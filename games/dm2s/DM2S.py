@@ -43,17 +43,14 @@ def run_experiment(argv):
             buf = line.strip().split(",")
             gParams[buf[0]] = buf[1]
 
-    # initialize pygame and font
+    # main part
     init_pygame_and_exp()
 
     # exit experiment
     quit_pygame()
 
 def init_pygame_and_exp():
-    """
-    initializes pygame backends explicitly with
-    predefined settings.
-    """
+    # initialize variables for button icons
     global gButton1
     global gButton1F
     global gButton2
@@ -205,5 +202,9 @@ def quit_pygame():
     # exit python
     sys.exit()
 
-run_experiment(sys.argv)
+if __name__=='__main__':
+    if len(sys.argv)<2:
+        print("USE: python DM2S.py DM2S.par")
+        exit()
 
+    run_experiment(sys.argv)
