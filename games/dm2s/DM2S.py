@@ -166,10 +166,10 @@ def drawScreen(screen,observation):
 
 def getAnother(cl,sp):
     color = gColors[random.randint(0, len(gColors))-1]
-    shape = gShapes[random.randint(0, len(gColors))-1]
+    shape = gShapes[random.randint(0, len(gShapes))-1]
     while cl==color and sp==shape:
         color = gColors[random.randint(0, len(gColors))-1]
-        shape = gShapes[random.randint(0, len(gColors))-1]
+        shape = gShapes[random.randint(0, len(gShapes))-1]
     return pygame.image.load("png/"+shape+"_"+color+".png")
 
 def getKeyResponse():
