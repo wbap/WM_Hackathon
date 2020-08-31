@@ -7,7 +7,7 @@ USE:
     
     python3 M2S.py M2S.par 
     
-where M2S.par ([sample](../DM2S.par)) contains parameters:
+where M2S.par ([sample](../dm2s/DM2S.par)) contains parameters:
 
     mainTaskRepeat, # of actual trial sessions
     observationRepeat, # of observation sessions
@@ -26,4 +26,4 @@ After the observation phase, the screen flashes to enter the actual trial phase.
 
 The timeout period for the arrow key response is 5 sec.
 
-For detail, the specification draft is found [here](https://docs.google.com/document/d/1DexYrOpjoGKM7Z32FmtoJ-beq6Z0IVJwPiZe-of0NPU/edit?usp=sharing).
+Detailed specifications are found [here](https://docs.google.com/document/d/1DexYrOpjoGKM7Z32FmtoJ-beq6Z0IVJwPiZe-of0NPU/edit?usp=sharing).
