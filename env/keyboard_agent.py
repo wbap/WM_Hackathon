@@ -9,9 +9,15 @@ import sys, gym, time
 import gym_game
 import pygame
 
+if len(sys.argv) < 3:
+    print('Usage: python keyboard_agent.py ENV CONFIG_FILE')
+    sys.exit(-1)
+
 env_name = sys.argv[1]
 print('Making Gym[PyGame] environment:', env_name)
-env = gym.make(env_name)
+config_file = sys.argv[2]
+print('Config file:', config_file)
+env = gym.make(env_name, config_file=config_file)
 
 sleep_time = 0.1
 if not hasattr(env.action_space, 'n'):
@@ -22,7 +28,9 @@ print("ACTIONS={}".format(ACTIONS))
 print("Press keys 1 2 3 ... to take actions 1 2 3 ... etc.")
 print("No keys pressed is taking action 0")
 
-env.render()
+render_mode = 'human'
+#render_mode = 'rgb_array'
+env.render(render_mode)
 
 def get_action(pressed_keys):
     action = None
@@ -73,7 +81,7 @@ def rollout(env):
         total_reward += reward
 
         # Render the new state
-        img = env.render(mode='human', close=quit)  # Render the game
+        img = env.render(mode=render_mode, close=quit)  # Render the game
 
         # Handle quit request
         if quit:
