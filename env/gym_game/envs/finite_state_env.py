@@ -65,14 +65,18 @@ class FiniteStateEnv(PyGameEnv):
     self.states[state_key] = state
     if start_state is True:
       self.start_state = state_key
-      print('Start state = ', state_key)
-    print('Adding state:', str(state))
+      #print('Start state = ', state_key)
+    #print('Adding state:', str(state))
 
   def set_state(self, state_key):
+    old_state_key = self.state_key
     time = self.get_time()  # Record the time of entering the state
     self.state_key = state_key  # The key, not the object
     self.state_time = time  # When we entered the state
-    print('State -> ', state_key, '@t=', time)
+    self.on_state_changed(old_state_key, state_key)
+
+  def on_state_changed(self, old_state_key, new_state_key):
+    print('State -> ', state_key, '@t=', self.state_time)
 
   def get_state_key(self):
     return self.state_key
@@ -83,7 +87,6 @@ class FiniteStateEnv(PyGameEnv):
     return elapsed_time
 
   def is_end_state(self, state_key):
-    print('is end state?', state_key)
     state = self.states[state_key]
     return state['end']
 
@@ -95,13 +98,12 @@ class FiniteStateEnv(PyGameEnv):
   def _do_step(self, action, time):
     old_state_key = self.get_state_key()
     elapsed_time = self.get_state_elapsed_time()
-    print('old state=', old_state_key, 'time=',elapsed_time)
+    #print('old state=', old_state_key, 'time=',elapsed_time)
     new_state_key = self._update_state_key(old_state_key, action, elapsed_time)
-    print('new state=', new_state_key)
+    #print('new state=', new_state_key)
     reward = self._update_reward(old_state_key, action, elapsed_time, new_state_key)
 
     if new_state_key != old_state_key:
-      print('state changed')
       self.set_state(new_state_key)
 
     is_end_state = self.is_end_state(new_state_key)
