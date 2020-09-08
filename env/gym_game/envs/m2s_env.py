@@ -13,7 +13,7 @@ from pygame.locals import *
 from .pygame_env import PyGameEnv
 from .finite_state_env import FiniteStateEnv
 
-class Dm2sEnv(FiniteStateEnv):
+class M2sEnv(FiniteStateEnv):
 
   # Define states of the game
   STATE_TUTOR_STIM = 'tutor-stim'
@@ -63,13 +63,10 @@ class Dm2sEnv(FiniteStateEnv):
         buf = line.strip().split(",")
         self.gParams[buf[0]] = buf[1]
     print('D2MS gParams:', self.gParams)
-    #self.image_dir = 'png'
+    self.image_dir = 'png'
     self.inter_flash = 400
     self.feedback_flash = 100
 
-    self.image_dir = str(self.gParams["imageDir"])
-    print('image dir =', self.image_dir)
-    
     # load button images
     self.gButton1 = self.read_image(self.get_image_file_name('Button_Green'))
     self.gButton1F = self.read_image(self.get_image_file_name('Button_LG'))
@@ -78,6 +75,7 @@ class Dm2sEnv(FiniteStateEnv):
 
     self.tutor_repeats = int(self.gParams["observationRepeat"])
     self.play_repeats = int(self.gParams["mainTaskRepeat"])
+
     w = self.gVideoWidth
     h = self.gVideoHeight
 
