@@ -79,6 +79,7 @@ def rollout(env):
         observation, reward, done, info = env.step(a)
         total_timesteps += 1
         total_reward += reward
+        #print('Obs: ',str(observation))
 
         # Render the new state
         img = env.render(mode=render_mode, close=quit)  # Render the game

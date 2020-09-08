@@ -66,9 +66,7 @@ class Dm2sEnv(FiniteStateEnv):
     #self.image_dir = 'png'
     self.inter_flash = 400
     self.feedback_flash = 100
-
     self.image_dir = str(self.gParams["imageDir"])
-    print('image dir =', self.image_dir)
     
     # load button images
     self.gButton1 = self.read_image(self.get_image_file_name('Button_Green'))

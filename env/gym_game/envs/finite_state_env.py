@@ -12,8 +12,10 @@ import pygame as pygame
 from pygame.locals import *
 
 from .pygame_env import PyGameEnv
+from .active_vision_env import ActiveVisionEnv
 
-class FiniteStateEnv(PyGameEnv):
+#class FiniteStateEnv(PyGameEnv):
+class FiniteStateEnv(ActiveVisionEnv):
 
   def __init__(self, num_actions, screen_width, screen_height, frame_rate=30):
 
@@ -106,6 +108,7 @@ class FiniteStateEnv(PyGameEnv):
     if new_state_key != old_state_key:
       self.set_state(new_state_key)
 
+    observation = self.get_observation()
     is_end_state = self.is_end_state(new_state_key)
 
     #ob = self._get_obs()
@@ -117,4 +120,4 @@ class FiniteStateEnv(PyGameEnv):
       'action': action,
       'done': is_end_state }
     print('additional:', str(additional))
-    return [new_state_key, self.reward, is_end_state, additional]
+    return [observation, self.reward, is_end_state, additional]

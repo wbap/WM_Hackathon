@@ -45,13 +45,18 @@ class M2sEnv(FiniteStateEnv):
   WHITE = (255, 255, 255)
   YELLOW = (255,255,0)
   BLUE = (0,0,255)
+  GRAY = (128,128,128)
 
   # define global variables
   gParams = {}  # parameter dictionary
   gVideoWidth = 800
   gVideoHeight = 800
-  gColors =  ["LB"]
-  gShapes =  ["Barred_Ring","Triangle","Crescent","Cross","Circle","Heart","Pentagon","Ring","Square"]
+  gColors =  ["LB","LG","YELLOW","PINK"]
+  gShapes =  ["Barred_Ring","Triangle","Crescent","Cross","Heart","Pentagon","Square","Ring"]
+  gDelay  =  ["Non-Delayed", "Delayed"]
+  gTransfigurations = ["None", "Reduce", "+45°"]
+  gBarPositions = ["Bottom","Right","Left","Top"]
+  gGameTypes = ["Shape","Color","Bar-Position"]
   gCorrectFB = Rect(0, gVideoHeight - 80, gVideoWidth, 80)
   gObservBar = Rect(0, 0, gVideoWidth, 80)
 
@@ -63,9 +68,9 @@ class M2sEnv(FiniteStateEnv):
         buf = line.strip().split(",")
         self.gParams[buf[0]] = buf[1]
     print('D2MS gParams:', self.gParams)
-    self.image_dir = 'png'
     self.inter_flash = 400
     self.feedback_flash = 100
+    self.image_dir = str(self.gParams["imageDir"])
 
     # load button images
     self.gButton1 = self.read_image(self.get_image_file_name('Button_Green'))
@@ -85,27 +90,24 @@ class M2sEnv(FiniteStateEnv):
 
   def _create_states(self):
     show_stim_interval = 2000
-    hide_stim_interval = 2000
     tutor_show_interval = 1000
     play_show_interval = 5000
     feedback_interval = 1000
     inter_interval = 400 * 3
-    self.add_state(self.STATE_TUTOR_STIM, next_states=[self.STATE_TUTOR_HIDE], duration=show_stim_interval, start_state=True)
-    self.add_state(self.STATE_TUTOR_HIDE, next_states=[self.STATE_TUTOR_SHOW], duration=hide_stim_interval)
+    self.add_state(self.STATE_TUTOR_STIM, next_states=[self.STATE_TUTOR_SHOW], duration=show_stim_interval, start_state=True)
     self.add_state(self.STATE_TUTOR_SHOW, next_states=[self.STATE_TUTOR_FEEDBACK], duration=tutor_show_interval)
     self.add_state(self.STATE_TUTOR_FEEDBACK, next_states=[self.STATE_INTER], duration=feedback_interval)
 
     self.add_state(self.STATE_INTER, next_states=[self.STATE_PLAY_STIM], duration=inter_interval)
 
-    self.add_state(self.STATE_PLAY_STIM, next_states=[self.STATE_PLAY_HIDE], duration=show_stim_interval)
-    self.add_state(self.STATE_PLAY_HIDE, next_states=[self.STATE_PLAY_SHOW], duration=hide_stim_interval)
+    self.add_state(self.STATE_PLAY_STIM, next_states=[self.STATE_PLAY_SHOW], duration=show_stim_interval)
     self.add_state(self.STATE_PLAY_SHOW, next_states=[self.STATE_PLAY_FEEDBACK], duration=play_show_interval)
     self.add_state(self.STATE_PLAY_FEEDBACK, next_states=[self.STATE_END], duration=feedback_interval)
 
     self.add_state(self.STATE_END, end_state=True)
 
   def _get_caption(self):
-    return 'Delayed Match-to-Sample'
+    return 'Match-to-Sample'
 
   def reset(self):
     self.sample = None

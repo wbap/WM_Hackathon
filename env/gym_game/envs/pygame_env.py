@@ -21,6 +21,7 @@ class PyGameEnv(gym.Env, ABC):
     self.reset()
     self.display_screen = None
     pygame.init()
+    self.screen_shape = [screen_height, screen_width, 3]
     self.screen = pygame.Surface((screen_width,screen_height))  # draw on here
     self.frame_rate = frame_rate
 
@@ -47,8 +48,8 @@ class PyGameEnv(gym.Env, ABC):
   def _create_observation_space(self, screen_width, screen_height, channels=3, dtype=np.uint8):    
     self.observation_space = spaces.Box(low=0, high=255, shape=(screen_height, screen_width, channels), dtype=dtype)
 
-  def get_observation_shape(self):
-    return self.observation_space.shape
+  def get_screen_shape(self):
+    return self.screen_shape
 
   def get_random(self):
     """Return the PRNG for this game"""
@@ -79,6 +80,10 @@ class PyGameEnv(gym.Env, ABC):
     background_colour = (0,0,0)
     return background_colour
 
+  def get_observation(self):
+    img = self.render(mode='rgb_array')
+    return img
+
   def render(self, mode='human', close=False):
     """Renders the game to a window, or as an image. Override render_image() to define what's shown. Close is a hint that the window shoud b"""
     try:
@@ -103,9 +108,9 @@ class PyGameEnv(gym.Env, ABC):
     elif mode == 'human':
       #print('HUMAN')
       if self.display_screen is None:
-        observation_shape = self.get_observation_shape()
-        self.window_height = observation_shape[0]  # height
-        self.window_width = observation_shape[1]  # width
+        screen_shape = self.get_screen_shape()
+        self.window_height = screen_shape[0]  # height
+        self.window_width = screen_shape[1]  # width
         self.display_screen = pygame.display.set_mode(
             (round(self.window_width), round(self.window_height)))
         pygame.display.set_caption(self._get_caption())
