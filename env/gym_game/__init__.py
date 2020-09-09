@@ -1,8 +1,8 @@
 from gym.envs.registration import register
 
 register(
-    id='counting-v0',
-    entry_point='gym_game.envs:CountingEnv'
+    id='simple-v0',
+    entry_point='gym_game.envs:SimpleEnv'
 )
 
 register(
