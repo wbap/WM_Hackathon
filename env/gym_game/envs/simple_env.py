@@ -83,7 +83,6 @@ class SimpleEnv(PyGameEnv):
       self.goal = self.random_goal()
       self.goal_time = self.get_time()
 
-
     done = False
     if self.count >= self.NUM_GOALS:
       done = True

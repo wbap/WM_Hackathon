@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pygame as pygame
 
+
 class PyGameEnv(gym.Env, ABC):
 
   metadata = {'render.modes': ['human','rgb_array']}
@@ -82,10 +83,15 @@ class PyGameEnv(gym.Env, ABC):
 
   def get_observation(self):
     img = self.render(mode='rgb_array')
+    # TODO: render returns a tuple, is img meant to be a tuple - i.e. is this a bug?
     return img
 
   def render(self, mode='human', close=False):
-    """Renders the game to a window, or as an image. Override render_image() to define what's shown. Close is a hint that the window shoud b"""
+    """
+    Renders the game to a window, or as an image.
+    Override render_image() to define what's shown.
+    Close is a hint that the window should b
+    """
     try:
       import pygame
       from pygame import gfxdraw

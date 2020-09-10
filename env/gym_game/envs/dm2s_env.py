@@ -13,6 +13,7 @@ from pygame.locals import *
 from .pygame_env import PyGameEnv
 from .finite_state_env import FiniteStateEnv
 
+
 class Dm2sEnv(FiniteStateEnv):
 
   # Define states of the game

@@ -14,7 +14,7 @@ from pygame.locals import *
 from .pygame_env import PyGameEnv
 from .active_vision_env import ActiveVisionEnv
 
-#class FiniteStateEnv(PyGameEnv):
+
 class FiniteStateEnv(ActiveVisionEnv):
 
   def __init__(self, num_actions, screen_width, screen_height, frame_rate=30):
@@ -78,7 +78,7 @@ class FiniteStateEnv(ActiveVisionEnv):
     self.on_state_changed(old_state_key, state_key)
 
   def on_state_changed(self, old_state_key, new_state_key):
-    print('State -> ', state_key, '@t=', self.state_time)
+    print('New state -> ', new_state_key, '@t=', self.state_time)
 
   def get_state_key(self):
     return self.state_key
