@@ -1,11 +1,11 @@
-import matplotlib
 import torch
-
 import torchvision
 from utils.retina import Retina
 from PIL import Image
 import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
+
 
 config = {
   'f_size': 7,
