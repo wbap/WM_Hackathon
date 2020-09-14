@@ -1,3 +1,4 @@
+import json
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
@@ -8,9 +9,10 @@ from .pygame_env import PyGameEnv
 
 class SimpleEnv(PyGameEnv):
 
-  GRID_SIZE = 3
-  PX_SIZE = 100
-  TIMEOUT = 2000
+  GRID_SIZE = 12
+  PX_SIZE = 1
+  TIMEOUT = 200
+  NUM_GOALS = 5
 
   ACTION_NONE = 0
   ACTION_N = 1
@@ -18,21 +20,35 @@ class SimpleEnv(PyGameEnv):
   ACTION_S = 3
   ACTION_W = 4
   NUM_ACTIONS = 5
-  NUM_GOALS = 5
 
   def __init__(self, config_file=None):
+    #print('Env Config file = ', config_file)
+    if config_file is not None:
+      with open(config_file) as json_file:
+        config = json.load(json_file)
+        self.GRID_SIZE = config['grid_size']
+        self.PX_SIZE = config['px_size']
+        self.TIMEOUT = config['timeout']
+        self.NUM_GOALS = config['num_goals']
+
+    #print('grid size:', self.GRID_SIZE)
+    #print('px size:', self.PX_SIZE)
     w = self.GRID_SIZE * self.PX_SIZE
     h = self.GRID_SIZE * self.PX_SIZE
     a = self.NUM_ACTIONS
     super().__init__(a, w, h)
+    self.goal = None
+    self.pose = None
 
   def reset(self):
+    #print('RESET ENV ------------------------------')
     super().reset()
     #self.grid = np.zeros((self.GRID_SIZE, self.GRID_SIZE))
     self.pose = [0,0]
     self.goal = self.random_goal()
     self.count = 0
     self.goal_time = self.get_time()
+    return self.get_observation()
 
   def random_goal(self):
     x = self.np_random.randint(self.GRID_SIZE)
@@ -88,6 +104,7 @@ class SimpleEnv(PyGameEnv):
     if self.count >= self.NUM_GOALS:
       done = True
 
+    #print('done?', done)
     observation = self.get_observation()
     additional = {
       'pose': self.pose,
@@ -98,7 +115,11 @@ class SimpleEnv(PyGameEnv):
     return [observation, reward, done, additional]
    
   def render_screen(self, screen):
+    #print('RENDER ENV ------------------------------')
     screen.fill((0,0,0))
+
+    if self.goal is None or self.pose is None:
+      return
     YELLOW = (255,255,0)
     BLUE = (0,0,255)
 
