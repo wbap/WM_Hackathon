@@ -2,7 +2,8 @@ from gym.envs.registration import register
 
 register(
     id='simple-v0',
-    entry_point='gym_game.envs:SimpleEnv'
+    entry_point='gym_game.envs:SimpleEnv',
+    kwargs={'config_file': 'env_config.json'}
 )
 
 register(

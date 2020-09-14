@@ -18,17 +18,18 @@ class PyGameEnv(gym.Env, ABC):
     # here spaces.Discrete(2) means that action can either be L or R choice
     self._create_action_space(num_actions)
     self._create_observation_space(screen_width, screen_height)
-    self.seed()  # Ensure repeatability of game
-    self.reset()
     self.display_screen = None
     pygame.init()
     self.screen_shape = [screen_height, screen_width, 3]
     self.screen = pygame.Surface((screen_width,screen_height))  # draw on here
     self.frame_rate = frame_rate
+    self.seed()  # Ensure repeatability of game
+    #self.reset()
 
   def reset(self):
     """Reset the game to a valid initial state."""
     self.clock = pygame.time.Clock()
+    return self.get_observation()
 
   def get_time(self):
     """Returns game time in milliseconds"""
@@ -46,7 +47,7 @@ class PyGameEnv(gym.Env, ABC):
   def _create_action_space(self, num_actions):
     self.action_space = spaces.Discrete(num_actions)
 
-  def _create_observation_space(self, screen_width, screen_height, channels=3, dtype=np.uint8):    
+  def _create_observation_space(self, screen_width, screen_height, channels=3, dtype=np.uint8):
     self.observation_space = spaces.Box(low=0, high=255, shape=(screen_height, screen_width, channels), dtype=dtype)
 
   def get_screen_shape(self):
@@ -131,15 +132,9 @@ class PyGameEnv(gym.Env, ABC):
 
     # Convert to numpy array
     rgb_array = pygame.surfarray.array3d(self.screen)
-    return rgb_array, True
+    #print("RENDER OBJ = ", type(rgb_array))
+    #print("RENDER OBJ SHAPE = ", rgb_array.shape)
+    return rgb_array
 
   def render_screen(self, screen):
     pass
-
-  # def render_image(self):
-  #   image = np.zeros((100,50,3))
-  #   for i in range(0, 30):
-  #     for j in range(0, 30):
-  #       image[i][j][0] = 100.0
-  #   return image
-

@@ -10,7 +10,7 @@ import gym_game
 import pygame
 
 if len(sys.argv) < 3:
-    print('Usage: python keyboard_agent.py ENV CONFIG_FILE')
+    print('Usage: python keyboard_agent.py ENV_NAME CONFIG_FILE')
     sys.exit(-1)
 
 env_name = sys.argv[1]
