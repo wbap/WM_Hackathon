@@ -85,9 +85,7 @@ def env_creator(env_name, env_config_file):
 class TorchCustomModel(TorchModelV2, nn.Module):
     """PyTorch custom model that flattens the input to 1d and delegates to a fc-net."""
 
-    def __init__(self, obs_space, action_space, num_outputs, model_config,
-                 name):
-        print('model config:', model_config)
+    def __init__(self, obs_space, action_space, num_outputs, model_config, name):
         # Reshape obs to vector and convert to float
         volume = np.prod(obs_space.shape)
         space = np.zeros(volume)
@@ -96,8 +94,7 @@ class TorchCustomModel(TorchModelV2, nn.Module):
         # TODO: Transform to output of any other PyTorch and pass new shape to model.
 
         # Create default model
-        TorchModelV2.__init__(self, flat_observation_space, action_space, num_outputs,
-                              model_config, name)
+        TorchModelV2.__init__(self, flat_observation_space, action_space, num_outputs, model_config, name)
         nn.Module.__init__(self)
         self.torch_sub_model = TorchFC(flat_observation_space, action_space, num_outputs, model_config, name)
 

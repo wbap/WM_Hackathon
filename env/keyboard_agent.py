@@ -30,6 +30,7 @@ print("No keys pressed is taking action 0")
 
 render_mode = 'human'
 #render_mode = 'rgb_array'
+env.reset()
 env.render(render_mode)
 
 def get_action(pressed_keys):

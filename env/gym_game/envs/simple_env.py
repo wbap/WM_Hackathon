@@ -42,13 +42,13 @@ class SimpleEnv(PyGameEnv):
 
   def reset(self):
     #print('RESET ENV ------------------------------')
-    super().reset()
+    #super().reset()
     #self.grid = np.zeros((self.GRID_SIZE, self.GRID_SIZE))
     self.pose = [0,0]
     self.goal = self.random_goal()
     self.count = 0
     self.goal_time = self.get_time()
-    return self.get_observation()
+    return super().reset() #self.get_observation()
 
   def random_goal(self):
     x = self.np_random.randint(self.GRID_SIZE)

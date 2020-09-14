@@ -115,7 +115,7 @@ class Dm2sEnv(FiniteStateEnv):
     self.result = None
     self.tutor_counts = 0
     self.play_counts = 0
-    super().reset()
+    return super().reset()
 
   def on_state_changed(self, old_state_key, new_state_key):
     #print('State -> ', new_state_key, '@t=', self.state_time)

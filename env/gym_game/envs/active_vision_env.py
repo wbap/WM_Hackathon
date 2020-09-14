@@ -51,8 +51,7 @@ class ActiveVisionEnv(PyGameEnv):
       'peripheral': peripheral})
 
   def get_observation(self):
-    print('Obs DICT')
-    img, _ = self.render(mode='rgb_array')
+    img = self.render(mode='rgb_array')
 
     # crop to fovea (centre region)
     h, w, ch = img.shape[0], img.shape[1], img.shape[2]
