@@ -1,1 +1,9 @@
-pygame
+pygame~=1.9.6
+gym~=0.17.2
+numpy~=1.19.1
+setuptools~=49.6.0
+torch~=1.6.0
+scipy~=1.5.2
+pillow~=7.2.0
+torchvision~=0.7.0
+matplotlib~=3.3.1
