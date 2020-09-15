@@ -1,11 +1,7 @@
-import gym
-from gym import error, spaces, utils
-from gym.utils import seeding
 
-from abc import ABC, abstractmethod
+from gym import spaces
 import numpy as np
-import pygame as pygame
-
+import logging
 from .pygame_env import PyGameEnv
 
 
@@ -18,12 +14,14 @@ class ActiveVisionEnv(PyGameEnv):
 
   def __init__(self, num_actions, screen_width, screen_height, frame_rate=30):
     self.fov_fraction = 0.1  # fraction of diameter, at centre of image
-    self.gaze = (0, 0)       # gaze position - (y, x) tuple
+    self.gaze = np.array([0, 0])       # gaze position - (y, x) tuple
+    self.actions_start = num_actions
+    self.actions_end = num_actions + 4
     self.action_2_xy = {     # map actions (integers) to x,y gaze delta
-      0: (0, 0),
-      1: (0, 1),
-      2: (1, 0),
-      3: (1, 1)
+      num_actions:   np.array([-1, 0]),
+      num_actions+1: np.array([1, 0]),
+      num_actions+2: np.array([0, -1]),
+      num_actions+3: np.array([0, 1])
     }
 
     super().__init__(num_actions, screen_width, screen_height, frame_rate)
@@ -34,11 +32,14 @@ class ActiveVisionEnv(PyGameEnv):
 
   def _do_step(self, action, time):
     # update the position of the fovea (fov_pos), given the action taken
-    self.gaze_pos = self.gaze_pos + self.action_2_xy[action]
+    logging.debug("Received action: ", action)
+    # if within action scope, modify gaze
+    if self.actions_start <= action < self.actions_end:
+      self.gaze = self.gaze + self.action_2_xy[action]
+      logging.debug("New gaze: ", self.gaze)
 
   def _create_action_space(self, num_actions):
-    # TODO: I don't know where PyGameEnv gets instantiated, so don't know how num_actions is defined, **guessing here**
-    total_actions = num_actions + len(self.action_2_xy.keys())  # Gaze control
+    total_actions = num_actions + self.actions_end  # Gaze control
     self.action_space = spaces.Discrete(total_actions)
 
   def _create_observation_space(self, screen_width, screen_height, channels=3, dtype=np.uint8):    
