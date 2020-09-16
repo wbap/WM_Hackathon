@@ -86,11 +86,6 @@ class ActiveVisionEnv(PyGameEnv):
 
       self._last_observed_gaze = self.gaze.copy()
 
-      # debugging
-      # plt.imsave(str(self.i)+'_fov.png', self.img_fov)
-      # plt.imsave(str(self.i)+'_periph.png', self.img_periph)
-      # self.i += 1
-
     observation = {
       'full': img,
       'fovea': self.img_fov,

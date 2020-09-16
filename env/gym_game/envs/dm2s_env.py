@@ -79,7 +79,10 @@ class Dm2sEnv(FiniteStateEnv):
     self.result = None
     self.tutor_counts = 0
     self.play_counts = 0
+
+    # gaze
     self._mode_no_tutor_long_game = False   # currently being used for testing gaze
+    self._draw_gaze = True
 
     # Create base class stuff
     super().__init__(self.NUM_ACTIONS, w, h)
@@ -305,3 +308,9 @@ class Dm2sEnv(FiniteStateEnv):
     screen.blit(gButton1, (int(self.gVideoWidth/2 - self.gButton1.get_width()/2) - 160, 610))
     screen.blit(gButton2, (int(self.gVideoWidth/2 - self.gButton2.get_width()/2) + 160, 610))
 
+    # draw the gaze position
+    if self._draw_gaze:
+      radius = 10
+      pygame.draw.circle(screen, self.BLACK, self.gaze, radius, 1)
+      pygame.draw.line(screen, self.BLACK, self.gaze+[0, radius], self.gaze+[0, -radius])       # vertical line
+      pygame.draw.line(screen, self.BLACK, self.gaze+[radius, 0], self.gaze+[-radius, 0])       # horizontal line
