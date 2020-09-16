@@ -3,8 +3,9 @@ import sys, gym, time
 import json
 
 #
-# Trains a simple agent on an environment
-# python simple_agent.py Env-vN
+# (Pre)Trains a simple agent modules in an unsupervised/self-supervised manner on prerecorded samples from an environment.
+# E.g. 
+# python pretrain.py dm2s-v0 ../games/dm2s/DM2S.par data.pickle simple_model.json
 #
 import numpy as np
 from gym import error, spaces, utils
@@ -23,33 +24,38 @@ import shutil
 from ray.rllib.utils.framework import try_import_torch
 torch, nn = try_import_torch()
 
+from gym_game.envs.pygame_dataset import PyGameDataset
+
 if len(sys.argv) < 4:
-    print('Usage: python simple_agent.py ENV_NAME ENV_CONFIG_FILE MODEL_CONFIG_FILE')
+    print('Usage: python simple_agent.py ENV_NAME ENV_CONFIG_FILE DATASET_FILE MODEL_CONFIG_FILE')
     sys.exit(-1)
 
 env_name = sys.argv[1]
 print('Making Gym[PyGame] environment:', env_name)
 env_config_file = sys.argv[2]
 print('Env config file:', env_config_file)
-env = gym.make(env_name, config_file=env_config_file)
-
-model_config_file = sys.argv[3]
+dataset_file = sys.argv[3]
+print('Dataset file:', dataset_file)
+model_config_file = sys.argv[4]
 print('Model config file:', model_config_file)
 
+
+# Check environment
+env = gym.make(env_name, config_file=env_config_file)
 if not hasattr(env.action_space, 'n'):
     raise Exception('Simple agent only supports discrete action spaces')
 ACTIONS = env.action_space.n
-
 print("ACTIONS={}".format(ACTIONS))
 
-render_mode = 'rgb_array'
 
+# Check Ray
 ray.shutdown()
 ray.init(ignore_reinit_error=True)
-
 CHECKPOINT_ROOT = 'tmp/simple'
 shutil.rmtree(CHECKPOINT_ROOT, ignore_errors=True, onerror=None)
 
+
+# Configs
 config= {}
 config["log_level"] = "DEBUG"
 config["framework"] = "torch"
@@ -73,6 +79,14 @@ if model_config_file is not None:
             config["model"][key] = value
 print('Final complete config: ', config)
 
+
+# Build and reload pregenerated data
+dataset = PyGameDataset()
+ok = dataset.read(dataset_file)
+if ok:
+    print('Read pregenerated dataset OK.')
+
+# Custom env creator
 def env_creator(env_name, env_config_file):
     """Custom functor to create custom Gym environments."""
     if env_name == 'simple-v0':
@@ -80,7 +94,11 @@ def env_creator(env_name, env_config_file):
     else:
         raise NotImplementedError
     return env(env_config_file)  # Instantiate with config file
+tune.register_env(env_name, lambda config: env_creator(env_name, env_config_file))
 
+
+
+# Build entire model
 class TorchCustomModel(TorchModelV2, nn.Module):
     """PyTorch custom model that flattens the input to 1d and delegates to a fc-net."""
 
@@ -115,29 +133,15 @@ class TorchCustomModel(TorchModelV2, nn.Module):
         return torch.reshape(self.torch_sub_model.value_function(), [-1])
 
 # Register the model
-# https://github.com/ray-project/ray/issues/9040
 ModelCatalog.register_custom_model(model_name, TorchCustomModel)
-# https://stackoverflow.com/questions/58551029/rllib-use-custom-registered-environments
-#tune.register_env(env_name, lambda: config, env_creator(env_name, env_config_file))
-tune.register_env(env_name, lambda config: env_creator(env_name, env_config_file))
+
 #agent = a3c.A3CTrainer(config, env=env_creator(env_name, env_config_file))  # Note use of custom Env creator fn
-agent = a3c.A3CTrainer(config, env=env_name)  # Note use of custom Env creator fn
+#agent = a3c.A3CTrainer(config, env=env_name)  # Note use of custom Env creator fn
 
 # Train the model
 status_message = "{:3d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f} saved {}"
 agent_steps = 250
-for n in range(agent_steps):
-  result = agent.train()
-  file_name = agent.save(CHECKPOINT_ROOT)
-  print(status_message.format(
-    n + 1,
-    result["episode_reward_min"],
-    result["episode_reward_mean"],
-    result["episode_reward_max"],
-    result["episode_len_mean"],
-    file_name
-   ))
+#for n in range(agent_steps):
 
 # Finish
 print('Shutting down...')
-ray.shutdown()
