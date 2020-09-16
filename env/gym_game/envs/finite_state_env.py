@@ -1,20 +1,9 @@
-import gym
-from gym import error, spaces, utils
-from gym.utils import seeding
 
 from abc import ABC, abstractmethod
-import numpy as np
-import os
-import sys
-import csv
-import random
-import pygame as pygame
-from pygame.locals import *
-
-from .pygame_env import PyGameEnv
+import logging
 from .active_vision_env import ActiveVisionEnv
 
-#class FiniteStateEnv(PyGameEnv):
+
 class FiniteStateEnv(ActiveVisionEnv):
 
   def __init__(self, num_actions, screen_width, screen_height, frame_rate=30):
@@ -23,6 +12,7 @@ class FiniteStateEnv(ActiveVisionEnv):
     self.states = {}
     self.start_state = None
     self.state_key = None
+    self.state_time = None
     self._create_states()
 
     super().__init__(num_actions, screen_width, screen_height, frame_rate)
@@ -57,18 +47,18 @@ class FiniteStateEnv(ActiveVisionEnv):
 
   def add_state(self, state_key, start_state=False, end_state=False, next_states=[], duration=None, meta=None):
     state = {
-      'key':state_key,
-      'start':start_state,
-      'end':end_state,
-      'duration':duration,
-      'next_state_keys':next_states,
-      'meta':meta
+      'key': state_key,
+      'start': start_state,
+      'end': end_state,
+      'duration': duration,
+      'next_state_keys': next_states,
+      'meta': meta
     }    
     self.states[state_key] = state
     if start_state is True:
       self.start_state = state_key
-      #print('Start state = ', state_key)
-    #print('Adding state:', str(state))
+      logging.debug('Start state = ', state_key)
+    logging.debug('Adding state:', str(state))
 
   def set_state(self, state_key):
     old_state_key = self.state_key
@@ -78,7 +68,7 @@ class FiniteStateEnv(ActiveVisionEnv):
     self.on_state_changed(old_state_key, state_key)
 
   def on_state_changed(self, old_state_key, new_state_key):
-    print('State -> ', state_key, '@t=', self.state_time)
+    logging.info('State -> ', self.state_key, '@t=', self.state_time)
 
   def get_state_key(self):
     return self.state_key
@@ -98,11 +88,11 @@ class FiniteStateEnv(ActiveVisionEnv):
     return next_states
 
   def _do_step(self, action, time):
+    super()._do_step(action, time)
     old_state_key = self.get_state_key()
     elapsed_time = self.get_state_elapsed_time()
-    #print('old state=', old_state_key, 'time=',elapsed_time)
+    logging.debug('old state=', old_state_key, 'time=', elapsed_time)
     new_state_key = self._update_state_key(old_state_key, action, elapsed_time)
-    #print('new state=', new_state_key)
     reward = self._update_reward(old_state_key, action, elapsed_time, new_state_key)
 
     if new_state_key != old_state_key:
@@ -111,13 +101,12 @@ class FiniteStateEnv(ActiveVisionEnv):
     observation = self.get_observation()
     is_end_state = self.is_end_state(new_state_key)
 
-    #ob = self._get_obs()
     self.reward = reward
     additional = {
       'old_state': old_state_key,
       'new_state': new_state_key,
       'reward': self.reward, 
       'action': action,
-      'done': is_end_state }
-    print('additional:', str(additional))
+      'done': is_end_state}
+    logging.info('additional:', str(additional))
     return [observation, self.reward, is_end_state, additional]

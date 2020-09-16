@@ -1,16 +1,9 @@
-import gym
-from gym import error, spaces, utils
-from gym.utils import seeding
 
-import numpy as np
+
 import os
-import sys
-import csv
-import random
 import pygame as pygame
 from pygame.locals import *
-
-from .pygame_env import PyGameEnv
+import logging
 from .finite_state_env import FiniteStateEnv
 
 
@@ -32,7 +25,7 @@ class Dm2sEnv(FiniteStateEnv):
   ACTION_NONE = 0
   ACTION_LEFT = 1
   ACTION_RIGHT = 2
-  NUM_ACTIONS = 3
+  NUM_ACTIONS = 3  # No action, Left and Right
 
   POSITION_NONE = 0
   POSITION_L = 1
@@ -42,17 +35,17 @@ class Dm2sEnv(FiniteStateEnv):
   RESULT_CORRECT = 1
 
   # define colors
-  BLACK = (0,0,0)
+  BLACK = (0, 0, 0)
   WHITE = (255, 255, 255)
-  YELLOW = (255,255,0)
-  BLUE = (0,0,255)
+  YELLOW = (255, 255, 0)
+  BLUE = (0, 0, 255)
 
   # define global variables
   gParams = {}  # parameter dictionary
   gVideoWidth = 800
   gVideoHeight = 800
-  gColors =  ["LB"]
-  gShapes =  ["Barred_Ring","Triangle","Crescent","Cross","Circle","Heart","Pentagon","Ring","Square"]
+  gColors = ["LB"]
+  gShapes = ["Barred_Ring", "Triangle", "Crescent", "Cross", "Circle", "Heart", "Pentagon", "Ring", "Square"]
   gCorrectFB = Rect(0, gVideoHeight - 80, gVideoWidth, 80)
   gObservBar = Rect(0, 0, gVideoWidth, 80)
 
@@ -80,25 +73,37 @@ class Dm2sEnv(FiniteStateEnv):
     w = self.gVideoWidth
     h = self.gVideoHeight
 
+    self.sample = None
+    self.target = None
+    self.position = None
+    self.result = None
+    self.tutor_counts = 0
+    self.play_counts = 0
+    self._mode_no_tutor_long_game = False   # currently being used for testing gaze
+
     # Create base class stuff
-    num_actions = 3  # No action, Left and Right
     super().__init__(self.NUM_ACTIONS, w, h)
 
   def _create_states(self):
-    show_stim_interval = 2000
-    hide_stim_interval = 2000
+    show_stim_interval = 2000 if not self._mode_no_tutor_long_game else 500
+    hide_stim_interval = 2000 if not self._mode_no_tutor_long_game else 500
     tutor_show_interval = 1000
-    play_show_interval = 5000
-    feedback_interval = 1000
+    play_show_interval = 5000 if not self._mode_no_tutor_long_game else 20000
+    feedback_interval = 1000 if not self._mode_no_tutor_long_game else 500
     inter_interval = 400 * 3
-    self.add_state(self.STATE_TUTOR_STIM, next_states=[self.STATE_TUTOR_HIDE], duration=show_stim_interval, start_state=True)
-    self.add_state(self.STATE_TUTOR_HIDE, next_states=[self.STATE_TUTOR_SHOW], duration=hide_stim_interval)
-    self.add_state(self.STATE_TUTOR_SHOW, next_states=[self.STATE_TUTOR_FEEDBACK], duration=tutor_show_interval)
-    self.add_state(self.STATE_TUTOR_FEEDBACK, next_states=[self.STATE_INTER], duration=feedback_interval)
 
-    self.add_state(self.STATE_INTER, next_states=[self.STATE_PLAY_STIM], duration=inter_interval)
+    # if in mode 'no tutor, long game', don't show tutor
+    if not self._mode_no_tutor_long_game:
+      self.add_state(self.STATE_TUTOR_STIM, next_states=[self.STATE_TUTOR_HIDE], duration=show_stim_interval,
+                     start_state=True)
+      self.add_state(self.STATE_TUTOR_HIDE, next_states=[self.STATE_TUTOR_SHOW], duration=hide_stim_interval)
+      self.add_state(self.STATE_TUTOR_SHOW, next_states=[self.STATE_TUTOR_FEEDBACK], duration=tutor_show_interval)
+      self.add_state(self.STATE_TUTOR_FEEDBACK, next_states=[self.STATE_INTER], duration=feedback_interval)
 
-    self.add_state(self.STATE_PLAY_STIM, next_states=[self.STATE_PLAY_HIDE], duration=show_stim_interval)
+      self.add_state(self.STATE_INTER, next_states=[self.STATE_PLAY_STIM], duration=inter_interval)
+
+    self.add_state(self.STATE_PLAY_STIM, next_states=[self.STATE_PLAY_HIDE], duration=show_stim_interval,
+                   start_state=self._mode_no_tutor_long_game)
     self.add_state(self.STATE_PLAY_HIDE, next_states=[self.STATE_PLAY_SHOW], duration=hide_stim_interval)
     self.add_state(self.STATE_PLAY_SHOW, next_states=[self.STATE_PLAY_FEEDBACK], duration=play_show_interval)
     self.add_state(self.STATE_PLAY_FEEDBACK, next_states=[self.STATE_END], duration=feedback_interval)
@@ -118,7 +123,7 @@ class Dm2sEnv(FiniteStateEnv):
     return super().reset()
 
   def on_state_changed(self, old_state_key, new_state_key):
-    #print('State -> ', new_state_key, '@t=', self.state_time)
+    logging.info('State -> ', new_state_key, '@t=', self.state_time)
     if new_state_key == self.STATE_TUTOR_STIM or new_state_key == self.STATE_PLAY_STIM:
       self.position = self.np_random.randint(2)+1  # Left:1 & Right:2
       self.sample = self.get_random_sample() 
@@ -126,6 +131,7 @@ class Dm2sEnv(FiniteStateEnv):
       self.result = None
       
   def _update_state_key(self, old_state_key, action, elapsed_time):
+
     # Don't transition from end states
     is_end_state = self.is_end_state(old_state_key)
     if is_end_state:
@@ -134,17 +140,20 @@ class Dm2sEnv(FiniteStateEnv):
     # transition on response, when appropriate
     new_state_key = old_state_key  # default
     next_state_keys = self.get_next_state_keys(old_state_key)
-    if old_state_key == self.STATE_PLAY_SHOW:
-      if action != self.ACTION_NONE:
-        if self.result is None:
-          if action == self.position:
-            self.result = self.RESULT_CORRECT
-          else:
-            self.result = self.RESULT_WRONG
-          print("Response: "+str(action)+", Correct response: "+str(self.position))
-        new_state_key = next_state_keys[0]
-        return new_state_key
-      # else: wait for timer
+
+    # Only transition if action in scope of dm2s actions
+    if action < self.NUM_ACTIONS:
+      if old_state_key == self.STATE_PLAY_SHOW:
+        if action != self.ACTION_NONE:
+          if self.result is None:
+            if action == self.position:
+              self.result = self.RESULT_CORRECT
+            else:
+              self.result = self.RESULT_WRONG
+            print("Response: "+str(action)+", Correct response: "+str(self.position))
+          new_state_key = next_state_keys[0]
+          return new_state_key
+        # else: wait for timer
 
     # All other states - check timer
     state = self.states[old_state_key]
@@ -181,16 +190,16 @@ class Dm2sEnv(FiniteStateEnv):
     if unlike_sample is not None:
       except_color = unlike_sample['color']
       except_shape = unlike_sample['shape']
-    while( True ):
+    while(True):
       color = self.gColors[self.np_random.randint(0, len(self.gColors))-1]
       shape = self.gShapes[self.np_random.randint(0, len(self.gShapes))-1]
       if unlike_sample is None:
         break
-      elif except_color!=color or except_shape!=shape:
+      elif except_color != color or except_shape != shape:
         break
     sample = {
-      'color':color,
-      'shape':shape
+      'color': color,
+      'shape': shape
     }
     return sample
 
