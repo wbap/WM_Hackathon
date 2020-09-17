@@ -1,11 +1,8 @@
+import matplotlib.pyplot as plt
 import torch
 import torchvision
-from utils.retina import Retina
 from PIL import Image
-import matplotlib.pyplot as plt
-import matplotlib
-import numpy as np
-
+from utils.retina import Retina
 
 config = {
   'f_size': 7,
@@ -38,7 +35,6 @@ print(dog_neg.size)
 img.show()
 dog_pos.show()
 dog_neg.show()
-
 
 # show in matplotlib figure   --> currently has weird colours, maybe b/c range [0, 256] instead of [-1,1]
 fig = plt.figure()

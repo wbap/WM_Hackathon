@@ -1,14 +1,13 @@
-
-import torch
-import torch.nn as nn
 import numpy as np
 import scipy.ndimage
+import torch
+import torch.nn as nn
+
 
 # TODO: add appropriate padding so that the filtered image is the correct size
 
 
 def gaussian_kernel(size, stddev):
-
   if size % 2 == 0:
     raise RuntimeWarning("Kernel size must be odd, or the kernel is asymmetric")
 
@@ -78,6 +77,6 @@ def get_gaussian_image_filter(channels, size, sigma):
 def get_dog_image_filter(channels, size, sigma, k=1.6, invert=False):
   kernel = dog_kernel(size, sigma, k)
   if invert is True:
-      kernel = -kernel
+    kernel = -kernel
   image_filter = ImageFilter(channels, kernel)
   return image_filter
