@@ -24,6 +24,8 @@ from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 import ray.rllib.agents.ppo as ppo
 
 from ray.rllib.utils.framework import try_import_torch
+from utils.retina import Retina
+
 torch, nn = try_import_torch()
 
 
@@ -38,10 +40,17 @@ class StubAgent(TorchModelV2, nn.Module):
 
     # TODO: Transform to output of any other PyTorch and pass new shape to model.
 
-    # Create default model
+    # Create default model (for RL)
     TorchModelV2.__init__(self, flat_observation_space, action_space, num_outputs, model_config, name)
     nn.Module.__init__(self)
     self.torch_sub_model = TorchFC(flat_observation_space, action_space, num_outputs, model_config, name)
+
+    # create the stubbed sub-modules of the simple agent
+    self._build()
+
+  def _build(self):
+    retina = Retina(1, config=None)
+    self.add_module('retina', retina)
 
   def forward(self, input_dict, state, seq_lens):
     # flatten
@@ -52,6 +61,7 @@ class StubAgent(TorchModelV2, nn.Module):
     input_dict["obs"] = obs_3d
 
     # TODO: forward() any other PyTorch modules here, pass result to RL algo
+    # retina = self.retina
 
     # Defer to default FC model
     fc_out, _ = self.torch_sub_model(input_dict, state, seq_lens)

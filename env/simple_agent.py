@@ -25,6 +25,18 @@ import shutil
 from ray.rllib.utils.framework import try_import_torch
 torch, nn = try_import_torch()
 
+"""
+Create a simple RL agent using StubAgent. 
+The environment can be chosen. Both environment and agent are configurable.
+
+Usage: python simple_agent.py ENV_NAME ENV_CONFIG_FILE MODEL_CONFIG_FILE
+e.g.
+  python simple_agent.py dm2s-v0 ../games/dm2s/DM2S.par simple_agent_model.json
+  --> the StubAgent plays the dm2s game
+
+  python simple_agent.py simple-v0 simple_env_machine.json simple_agent_model.json
+  --> the StubAgent (conf simple_agent_model.json) plays the simple env (config simple_env_machine.json)  
+"""
 
 if len(sys.argv) < 4:
     print('Usage: python simple_agent.py ENV_NAME ENV_CONFIG_FILE MODEL_CONFIG_FILE')
@@ -76,12 +88,15 @@ if model_config_file is not None:
             config["model"][key] = value
 print('Final complete config: ', config)
 
+
 def env_creator(env_name, env_config_file):
     """Custom functor to create custom Gym environments."""
     if env_name == 'simple-v0':
-        from gym_game.envs import SimpleEnv as env
+      from gym_game.envs import SimpleEnv as env
+    elif env_name == 'dm2s-v0':
+      from gym_game.envs import Dm2sEnv as env
     else:
-        raise NotImplementedError
+      raise NotImplementedError
     return env(env_config_file)  # Instantiate with config file
 
 

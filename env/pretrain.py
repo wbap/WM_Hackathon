@@ -5,7 +5,7 @@ import json
 #
 # (Pre)Trains a simple agent modules in an unsupervised/self-supervised manner on prerecorded samples from an environment.
 # E.g. 
-# python pretrain.py dm2s-v0 ../games/dm2s/DM2S.par data.pickle simple_model.json
+# python pretrain.py dm2s-v0 ../games/dm2s/DM2S.par data.pickle simple_agent_model.json
 #
 import numpy as np
 from gym import error, spaces, utils
