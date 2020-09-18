@@ -310,7 +310,8 @@ class Dm2sEnv(FiniteStateEnv):
 
     # draw the gaze position
     if self._draw_gaze:
-      radius = 10
-      pygame.draw.circle(screen, self.BLACK, self.gaze, radius, 1)
-      pygame.draw.line(screen, self.BLACK, self.gaze+[0, radius], self.gaze+[0, -radius])       # vertical line
-      pygame.draw.line(screen, self.BLACK, self.gaze+[radius, 0], self.gaze+[-radius, 0])       # horizontal line
+      pygame.draw.circle(screen, self.BLACK, self.gaze, self.fov_size[0], 1)
+      # vertical line
+      pygame.draw.line(screen, self.BLACK, self.gaze+[0, self.fov_size[1]], self.gaze+[0, -self.fov_size[1]])
+      # horizontal line
+      pygame.draw.line(screen, self.BLACK, self.gaze+[self.fov_size[0], 0], self.gaze+[-self.fov_size[0], 0])
