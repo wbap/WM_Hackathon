@@ -3,13 +3,8 @@ from utils import image_utils
 
 
 class Retina(nn.Module):
-  # hyperparams
-  config = {
-    # nms = non-maxima suppression
-    # 'nms_size': 0,
-    # 'nms_stride': 0.0,
 
-    # f = feature
+  config = {
     'f_size': 7,
     'f_sigma': 2.0,
     'f_k': 1.6  # approximates Laplacian of Gaussian
@@ -28,7 +23,7 @@ class Retina(nn.Module):
     self._dog_filter_pos = None
     self._dog_filter_neg = None
 
-    self.build()
+    self._build()
 
   # def set_image(self, name, val):
   #   self._image_dic[name] = val
@@ -36,7 +31,7 @@ class Retina(nn.Module):
   # def get_image(self, name):
   #   return self._image_dic[name]
 
-  def build(self):
+  def _build(self):
     # DoG kernel - edge and corner detection plus smoothing
     self._dog_filter_pos = image_utils.get_dog_image_filter(channels=self.channels,
                                                             size=self._config['f_size'],

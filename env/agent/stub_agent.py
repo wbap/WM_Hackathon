@@ -22,11 +22,29 @@ import shutil
 from ray.tune.registry import register_env
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 import ray.rllib.agents.ppo as ppo
-
 from ray.rllib.utils.framework import try_import_torch
+
+
+from utils.medial_temporal_lobe import MedialTemporalLobe
+from utils.positional_encoding import PositionalEncoder
 from utils.retina import Retina
 
+
 torch, nn = try_import_torch()
+
+# default config
+config = {
+  "retina": {
+    'f_size': 7,
+    'f_sigma': 2.0,
+    'f_k': 1.6  # approximates Laplacian of Gaussian
+  },
+  "positional_encoding": {},
+  "vc_fovea": {},
+  "vc_periphery": {},
+  "mtl": {},
+  "sc": {}
+}
 
 
 class StubAgent(TorchModelV2, nn.Module):
@@ -52,6 +70,14 @@ class StubAgent(TorchModelV2, nn.Module):
     retina = Retina(1, config=None)
     self.add_module('retina', retina)
 
+    pe_config = self.custom_model_config["positional_encoding"]
+    pe = PositionalEncoder(config=pe_config)
+    self.add_module('pe', pe)
+
+    mtl_config = self.custom_model_config["mtl"]
+    mtl = MedialTemporalLobe(config=mtl_config)
+    self.add_module('mtl', mtl)
+
   def forward(self, input_dict, state, seq_lens):
     # flatten
     obs_4d = input_dict["obs"].float()
@@ -61,7 +87,7 @@ class StubAgent(TorchModelV2, nn.Module):
     input_dict["obs"] = obs_3d
 
     # TODO: forward() any other PyTorch modules here, pass result to RL algo
-    # retina = self.retina
+    # self.retina.forward()
 
     # Defer to default FC model
     fc_out, _ = self.torch_sub_model(input_dict, state, seq_lens)

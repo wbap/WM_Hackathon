@@ -5,24 +5,18 @@
 # python simple_agent.py Env-vN
 #
 
-from agent.StubAgent import StubAgent
-
-import sys, gym, time
+import gym
 import json
-
-import numpy as np
-from gym import error, spaces, utils
-import gym_game
-import pygame
+import shutil
+import sys
 
 import ray
-import ray.tune as tune
-from ray.tune.registry import register_env
-from ray.rllib.models import ModelCatalog
-import ray.rllib.agents.ppo as ppo
 import ray.rllib.agents.a3c as a3c
-import shutil
+import ray.tune as tune
+from agent.stub_agent import StubAgent
+from ray.rllib.models import ModelCatalog
 from ray.rllib.utils.framework import try_import_torch
+
 torch, nn = try_import_torch()
 
 """
@@ -78,6 +72,10 @@ config["model"]["fcnet_activation"] = 'tanh'
 config["model"]["fcnet_hiddens"] = [128, 128]
 config["model"]["max_seq_len"] = 50
 config["model"]["framestack"] = False  # default: True
+
+# We're meant to be able to use this key for a custom config dic, but if we set any values, it causes a crash
+# https://github.com/ray-project/ray/blob/master/rllib/models/catalog.py
+config["model"]["custom_model_config"] = {}
 
 # Override from model config file:
 if model_config_file is not None:
