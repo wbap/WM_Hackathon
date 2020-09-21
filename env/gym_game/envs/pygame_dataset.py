@@ -19,8 +19,8 @@ import pickle  # for read/write data
 class PyGameDataset(torch.utils.data.Dataset):
   """A PyTorch Dataset made from samples generated from PyGame environment rollouts"""
 
-  def __init__(self):
-    pass
+  def __init__(self, key=None):
+    self.key = key
 
   def read(self, file_name):
     """
@@ -35,10 +35,10 @@ class PyGameDataset(torch.utils.data.Dataset):
       sys.stderr.write('File ' + file_name + ' cannot be read\n')
       sys.stderr.write(details)
       return False
-    return True
 
     self._samples = pickle.load(f)
     f.close()
+    return True
 
   def write(self, file_name):
     """
@@ -73,10 +73,18 @@ class PyGameDataset(torch.utils.data.Dataset):
     if truncate:
       del self._samples[num_samples:]
 
+  def get_shape(self, env):
+    """Obtains an observation by reset()ing the environment, then returns that shape. Assumes the observation is a numpy array."""
+    observation = env.get_observation()
+    if self.key is not None:
+      return observation[self.key].shape
+    return observation.shape
+
   def rollout(self, env, policy):
     """Perform a rollout of the env using the policy"""
     samples = []
     observation = env.reset()
+    #print('obs:', observation)
     policy.reset()
     total_reward = 0
     total_timesteps = 0
@@ -87,6 +95,7 @@ class PyGameDataset(torch.utils.data.Dataset):
       #print('obs shape = ',observation)
       total_timesteps += 1
       total_reward += reward  # for tracking exploration
+      #print("Rollout summary: Timesteps %i Reward %0.2f" % (total_timesteps, total_reward))
       if done:
         print('Episode (rollout) complete.')
         env.reset()
@@ -97,8 +106,15 @@ class PyGameDataset(torch.utils.data.Dataset):
 
   def __len__(self):
     """Returns the size of the dataset"""
+    #print('Len?????????????', len(self._samples))
     return len(self._samples)
 
   def __getitem__(self, idx):
     """Return the ith sample of the dataset"""
-    return self._samples[idx]
+    #print('get item?????????????', idx)
+    sample = self._samples[idx]
+    #print('Sample ', str(sample))
+    if self.key is not None:
+      sample = sample[self.key]
+    #print('Sample[key]= ', str(sample))
+    return sample
