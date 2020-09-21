@@ -1,147 +1,176 @@
-#!/usr/bin/env python
-import sys, gym, time
-import json
+"""Model pretraining."""
 
-#
-# (Pre)Trains a simple agent modules in an unsupervised/self-supervised manner on prerecorded samples from an environment.
-# E.g. 
-# python pretrain.py dm2s-v0 ../games/dm2s/DM2S.par data.pickle simple_agent_model.json
-#
-import numpy as np
-from gym import error, spaces, utils
-import gym_game
-import pygame
+from __future__ import print_function
+
+import json
+import argparse
+import gym
+import json
+import shutil
+import sys
 
 import ray
-import ray.tune as tune
-from ray.tune.registry import register_env
-from ray.rllib.models import ModelCatalog
-from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
-from ray.rllib.models.torch.fcnet import FullyConnectedNetwork as TorchFC
-import ray.rllib.agents.ppo as ppo
 import ray.rllib.agents.a3c as a3c
-import shutil
+import ray.tune as tune
+from ray.rllib.models import ModelCatalog
 from ray.rllib.utils.framework import try_import_torch
-torch, nn = try_import_torch()
 
+import torch
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.utils.tensorboard import SummaryWriter
+
+import torchvision
+from torchvision import datasets, transforms
+
+from cls_module.components.sparse_autoencoder import SparseAutoencoder
+
+from agent.stub_agent import StubAgent
 from gym_game.envs.pygame_dataset import PyGameDataset
 
-if len(sys.argv) < 4:
-    print('Usage: python simple_agent.py ENV_NAME ENV_CONFIG_FILE DATASET_FILE MODEL_CONFIG_FILE')
-    sys.exit(-1)
+def train(args, model, device, train_loader, optimizer, epoch, writer):
+  """Trains the model for one epoch."""
+  model.train()
+  #for batch_idx, (data, target) in enumerate(train_loader):
+  for batch_idx, (data) in enumerate(train_loader):
+    #data, target = data.to(device), target.to(device)
+    #print('Data:', data)
+    data = data.to(device)
 
-env_name = sys.argv[1]
-print('Making Gym[PyGame] environment:', env_name)
-env_config_file = sys.argv[2]
-print('Env config file:', env_config_file)
-dataset_file = sys.argv[3]
-print('Dataset file:', dataset_file)
-model_config_file = sys.argv[4]
-print('Model config file:', model_config_file)
+    optimizer.zero_grad()
+    _, output = model(data)
+    loss = F.mse_loss(output, data)
+    loss.backward()
+    optimizer.step()
 
+    writer.add_image('train/inputs', torchvision.utils.make_grid(data), batch_idx)
+    writer.add_image('train/outputs', torchvision.utils.make_grid(output), batch_idx)
+    writer.add_scalar('train/loss', loss, batch_idx)
 
-# Check environment
-env = gym.make(env_name, config_file=env_config_file)
-if not hasattr(env.action_space, 'n'):
-    raise Exception('Simple agent only supports discrete action spaces')
-ACTIONS = env.action_space.n
-print("ACTIONS={}".format(ACTIONS))
+    if batch_idx % args.log_interval == 0:
+      print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+          epoch, batch_idx * len(data), len(train_loader.dataset),
+          100. * batch_idx / len(train_loader), loss.item()))
 
-
-# Check Ray
-ray.shutdown()
-ray.init(ignore_reinit_error=True)
-CHECKPOINT_ROOT = 'tmp/simple'
-shutil.rmtree(CHECKPOINT_ROOT, ignore_errors=True, onerror=None)
-
-
-# Configs
-config= {}
-config["log_level"] = "DEBUG"
-config["framework"] = "torch"
-config["num_workers"] = 1
-config["model"] = {}
-model_name = 'flat_custom_model'
-config["model"]["custom_model"] = model_name
-
-# Adjust model hyperparameters to tune
-config["model"]["fcnet_activation"] = 'tanh'
-config["model"]["fcnet_hiddens"] = [128, 128]
-config["model"]["max_seq_len"] = 50
-config["model"]["framestack"] = False  # default: True
-
-# Override from model config file:
-if model_config_file is not None:
-    with open(model_config_file) as json_file:
-        model_config = json.load(json_file)
-        for key, value in model_config.items():
-            #print('Override key:', key, 'value:', value)
-            config["model"][key] = value
-print('Final complete config: ', config)
+      if args.dry_run:
+        break
 
 
-# Build and reload pregenerated data
-dataset = PyGameDataset()
-ok = dataset.read(dataset_file)
-if ok:
-    print('Read pregenerated dataset OK.')
+def test(model, device, test_loader, writer):
+  """Evaluates the trained model."""
+  model.eval()
+  test_loss = 0
 
-# Custom env creator
-def env_creator(env_name, env_config_file):
-    """Custom functor to create custom Gym environments."""
-    if env_name == 'simple-v0':
-        from gym_game.envs import SimpleEnv as env
-    else:
-        raise NotImplementedError
-    return env(env_config_file)  # Instantiate with config file
-tune.register_env(env_name, lambda config: env_creator(env_name, env_config_file))
+  with torch.no_grad():
+    for batch_idx, (data) in enumerate(test_loader):
+      data = data.to(device)
+      _, output = model(data)
+
+      writer.add_image('test/inputs', torchvision.utils.make_grid(data), batch_idx)
+      writer.add_image('test/outputs', torchvision.utils.make_grid(output), batch_idx)
+
+      test_loss += F.mse_loss(output, data, reduction='sum').item()  # sum up batch loss
+
+    test_loss /= len(test_loader.dataset)
+
+    writer.add_scalar('test/avg_loss', test_loss, 0)
+
+    print('\nTest set: Average loss: {:.4f}\n'.format(test_loss))
 
 
+def main():
+  # Training settings
+  parser = argparse.ArgumentParser(description='Module pretraining')
+  parser.add_argument('--env', type=str, default='', metavar='N',
+                      help='Gym environment name')
+  parser.add_argument('--env-config', type=str, default='', metavar='N',
+                      help='Gym environment config file')
+  parser.add_argument('--env-data-file', type=str, default='', metavar='N',
+                      help='Gym environment pre-generated data file')
+  parser.add_argument('--env-obs-key', type=str, default=None, metavar='N',
+                      help='Gym environment dict observation object key')
+  parser.add_argument('--config', type=str, default='test_configs/sae.json', metavar='N',
+                      help='Model configuration (default: test_configs/sae.json')
+  parser.add_argument('--epochs', type=int, default=1, metavar='N',
+                      help='Number of training epochs (default: 1)')
+  parser.add_argument('--no-cuda', action='store_true', default=False,
+                      help='disables CUDA training')
+  parser.add_argument('--dry-run', action='store_true', default=False,
+                      help='quickly check a single pass')
+  parser.add_argument('--seed', type=int, default=1, metavar='S',
+                      help='random seed (default: 1)')
+  parser.add_argument('--log-interval', type=int, default=10, metavar='N',
+                      help='how many batches to wait before logging training status')
+  parser.add_argument('--save-model', action='store_true', default=False,
+                      help='For Saving the current Model')
 
-# Build entire model
-class TorchCustomModel(TorchModelV2, nn.Module):
-    """PyTorch custom model that flattens the input to 1d and delegates to a fc-net."""
+  args = parser.parse_args()
 
-    def __init__(self, obs_space, action_space, num_outputs, model_config, name):
-        # Reshape obs to vector and convert to float
-        volume = np.prod(obs_space.shape)
-        space = np.zeros(volume)
-        flat_observation_space = spaces.Box(low=0, high=255, shape=space.shape, dtype=np.float32)
+  torch.manual_seed(args.seed)
 
-        # TODO: Transform to output of any other PyTorch and pass new shape to model.
+  use_cuda = not args.no_cuda and torch.cuda.is_available()
+  device = torch.device("cuda" if use_cuda else "cpu")
 
-        # Create default model
-        TorchModelV2.__init__(self, flat_observation_space, action_space, num_outputs, model_config, name)
-        nn.Module.__init__(self)
-        self.torch_sub_model = TorchFC(flat_observation_space, action_space, num_outputs, model_config, name)
+  with open(args.config) as config_file:
+    config = json.load(config_file)
 
-    def forward(self, input_dict, state, seq_lens):
-        # flatten
-        obs_4d = input_dict["obs"].float()
-        volume = np.prod(obs_4d.shape[1:])  # calculate volume as vector excl. batch dim
-        obs_3d_shape = [obs_4d.shape[0], volume]  # [batch size, volume]
-        obs_3d = np.reshape(obs_4d, obs_3d_shape)
-        input_dict["obs"] = obs_3d
+  kwargs = {'batch_size': config['batch_size']}
 
-        # TODO: forward() any other PyTorch modules here, pass result to RL algo
+  if use_cuda:
+    kwargs.update({
+        'num_workers': 1,
+        'pin_memory': True,
+        'shuffle': True
+    })
 
-        # Defer to default FC model
-        fc_out, _ = self.torch_sub_model(input_dict, state, seq_lens)
-        return fc_out, []
+  writer = SummaryWriter()
 
-    def value_function(self):
-        return torch.reshape(self.torch_sub_model.value_function(), [-1])
+  transform = transforms.Compose([
+      transforms.ToTensor()
+  ])
 
-# Register the model
-ModelCatalog.register_custom_model(model_name, TorchCustomModel)
+  env_name = args.env
+  print('Making Gym[PyGame] environment:', env_name)
+  env_config_file = args.env_config
+  print('Env config file:', env_config_file)
+  env = gym.make(env_name, config_file=env_config_file)
+  print('Env constructed')
 
-#agent = a3c.A3CTrainer(config, env=env_creator(env_name, env_config_file))  # Note use of custom Env creator fn
-#agent = a3c.A3CTrainer(config, env=env_name)  # Note use of custom Env creator fn
+  print('Obs. key:', args.env_obs_key)
+  dataset = PyGameDataset(key=args.env_obs_key)
+  print('Loading pre-generated data from: ', args.env_data_file) 
+  read_ok = dataset.read(args.env_data_file)
+  print('Loaded pre-generated data?', str(read_ok)) 
 
-# Train the model
-status_message = "{:3d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f} saved {}"
-agent_steps = 250
-#for n in range(agent_steps):
+  env.reset()
+  data_shape = dataset.get_shape(env)
+  print('Data shape:', data_shape)
 
-# Finish
-print('Shutting down...')
+  # train_dataset = datasets.MNIST('./data', train=True, download=True,
+  #                                transform=transform)
+  # test_dataset = datasets.MNIST('./data', train=False,
+  #                               transform=transform)
+
+  train_loader = torch.utils.data.DataLoader(dataset, **kwargs)
+  test_loader = torch.utils.data.DataLoader(dataset, **kwargs)
+
+  input_shape = (-1,) + data_shape #[-1, 1, 28, 28]
+  print('Final dataset shape:', input_shape)
+
+  if config['model'] == 'sae':
+    model = SparseAutoencoder(input_shape, config['model_config']).to(device)
+  else:
+    raise NotImplementedError('Model not supported: ' + str(config['model']))
+
+  optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])
+
+  for epoch in range(1, args.epochs + 1):
+    train(args, model, device, train_loader, optimizer, epoch, writer)
+    test(model, device, test_loader, writer)
+
+  if args.save_model:
+    torch.save(model.state_dict(), "mnist_sae.pt")
+
+
+if __name__ == '__main__':
+    main()

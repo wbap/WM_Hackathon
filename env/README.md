@@ -32,3 +32,23 @@ Should optimize to around 0/4/5.
 This allows you to run the modular agent with stubs on the DM2S task.
 
 `python train_stub_agent.py dm2s-v0 ../games/dm2s/DM2S.par simple_agent_model.json`
+
+# Pretraining phase
+You can pretrain parts of a model on a custom environment without rewards. This has two parts: First, pre-generate some data from the environment. Second, pretrain model modules on this data.
+
+## Pre-generating data
+Example:
+
+`python generate.py dm2s-v0 ../games/dm2s/DM2S.par 100 dm2s.pickle simple_model.json`
+
+## Pre-training modules
+Example:
+
+`python pretrain.py --config ../../../cfsl/tests/test_configs/sae.json --env dm2s-v0 --env-config ../games/dm2s/DM2S.par --env-data-file=data.pickle --env-obs-key=fovea --epochs 3`
+
+To view the output of pretraining, you can examine the tensorboard output in the ./run directory.
+
+To start tensorboard in this folder, use a command such as:
+
+`tensorboard --logdir=. --port=6008 --samples_per_plugin images=200`
+
