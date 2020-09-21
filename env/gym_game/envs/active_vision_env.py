@@ -72,6 +72,9 @@ class ActiveVisionEnv(PyGameEnv):
       'peripheral': peripheral})
 
   def get_observation(self):
+    """
+    Return images in PyTorch format.
+    """
 
     img = self.render(mode='rgb_array')
     img = np.transpose(img, [1, 0, 2])  # observed img is horizontally reflected, and rotated 90 deg ...
