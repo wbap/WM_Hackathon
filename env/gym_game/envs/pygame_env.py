@@ -21,7 +21,7 @@ class PyGameEnv(gym.Env, ABC):
     self.display_screen = None
     pygame.init()
     self.screen_shape = [screen_height, screen_width, 3]
-    self.screen = pygame.Surface((screen_width,screen_height))  # draw on here
+    self.screen = pygame.Surface((screen_width, screen_height))  # draw on here
     self.frame_rate = frame_rate
     self.seed()  # Ensure repeatability of game
     #self.reset()
@@ -30,6 +30,11 @@ class PyGameEnv(gym.Env, ABC):
     """Reset the game to a valid initial state."""
     self.clock = pygame.time.Clock()
     return self.get_observation()
+
+  @abstractmethod
+  def get_config(self):
+    """ return a dictionary of params """
+    pass
 
   def get_time(self):
     """Returns game time in milliseconds"""

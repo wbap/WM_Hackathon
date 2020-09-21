@@ -5,11 +5,11 @@
 # python simple_agent.py Env-vN
 #
 
-import gym
 import json
 import shutil
 import sys
 
+import gym
 import ray
 import ray.rllib.agents.a3c as a3c
 import ray.tune as tune
@@ -79,23 +79,23 @@ config["model"]["custom_model_config"] = {}
 
 # Override from model config file:
 if model_config_file is not None:
-    with open(model_config_file) as json_file:
-        model_config = json.load(json_file)
-        for key, value in model_config.items():
-            #print('Override key:', key, 'value:', value)
-            config["model"][key] = value
+  with open(model_config_file) as json_file:
+    model_config = json.load(json_file)
+    for key, value in model_config.items():
+      # print('Override key:', key, 'value:', value)
+      config["model"][key] = value
 print('Final complete config: ', config)
 
 
 def env_creator(env_name, env_config_file):
-    """Custom functor to create custom Gym environments."""
-    if env_name == 'simple-v0':
-      from gym_game.envs import SimpleEnv as env
-    elif env_name == 'dm2s-v0':
-      from gym_game.envs import Dm2sEnv as env
-    else:
-      raise NotImplementedError
-    return env(env_config_file)  # Instantiate with config file
+  """Custom functor to create custom Gym environments."""
+  if env_name == 'simple-v0':
+    from gym_game.envs import SimpleEnv as env
+  elif env_name == 'dm2s-v0':
+    from gym_game.envs import Dm2sEnv as env
+  else:
+    raise NotImplementedError
+  return env(env_config_file)  # Instantiate with config file
 
 
 # Register the model

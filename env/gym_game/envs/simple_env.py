@@ -7,6 +7,7 @@ import numpy as np
 import pygame as pygame
 from .pygame_env import PyGameEnv
 
+
 class SimpleEnv(PyGameEnv):
 
   GRID_SIZE = 12

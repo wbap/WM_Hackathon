@@ -87,6 +87,9 @@ class Dm2sEnv(FiniteStateEnv):
     # Create base class stuff
     super().__init__(self.NUM_ACTIONS, w, h)
 
+  def get_config(self):
+    return self.gParams
+
   def _create_states(self):
     show_stim_interval = 2000 if not self._mode_no_tutor_long_game else 500
     hide_stim_interval = 2000 if not self._mode_no_tutor_long_game else 500
