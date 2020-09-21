@@ -18,13 +18,6 @@ class ActiveVisionEnv(PyGameEnv):
   HUMAN = 'human'
   ARRAY = 'rgb_array'
 
-  GAZE_STEP_SIZE = 100  # step size of gaze movement, in pixels in the screen image
-  FOVEA_FRACTION = 0.05  # fovea occupies this fraction of the screen image (applied to x and y respectively)
-  PERIPHERAL_SIZE_FRACTION = 0.05  # peripheral image size, expressed as fraction of screen size
-  SCREEN_IMAGE_FRACTION = 0.10  # resize the screen image before returning as an observation
-
-  # i = 0
-
   def __init__(self, num_actions, screen_width, screen_height, frame_rate=30):
     """
     The concrete environment (e.g. dm2s-v0) is responsible for reading in the config in its own format
@@ -32,10 +25,10 @@ class ActiveVisionEnv(PyGameEnv):
     i.e. the params are available via self.get_config()
     """
     config = self.get_config()
-    self.fov_fraction = float(config["fovea_fraction"])
-    self.step_size = int(config["gaze_step_size"])
-    self.peripheral_size_fraction = float(config["peripheral_size_fraction"])
-    self.screen_image_fraction = float(config["screen_image_fraction"])
+    self.fov_fraction = float(config["fovea_fraction"])  # fovea occupies this fraction of the screen image (applied to x and y respectively)
+    self.step_size = int(config["gaze_step_size"])  # step size of gaze movement, in pixels in the screen image
+    self.peripheral_size_fraction = float(config["peripheral_size_fraction"])  # peripheral image size, expressed as fraction of screen size
+    self.screen_image_fraction = float(config["screen_image_fraction"])  # resize the screen image before returning as an observation
     self.fov_size = np.array([int(self.fov_fraction * screen_width), int(self.fov_fraction * screen_height)])
     self.gaze = np.array([screen_width // 2, screen_height // 2])  # gaze position - (x, y) tuple
     self._action_2_xy = {  # map actions (integers) to x,y gaze delta
