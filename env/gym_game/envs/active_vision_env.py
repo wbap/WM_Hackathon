@@ -8,7 +8,7 @@ from .pygame_env import PyGameEnv
 
 """
   ActiveVisionEnv receives a screen image.
-  All other quantities are expressed as a fraction of that screen image. 
+  All other quantities are expressed relative to that screen image. 
 """
 
 

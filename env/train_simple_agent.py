@@ -23,13 +23,12 @@ from ray.rllib.utils.framework import try_import_torch
 torch, nn = try_import_torch()
 
 """
-Create a simple RL agent using StubAgent. 
+Create a simple RL agent. 
 The environment can be chosen. Both environment and agent are configurable.
 
 Usage: python simple_agent.py ENV_NAME ENV_CONFIG_FILE MODEL_CONFIG_FILE
 e.g.
-  python simple_agent.py simple-v0 simple_env_machine.json simple_agent_model.json
-  --> the StubAgent (conf simple_agent_model.json) plays the simple env (config simple_env_machine.json)  
+  python simple_agent.py simple-v0 simple_env_machine.json simple_agent_model.json  
 """
 
 if len(sys.argv) < 4:
