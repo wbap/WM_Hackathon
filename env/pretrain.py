@@ -24,6 +24,7 @@ import torchvision
 from torchvision import datasets, transforms
 
 from cls_module.components.sparse_autoencoder import SparseAutoencoder
+from cls_module.components.simple_autoencoder import SimpleAutoencoder
 
 from agent.stub_agent import StubAgent
 from gym_game.envs.pygame_dataset import PyGameDataset
@@ -166,6 +167,8 @@ def main():
 
   if config['model'] == 'sae':
     model = SparseAutoencoder(input_shape, config['model_config']).to(device)
+  elif config['model'] == 'ae':
+    model = SimpleAutoencoder(input_shape, config['model_config']).to(device)
   else:
     raise NotImplementedError('Model not supported: ' + str(config['model']))
   model.float()

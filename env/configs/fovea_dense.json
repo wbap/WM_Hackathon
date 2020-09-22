@@ -1,0 +1,23 @@
+{
+  "model": "ae",
+  "batch_size": 32,
+  "learning_rate": 0.005,
+
+  "model_config": {
+    "filters": 256,
+    "kernel_size": 40,
+    "stride": 40,
+
+    "use_bias": true,
+    "use_tied_weights": false,
+
+    "encoder_padding": 0,
+    "decoder_padding": 0,
+
+    "input_dropout":0,
+    "hidden_dropout":0,
+
+    "encoder_nonlinearity": "leaky_relu",
+    "decoder_nonlinearity": "sigmoid"
+  }
+}
