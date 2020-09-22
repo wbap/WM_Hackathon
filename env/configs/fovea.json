@@ -1,0 +1,24 @@
+{
+  "model": "sae",
+  "batch_size": 32,
+  "learning_rate": 0.005,
+
+  "model_config": {
+    "filters": 256,
+    "kernel_size": 80,
+    "stride": 80,
+
+    "use_bias": true,
+    "use_tied_weights": false,
+
+    "encoder_padding": 0,
+    "decoder_padding": 0,
+
+    "encoder_nonlinearity": "leaky_relu",
+    "decoder_nonlinearity": "sigmoid",
+
+    "sparsity": 10,
+    "sparsity_output_factor": 1.0,
+    "use_lifetime_sparsity": false
+  }
+}

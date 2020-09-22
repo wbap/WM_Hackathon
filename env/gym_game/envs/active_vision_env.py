@@ -17,7 +17,7 @@ class ActiveVisionEnv(PyGameEnv):
 
   # i = 0
 
-  def __init__(self, num_actions, screen_width, screen_height, frame_rate=30):
+  def __init__(self, num_actions, screen_width, screen_height, frame_rate):
     self.fov_fraction = self.FOVEA_FRACTION
     self.step_size = self.GAZE_STEP_SIZE
     self.fov_size = np.array([int(self.FOVEA_FRACTION * screen_width), int(self.FOVEA_FRACTION * screen_height)])

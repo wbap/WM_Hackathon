@@ -14,12 +14,21 @@ class PyGameEnv(gym.Env, ABC):
   HUMAN = 'human'
   ARRAY = 'rgb_array'
 
-  def __init__(self, num_actions, screen_width, screen_height, frame_rate=30):
+  def __init__(self, num_actions, screen_width, screen_height, frame_rate):
     # here spaces.Discrete(2) means that action can either be L or R choice
     self._create_action_space(num_actions)
     self._create_observation_space(screen_width, screen_height)
     self.display_screen = None
+    self.use_wall_clock = False
+    self.count = 0
     pygame.init()
+
+    # NOTE: If pygame crashing with error:
+    # ALSA lib pcm.c:7963:(snd_pcm_recover) underrun occurred
+    # https://www.reddit.com/r/ChipCommunity/comments/53aly4/alsa_lib_pcmc7843snd_pcm_recover_underrun_occurred/
+    # https://www.reddit.com/r/pygame/comments/e9h35x/disable_audio_engine/
+    pygame.mixer.quit()
+
     self.screen_shape = [screen_height, screen_width, 3]
     self.screen = pygame.Surface((screen_width,screen_height))  # draw on here
     self.frame_rate = frame_rate
@@ -29,11 +38,8 @@ class PyGameEnv(gym.Env, ABC):
   def reset(self):
     """Reset the game to a valid initial state."""
     self.clock = pygame.time.Clock()
+    self.count = 0
     return self.get_observation()
-
-  def get_time(self):
-    """Returns game time in milliseconds"""
-    return self.clock.get_ticks()
 
   @abstractmethod
   def _do_step(self, action, time):
@@ -41,7 +47,8 @@ class PyGameEnv(gym.Env, ABC):
 
   def step(self, action):
     """Update the game-state given the provided action."""
-    time = self.clock.tick()
+    time = self.step_time()
+    #print('count', self.count, 'time', time)
     return self._do_step(action, time)
 
   def _create_action_space(self, num_actions):
@@ -67,8 +74,25 @@ class PyGameEnv(gym.Env, ABC):
     pygame.event.pump()
     return pressed
 
+  def step_time(self):
+    if self.use_wall_clock:
+      self.clock.tick(self.frame_rate)
+    time = self.get_time()
+    self.count += 1
+    return time
+
   def get_time(self):
-    time = pygame.time.get_ticks()
+    """Returns game time in milliseconds"""
+    if self.use_wall_clock:
+      #time = pygame.time.get_ticks()
+      time = self.clock.get_ticks()
+    else:  # serve frames at a fixed rate
+      # Times are measured in milliseconds
+      # We count the steps taken and calculate the time based on steps.
+      # e.g. 10 frames/sec = 1/10 * 1000 = 100 millseconds per frame
+      # Calling step() 10 times will advance the game 1 second.
+      inter_frame = (1.0 / self.frame_rate) * 1000.0
+      time = self.count * inter_frame
     return time
 
   def get_events(self):

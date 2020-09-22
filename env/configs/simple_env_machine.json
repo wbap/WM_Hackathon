@@ -1,4 +1,5 @@
 {
+  "frame_rate":10,
   "grid_size":12,
   "px_size":1,
   "timeout":200,

@@ -32,7 +32,7 @@ render_mode = 'human'
 # render_mode = 'rgb_array'
 env.reset()
 env.render(render_mode)
-
+env.use_wall_clock = True
 
 def get_action(pressed_keys):
   action = None

@@ -6,7 +6,7 @@ from .active_vision_env import ActiveVisionEnv
 
 class FiniteStateEnv(ActiveVisionEnv):
 
-  def __init__(self, num_actions, screen_width, screen_height, frame_rate=30):
+  def __init__(self, num_actions, screen_width, screen_height, frame_rate):
 
     # Create state machine
     self.states = {}

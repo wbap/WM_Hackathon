@@ -85,7 +85,8 @@ class Dm2sEnv(FiniteStateEnv):
     self._draw_gaze = True
 
     # Create base class stuff
-    super().__init__(self.NUM_ACTIONS, w, h)
+    frame_rate = int(self.gParams["frameRate"])
+    super().__init__(self.NUM_ACTIONS, w, h, frame_rate)
 
   def _create_states(self):
     show_stim_interval = 2000 if not self._mode_no_tutor_long_game else 500

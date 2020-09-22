@@ -30,13 +30,14 @@ class SimpleEnv(PyGameEnv):
         self.PX_SIZE = config['px_size']
         self.TIMEOUT = config['timeout']
         self.NUM_GOALS = config['num_goals']
+        self.FRAME_RATE = config['frame_rate']
 
     #print('grid size:', self.GRID_SIZE)
     #print('px size:', self.PX_SIZE)
     w = self.GRID_SIZE * self.PX_SIZE
     h = self.GRID_SIZE * self.PX_SIZE
     a = self.NUM_ACTIONS
-    super().__init__(a, w, h)
+    super().__init__(a, w, h, self.FRAME_RATE)
     self.goal = None
     self.pose = None
 

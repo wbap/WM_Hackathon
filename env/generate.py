@@ -26,7 +26,7 @@ from gym_game.envs.pygame_pretrain_policy import PyGamePretrainPolicy
 from gym_game.envs.pygame_dataset import PyGameDataset
 
 if len(sys.argv) < 4:
-    print('Usage: python simple_agent.py ENV_NAME ENV_CONFIG_FILE NUM_SAMPLES DATA_FILE')
+    print('Usage: python simple_agent.py ENV_NAME ENV_CONFIG_FILE NUM_SAMPLES DATA_DIR')
     sys.exit(-1)
 
 env_name = sys.argv[1]
@@ -36,7 +36,7 @@ print('Env config file:', env_config_file)
 num_samples = int(sys.argv[3])
 print('Number of samples:', num_samples)
 file_name = sys.argv[4]
-print('Output file', file_name)
+print('Data directory:', file_name)
 
 # Custom env creator
 def env_creator(env_name, env_config_file):
@@ -52,8 +52,9 @@ tune.register_env(env_name, lambda config: env_creator(env_name, env_config_file
 env = gym.make(env_name, config_file=env_config_file)
 policy = PyGamePretrainPolicy(env.action_space)
 dataset = PyGameDataset()
+print('Generating samples...')
 dataset.generate(num_samples, env, policy)
-
+print('Writing samples...')
 dataset.write(file_name)
 
 # Uncomment to test recovery of the data

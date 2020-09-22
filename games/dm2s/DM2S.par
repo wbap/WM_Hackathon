@@ -1,3 +1,4 @@
+frameRate,25
 mainTaskRepeat,2
 observationRepeat,2
 imageDir,../games/dm2s/png

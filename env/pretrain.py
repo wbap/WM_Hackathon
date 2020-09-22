@@ -28,24 +28,30 @@ from cls_module.components.sparse_autoencoder import SparseAutoencoder
 from agent.stub_agent import StubAgent
 from gym_game.envs.pygame_dataset import PyGameDataset
 
-def train(args, model, device, train_loader, optimizer, epoch, writer):
+def train(args, model, device, train_loader, global_step, optimizer, epoch, writer):
   """Trains the model for one epoch."""
   model.train()
   #for batch_idx, (data, target) in enumerate(train_loader):
   for batch_idx, (data) in enumerate(train_loader):
     #data, target = data.to(device), target.to(device)
     #print('Data:', data)
+    #print('Batch:', batch_idx)
     data = data.to(device)
 
     optimizer.zero_grad()
-    _, output = model(data)
+    encoding, output = model(data)
+    print('input min/max=', data.min(), data.max())
+    print('encoding shape', encoding.shape)
+    print('DEcoding shape', output.shape)
     loss = F.mse_loss(output, data)
     loss.backward()
     optimizer.step()
 
-    writer.add_image('train/inputs', torchvision.utils.make_grid(data), batch_idx)
-    writer.add_image('train/outputs', torchvision.utils.make_grid(output), batch_idx)
-    writer.add_scalar('train/loss', loss, batch_idx)
+    writer.add_image('train/inputs', torchvision.utils.make_grid(data), global_step)
+    writer.add_image('train/outputs', torchvision.utils.make_grid(output), global_step)
+    writer.add_scalar('train/loss', loss, global_step)
+
+    global_step += 1
 
     if batch_idx % args.log_interval == 0:
       print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
@@ -55,8 +61,9 @@ def train(args, model, device, train_loader, optimizer, epoch, writer):
       if args.dry_run:
         break
 
+  return global_step  
 
-def test(model, device, test_loader, writer):
+def test(model, device, test_loader, global_step, writer):
   """Evaluates the trained model."""
   model.eval()
   test_loss = 0
@@ -66,14 +73,14 @@ def test(model, device, test_loader, writer):
       data = data.to(device)
       _, output = model(data)
 
-      writer.add_image('test/inputs', torchvision.utils.make_grid(data), batch_idx)
-      writer.add_image('test/outputs', torchvision.utils.make_grid(output), batch_idx)
+      writer.add_image('test/inputs', torchvision.utils.make_grid(data), global_step)
+      writer.add_image('test/outputs', torchvision.utils.make_grid(output), global_step)
 
       test_loss += F.mse_loss(output, data, reduction='sum').item()  # sum up batch loss
 
     test_loss /= len(test_loader.dataset)
 
-    writer.add_scalar('test/avg_loss', test_loss, 0)
+    writer.add_scalar('test/avg_loss', test_loss, global_step)
 
     print('\nTest set: Average loss: {:.4f}\n'.format(test_loss))
 
@@ -101,8 +108,8 @@ def main():
                       help='random seed (default: 1)')
   parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                       help='how many batches to wait before logging training status')
-  parser.add_argument('--save-model', action='store_true', default=False,
-                      help='For Saving the current Model')
+  parser.add_argument('--model-file', type=str, default=None, metavar='N',
+                      help='Trained model parameters file')
 
   args = parser.parse_args()
 
@@ -162,14 +169,18 @@ def main():
   else:
     raise NotImplementedError('Model not supported: ' + str(config['model']))
 
+  print('Model:', model)
+
   optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])
 
-  for epoch in range(1, args.epochs + 1):
-    train(args, model, device, train_loader, optimizer, epoch, writer)
-    test(model, device, test_loader, writer)
+  global_step = 0
+  for epoch in range(0, args.epochs):
+    global_step = train(args, model, device, train_loader, global_step, optimizer, epoch, writer)
+    test(model, device, test_loader, global_step, writer)
 
-  if args.save_model:
-    torch.save(model.state_dict(), "mnist_sae.pt")
+  if args.model_file is not None:
+    print('Saving trained model to file: ', args.model_file)
+    torch.save(model.state_dict(), args.model_file)
 
 
 if __name__ == '__main__':
