@@ -1,7 +1,9 @@
 mainTaskRepeat,2
 observationRepeat,2
 imageDir,../games/dm2s/png
-fovea_fraction,0.05
+fovea_fraction,0.1
+fovea_size_fraction,0.5
 gaze_step_size,100
 peripheral_size_fraction,0.05
 screen_image_fraction,0.1
+show_fovea_on_screen,0

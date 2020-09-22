@@ -82,7 +82,7 @@ class Dm2sEnv(FiniteStateEnv):
 
     # gaze
     self._mode_no_tutor_long_game = False   # currently being used for testing gaze
-    self._draw_gaze = True
+    self._show_fovea = bool(int(self.gParams["show_fovea_on_screen"]))
 
     # Create base class stuff
     super().__init__(self.NUM_ACTIONS, w, h)
@@ -312,9 +312,8 @@ class Dm2sEnv(FiniteStateEnv):
     screen.blit(gButton2, (int(self.gVideoWidth/2 - self.gButton2.get_width()/2) + 160, 610))
 
     # draw the gaze position
-    if self._draw_gaze:
-      pygame.draw.circle(screen, self.BLACK, self.gaze, self.fov_size[0], 1)
-      # vertical line
-      pygame.draw.line(screen, self.BLACK, self.gaze+[0, self.fov_size[1]], self.gaze+[0, -self.fov_size[1]])
-      # horizontal line
-      pygame.draw.line(screen, self.BLACK, self.gaze+[self.fov_size[0], 0], self.gaze+[-self.fov_size[0], 0])
+    if self._show_fovea:
+      # gaze pos is top left of fovea
+      fovea_rect = pygame.Rect(self.gaze[0], self.gaze[1],
+                               self.fov_size[0], self.fov_size[1])
+      pygame.draw.rect(screen, self.BLACK, fovea_rect, 1)

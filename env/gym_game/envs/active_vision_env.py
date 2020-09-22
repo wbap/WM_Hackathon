@@ -26,11 +26,12 @@ class ActiveVisionEnv(PyGameEnv):
     """
     config = self.get_config()
     self.fov_fraction = float(config["fovea_fraction"])  # fovea occupies this fraction of the screen image (applied to x and y respectively)
+    self.fov_size_fraction = float(config["fovea_size_fraction"])  # image size, expressed as fraction of screen size
     self.step_size = int(config["gaze_step_size"])  # step size of gaze movement, in pixels in the screen image
     self.peripheral_size_fraction = float(config["peripheral_size_fraction"])  # peripheral image size, expressed as fraction of screen size
     self.screen_image_fraction = float(config["screen_image_fraction"])  # resize the screen image before returning as an observation
     self.fov_size = np.array([int(self.fov_fraction * screen_width), int(self.fov_fraction * screen_height)])
-    self.gaze = np.array([screen_width // 2, screen_height // 2])  # gaze position - (x, y) tuple
+    self.gaze = np.array([screen_width // 2, screen_height // 2])  # gaze position - (x, y)--> *top left of fovea*
     self._action_2_xy = {  # map actions (integers) to x,y gaze delta
       num_actions: np.array([-1, 0]),      # 3. left
       num_actions + 1: np.array([1, 0]),   # 4. right
@@ -47,6 +48,7 @@ class ActiveVisionEnv(PyGameEnv):
     self._x_max = screen_width - self.fov_size[0]
     self._y_min = self.fov_size[1]
     self._y_max = screen_height - self.fov_size[1]
+    # self.i = 0      # used for debugging
 
     super().__init__(num_actions, screen_width, screen_height, frame_rate)
 
@@ -84,29 +86,29 @@ class ActiveVisionEnv(PyGameEnv):
     Return images in PyTorch format.
     """
 
-    debug = False
+    debug = True
+    multichannel = True
 
     img = self.render(mode='rgb_array')
     img = np.transpose(img, [1, 0, 2])  # observed img is horizontally reflected, and rotated 90 deg ...
     img_shape = img.shape
 
-    # Peripheral Image - downsize to get peripheral (lower resolution) image
-    self._img_periph = rescale(img, self.peripheral_size_fraction, multichannel=True)
+    # convert to float type (the standard for pytorch and other scikit image methods)
+    from skimage.util import img_as_float
+    img = img_as_float(img)
 
-    # Foveal Image - crop to fovea (centre region)
+    # Peripheral Image - downsize to get peripheral (lower resolution) image
+    self._img_periph = rescale(img, self.peripheral_size_fraction, multichannel=multichannel)
+
+    # Foveal Image - crop to fovea and rescale
     h, w, ch = img.shape[0], img.shape[1], img.shape[2]
     pixels_h = int(h * self.fov_fraction)
     pixels_w = int(w * self.fov_fraction)
     self._img_fov = img[self.gaze[1]:self.gaze[1] + pixels_h, self.gaze[0]:self.gaze[0] + pixels_w, :]
+    self._img_fov = rescale(self._img_fov, self.fov_size_fraction, multichannel=multichannel)
 
     # resize screen image before returning as observation
-    img = rescale(img, self.screen_image_fraction, multichannel=True)
-
-    # Convert images to float and scale range:
-    byte2unit = 1.0 / 255.0
-    self._img_fov = (self._img_fov.astype(np.float32) * byte2unit)
-    self._img_periph = (self._img_periph.astype(np.float32) * byte2unit)
-    img = (img.astype(np.float32) * byte2unit)
+    img = rescale(img, self.screen_image_fraction, multichannel=multichannel)
 
     # debugging
     if debug:
@@ -115,9 +117,10 @@ class ActiveVisionEnv(PyGameEnv):
       print('img fovea shape:', self._img_fov.shape)
       print('img screen rescaled shape:', img.shape)
 
-    # plt.imsave(str(self.i)+'_fov.png', self.img_fov)
-    # plt.imsave(str(self.i)+'_periph.png', self.img_periph)
-    # self.i += 1
+      # import matplotlib.pyplot as plt
+      # plt.imsave(str(self.i)+'_fov.png', self._img_fov)
+      # plt.imsave(str(self.i)+'_periph.png', self._img_periph)
+      # self.i += 1
 
     # PyTorch expects dimension order [b,c,h,w]
     # transpose dimensions from [,h,w,c] to [,c,h,w]]
