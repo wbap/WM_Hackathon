@@ -86,7 +86,7 @@ class ActiveVisionEnv(PyGameEnv):
     Return images in PyTorch format.
     """
 
-    debug = True
+    debug = False
     multichannel = True
 
     img = self.render(mode='rgb_array')
@@ -131,8 +131,8 @@ class ActiveVisionEnv(PyGameEnv):
 
     # Assemble dict
     observation = {
-      'full': img,
-      'fovea': self._img_fov,
-      'peripheral': self._img_periph}
+      'full': img.astype(np.float32),
+      'fovea': self._img_fov.astype(np.float32),
+      'peripheral': self._img_periph.astype(np.float32)}
 
     return observation

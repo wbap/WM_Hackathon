@@ -40,9 +40,9 @@ def train(args, model, device, train_loader, global_step, optimizer, epoch, writ
 
     optimizer.zero_grad()
     encoding, output = model(data)
-    print('input min/max=', data.min(), data.max())
-    print('encoding shape', encoding.shape)
-    print('DEcoding shape', output.shape)
+    #print('input min/max=', data.min(), data.max())
+    #print('encoding shape', encoding.shape)
+    #print('DEcoding shape', output.shape)
     loss = F.mse_loss(output, data)
     loss.backward()
     optimizer.step()
@@ -92,8 +92,8 @@ def main():
                       help='Gym environment name')
   parser.add_argument('--env-config', type=str, default='', metavar='N',
                       help='Gym environment config file')
-  parser.add_argument('--env-data-file', type=str, default='', metavar='N',
-                      help='Gym environment pre-generated data file')
+  parser.add_argument('--env-data-dir', type=str, default='', metavar='N',
+                      help='Gym environment pre-generated data directory')
   parser.add_argument('--env-obs-key', type=str, default=None, metavar='N',
                       help='Gym environment dict observation object key')
   parser.add_argument('--config', type=str, default='test_configs/sae.json', metavar='N',
@@ -145,8 +145,8 @@ def main():
 
   print('Obs. key:', args.env_obs_key)
   dataset = PyGameDataset(key=args.env_obs_key)
-  print('Loading pre-generated data from: ', args.env_data_file) 
-  read_ok = dataset.read(args.env_data_file)
+  print('Loading pre-generated data from: ', args.env_data_dir) 
+  read_ok = dataset.read(args.env_data_dir)
   print('Loaded pre-generated data?', str(read_ok)) 
 
   env.reset()
@@ -168,6 +168,7 @@ def main():
     model = SparseAutoencoder(input_shape, config['model_config']).to(device)
   else:
     raise NotImplementedError('Model not supported: ' + str(config['model']))
+  model.float()
 
   print('Model:', model)
 

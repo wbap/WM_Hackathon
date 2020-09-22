@@ -5,8 +5,8 @@
 
   "model_config": {
     "filters": 256,
-    "kernel_size": 80,
-    "stride": 80,
+    "kernel_size": 40,
+    "stride": 40,
 
     "use_bias": true,
     "use_tied_weights": false,

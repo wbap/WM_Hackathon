@@ -1,3 +1,7 @@
+import os
+from os import listdir
+from os.path import isfile, join
+
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
@@ -22,25 +26,40 @@ class PyGameDataset(torch.utils.data.Dataset):
   def __init__(self, key=None):
     self.key = key
 
-  def read(self, file_name):
+  def read(self, dir_name):
     """
     Read (Load) from file_name using pickle
     
     @param file_name: name of file to load from
     @type file_name: str
     """
-    try:
-      f = bz2.BZ2File(file_name, 'rb')
-    except (IOError, details):
-      sys.stderr.write('File ' + file_name + ' cannot be read\n')
-      sys.stderr.write(details)
-      return False
+    # try:
+    #   f = bz2.BZ2File(file_name, 'rb')
+    # except (IOError, details):
+    #   sys.stderr.write('File ' + file_name + ' cannot be read\n')
+    #   sys.stderr.write(details)
+    #   return False
 
-    self._samples = pickle.load(f)
-    f.close()
+    # self._samples = pickle.load(f)
+    # f.close()
+    # return True
+    
+    # Its important to use binary mode 
+    #f = open(file_name, 'ab')   
+    self._samples = []
+    files = [f for f in listdir(dir_name) if isfile(join(dir_name, f))]
+    num_files = len(files)
+    for i in range(0, num_files):
+      file_name = files[i]
+      file_path = os.path.join(dir_name, file_name)
+      print('Reading file:', file_path)
+      f = open(file_path, 'rb')   
+      sample = pickle.load(f)
+      f.close()
+      self._samples.append(sample)
     return True
 
-  def write(self, file_name):
+  def write(self, dir_name):
     """
     Save Dataset to file using compressed pickle
     
@@ -53,15 +72,31 @@ class PyGameDataset(torch.utils.data.Dataset):
     # file = bz2.BZ2File(file_name, 'w')
     # pickle.dump(self._samples, file)
 
-    try:
-      f = bz2.BZ2File(file_name, 'wb')
-    except (IOError, details):
-      sys.stderr.write('File ' + file_name + ' cannot be written\n')
-      sys.stderr.write(details)
-      return
+    num_samples = len(self._samples)
+    for i in range(0, num_samples):
+      file_name = str(i) + '.pickle'
+      file_path = os.path.join(dir_name, file_name)
+      sample = self._samples[i]
 
-    pickle.dump(self._samples, f, pickle.HIGHEST_PROTOCOL)
-    f.close()
+      #print('sample:', sample)
+      print('full:', sample['full'].shape)
+      print('fov:', sample['fovea'].shape)
+      print('per:', sample['peripheral'].shape)
+      # try:
+      #   f = bz2.BZ2File(file_path, 'wb')
+      # except (IOError):
+      #   sys.stderr.write('File ' + file_path + ' cannot be written\n')
+      #   return
+      f = open(file_path, 'wb') 
+
+      print('dumping...', i, ' of ', num_samples)
+      pickle.dump(sample, f)  #, pickle.HIGHEST_PROTOCOL)
+      f.close()
+
+    # # Its important to use binary mode 
+    # f = open(file_name, 'ab') 
+    # pickle.dump(self._samples, f)
+    # f.close()
 
   def generate(self, num_samples, env, policy, truncate=True):
     """Pregenerate a finite set of samples from the environment"""
@@ -115,6 +150,7 @@ class PyGameDataset(torch.utils.data.Dataset):
     sample = self._samples[idx]
     #print('Sample ', str(sample))
     if self.key is not None:
-      sample = sample[self.key]
+      sample = sample[self.key]  #.astype(np.float32)
     #print('Sample[key]= ', str(sample))
+    #print('Sample dtyp=', sample.dtype)
     return sample

@@ -44,7 +44,7 @@ Example:
 ## Pre-training modules
 Example:
 
-`python pretrain.py --config ./configs/fovea.json --env dm2s-v0 --env-config ./configs/dm2s_env.par --env-data-file=./data/gen --env-obs-key=fovea --model-file=./data/gen/fovea.pt --epochs 100`
+`python pretrain.py --config ./configs/fovea.json --env dm2s-v0 --env-config ./configs/dm2s_env.par --env-data-dir=./data/gen --env-obs-key=fovea --model-file=./data/gen/fovea.pt --epochs 100`
 
 To view the output of pretraining, you can examine the tensorboard output in the ./run directory.
 
