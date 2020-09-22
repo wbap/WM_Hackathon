@@ -30,7 +30,7 @@ class PyGameEnv(gym.Env, ABC):
     pygame.mixer.quit()
 
     self.screen_shape = [screen_height, screen_width, 3]
-    self.screen = pygame.Surface((screen_width,screen_height))  # draw on here
+    self.screen = pygame.Surface((screen_width, screen_height))  # draw on here
     self.frame_rate = frame_rate
     self.seed()  # Ensure repeatability of game
     #self.reset()
@@ -40,6 +40,11 @@ class PyGameEnv(gym.Env, ABC):
     self.clock = pygame.time.Clock()
     self.count = 0
     return self.get_observation()
+
+  @abstractmethod
+  def get_config(self):
+    """ return a dictionary of params """
+    pass
 
   @abstractmethod
   def _do_step(self, action, time):

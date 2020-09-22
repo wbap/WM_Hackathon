@@ -14,5 +14,3 @@ class SuperiorColliculus(nn.Module):
 
   def forward(self):
     pass
-
-

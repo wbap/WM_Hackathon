@@ -2,8 +2,14 @@ import logging
 
 import numpy as np
 from gym import spaces
+from skimage.transform import rescale
 
 from .pygame_env import PyGameEnv
+
+"""
+  ActiveVisionEnv receives a screen image.
+  All other quantities are expressed relative to that screen image. 
+"""
 
 
 class ActiveVisionEnv(PyGameEnv):
@@ -12,16 +18,20 @@ class ActiveVisionEnv(PyGameEnv):
   HUMAN = 'human'
   ARRAY = 'rgb_array'
 
-  GAZE_STEP_SIZE = 100  # number of pixels, step size of gaze movement (commanded as an action direction)
-  FOVEA_FRACTION = 0.1  # fraction of diameter, at centre of image
-
-  # i = 0
-
   def __init__(self, num_actions, screen_width, screen_height, frame_rate):
-    self.fov_fraction = self.FOVEA_FRACTION
-    self.step_size = self.GAZE_STEP_SIZE
-    self.fov_size = np.array([int(self.FOVEA_FRACTION * screen_width), int(self.FOVEA_FRACTION * screen_height)])
-    self.gaze = np.array([screen_width // 2, screen_height // 2])  # gaze position - (x, y) tuple
+    """
+    The concrete environment (e.g. dm2s-v0) is responsible for reading in the config in its own format
+    and creating a dictionary of params before calling super.init() to get to here.
+    i.e. the params are available via self.get_config()
+    """
+    config = self.get_config()
+    self.fov_fraction = float(config["fovea_fraction"])  # fovea occupies this fraction of the screen image (applied to x and y respectively)
+    self.fov_scale = float(config["fovea_scale"])  # image size, expressed as fraction of screen size
+    self.step_size = int(config["gaze_step_size"])  # step size of gaze movement, in pixels in the screen image
+    self.peripheral_scale = float(config["peripheral_scale"])  # peripheral image size, expressed as fraction of screen size
+    self.screen_scale = float(config["screen_scale"])  # resize the screen image before returning as an observation
+    self.fov_size = np.array([int(self.fov_fraction * screen_width), int(self.fov_fraction * screen_height)])
+    self.gaze = np.array([screen_width // 2, screen_height // 2])  # gaze position - (x, y)--> *top left of fovea*
     self._action_2_xy = {  # map actions (integers) to x,y gaze delta
       num_actions: np.array([-1, 0]),      # 3. left
       num_actions + 1: np.array([1, 0]),   # 4. right
@@ -33,12 +43,12 @@ class ActiveVisionEnv(PyGameEnv):
 
     self._img_fov = None
     self._img_periph = None
-    self._last_observed_gaze = self.gaze
 
     self._x_min = self.fov_size[0]
     self._x_max = screen_width - self.fov_size[0]
     self._y_min = self.fov_size[1]
     self._y_max = screen_height - self.fov_size[1]
+    # self.i = 0      # used for debugging
 
     super().__init__(num_actions, screen_width, screen_height, frame_rate)
 
@@ -72,47 +82,52 @@ class ActiveVisionEnv(PyGameEnv):
       'peripheral': peripheral})
 
   def get_observation(self):
+    """
+    Return images in PyTorch format.
+    """
+
+    debug = True
+    multichannel = True
 
     img = self.render(mode='rgb_array')
-    #img = np.transpose(img, [1, 0, 2])  # observed img is horizontally reflected, and rotated 90 deg ...
+    img = np.transpose(img, [1, 0, 2])  # observed img is horizontally reflected, and rotated 90 deg ...
+    img_shape = img.shape
 
-    # if gaze position changed, then update foveal and peripheral images, unless they are undefined
-    # DR: What if the image *content* changed but gaze coords didn't? the image is not constant
-    # imgs_undef = self._img_fov is None or self._img_periph is None
-    # gaze_changed = (self._last_observed_gaze != self.gaze).any()
-    # if imgs_undef or gaze_changed:
+    # convert to float type (the standard for pytorch and other scikit image methods)
+    from skimage.util import img_as_float
+    img = img_as_float(img)
 
-    # crop to fovea (centre region)
+    # Peripheral Image - downsize to get peripheral (lower resolution) image
+    self._img_periph = rescale(img, self.peripheral_scale, multichannel=multichannel)
+
+    # Foveal Image - crop to fovea and rescale
     h, w, ch = img.shape[0], img.shape[1], img.shape[2]
-
     pixels_h = int(h * self.fov_fraction)
     pixels_w = int(w * self.fov_fraction)
-
     self._img_fov = img[self.gaze[1]:self.gaze[1] + pixels_h, self.gaze[0]:self.gaze[0] + pixels_w, :]
+    self._img_fov = rescale(self._img_fov, self.fov_scale, multichannel=multichannel)
 
-    # zero foveal region, and return as peripheral (other options are to blur or cut it up differently)
-    self._img_periph = img.copy()
-    self._img_periph[self.gaze[1]:self.gaze[1] + pixels_h, self.gaze[0]:self.gaze[0] + pixels_w, :] = 0.
-
-    self._last_observed_gaze = self.gaze.copy()
+    # resize screen image before returning as observation
+    img = rescale(img, self.screen_scale, multichannel=multichannel)
 
     # debugging
-    # plt.imsave(str(self.i)+'_fov.png', self.img_fov)
-    # plt.imsave(str(self.i)+'_periph.png', self.img_periph)
-    # self.i += 1
+    if debug:
+      print('img orig screen shape:', img_shape)
+      print('img periph shape:', self._img_periph.shape)
+      print('img fovea shape:', self._img_fov.shape)
+      print('img screen rescaled shape:', img.shape)
 
-    # Convert to float and scale range:
-    byte2unit = 1.0 / 255.0
-    self._img_fov = (self._img_fov.astype(np.float32) * byte2unit)
-    self._img_periph = (self._img_periph.astype(np.float32) * byte2unit)
+      # import matplotlib.pyplot as plt
+      # plt.imsave(str(self.i)+'_fov.png', self._img_fov)
+      # plt.imsave(str(self.i)+'_periph.png', self._img_periph)
+      # self.i += 1
 
     # PyTorch expects dimension order [b,c,h,w]
     # transpose dimensions from [,h,w,c] to [,c,h,w]]
-    #print('img shape:', self._img_fov.shape)
     order = (2, 0, 1)
     self._img_fov = np.transpose(self._img_fov, order)
     self._img_periph = np.transpose(self._img_periph, order)
-    #print('img shape trans:', self._img_fov.shape)
+    # print('fovea shape trans:', self._img_fov.shape)
 
     # Assemble dict
     observation = {

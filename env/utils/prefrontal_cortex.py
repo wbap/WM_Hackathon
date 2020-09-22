@@ -14,5 +14,3 @@ class PrefrontalCortex(nn.Module):
 
   def forward(self):
     pass
-
-
