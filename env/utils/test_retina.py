@@ -1,3 +1,4 @@
+import sys
 import matplotlib.pyplot as plt
 import torch
 import torchvision
@@ -12,7 +13,9 @@ config = {
 
 model = Retina(channels=1, config=config)
 
-img = Image.open('../resources/typical_screens.png')
+file_path = sys.argv[1]
+print('Loading image: ', file_path)
+img = Image.open(file_path)
 img = img.convert("L")
 print(img.size)
 
