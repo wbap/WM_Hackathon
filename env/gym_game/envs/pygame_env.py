@@ -16,6 +16,8 @@ class PyGameEnv(gym.Env, ABC):
 
   def __init__(self, num_actions, screen_width, screen_height, frame_rate):
     # here spaces.Discrete(2) means that action can either be L or R choice
+    channels = 3
+    self.screen_shape = [screen_height, screen_width, channels]
     self._create_action_space(num_actions)
     self._create_observation_space(screen_width, screen_height)
     self.display_screen = None
@@ -29,7 +31,6 @@ class PyGameEnv(gym.Env, ABC):
     # https://www.reddit.com/r/pygame/comments/e9h35x/disable_audio_engine/
     pygame.mixer.quit()
 
-    self.screen_shape = [screen_height, screen_width, 3]
     self.screen = pygame.Surface((screen_width, screen_height))  # draw on here
     self.frame_rate = frame_rate
     self.seed()  # Ensure repeatability of game

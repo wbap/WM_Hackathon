@@ -14,6 +14,7 @@ import ray
 import ray.rllib.agents.a3c as a3c
 import ray.tune as tune
 from agent.stub_agent import StubAgent
+from agent.stub_agent import StubPreprocessor
 from ray.rllib.models import ModelCatalog
 from ray.rllib.utils.framework import try_import_torch
 
@@ -32,15 +33,22 @@ e.g.
   --> the StubAgent (conf simple_agent_model.json) plays the simple env (config simple_env_machine.json)  
 """
 
+def stub_env_creator(task_env_type, task_env_config_file):
+  """Custom functor to create custom Gym environments."""
+  from gym_game.envs import StubAgentEnv
+  return StubAgentEnv(task_env_type, task_env_config_file)  # Instantiate with config fil
+
 if len(sys.argv) < 4:
     print('Usage: python simple_agent.py ENV_NAME ENV_CONFIG_FILE MODEL_CONFIG_FILE')
     sys.exit(-1)
 
-env_name = sys.argv[1]
-print('Making Gym[PyGame] environment:', env_name)
-env_config_file = sys.argv[2]
-print('Env config file:', env_config_file)
-env = gym.make(env_name, config_file=env_config_file)
+meta_env_type = 'stub-v0'
+task_env_type = sys.argv[1]
+print('Task Gym[PyGame] environment:', task_env_type)
+task_env_config_file = sys.argv[2]
+print('Task Env config file:', task_env_config_file)
+env = stub_env_creator(task_env_type, task_env_config_file)#gym.make(env_name, config_file=env_config_file)
+tune.register_env(meta_env_type, lambda config: stub_env_creator(task_env_type, task_env_config_file))
 
 model_config_file = sys.argv[3]
 print('Model config file:', model_config_file)
@@ -64,8 +72,11 @@ config["log_level"] = "DEBUG"
 config["framework"] = "torch"
 config["num_workers"] = 1
 config["model"] = {}
-model_name = 'flat_custom_model'
+
+model_name = 'stub_agent_model'
+preprocessor_name = 'stub_preprocessor'
 config["model"]["custom_model"] = model_name
+#config["model"]["custom_preprocessor"] = preprocessor_name
 
 # Adjust model hyperparameters to tune
 config["model"]["fcnet_activation"] = 'tanh'
@@ -97,15 +108,15 @@ def env_creator(env_name, env_config_file):
     raise NotImplementedError
   return env(env_config_file)  # Instantiate with config file
 
-
-# Register the model
+# Register the custom items
+#ModelCatalog.register_custom_preprocessor(preprocessor_name, StubPreprocessor)
 # https://github.com/ray-project/ray/issues/9040
 ModelCatalog.register_custom_model(model_name, StubAgent)
 # https://stackoverflow.com/questions/58551029/rllib-use-custom-registered-environments
 #tune.register_env(env_name, lambda: config, env_creator(env_name, env_config_file))
-tune.register_env(env_name, lambda config: env_creator(env_name, env_config_file))
+
 #agent = a3c.A3CTrainer(config, env=env_creator(env_name, env_config_file))  # Note use of custom Env creator fn
-agent = a3c.A3CTrainer(config, env=env_name)  # Note use of custom Env creator fn
+agent = a3c.A3CTrainer(config, env=meta_env_type)  # Note use of custom Env creator fn
 
 # Train the model
 status_message = "{:3d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f} saved {}"

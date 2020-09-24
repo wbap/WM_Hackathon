@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 
 from gym import error, spaces, utils
@@ -48,6 +49,22 @@ config = {
   "pfc": {}
 }
 
+from ray.rllib.models.preprocessors import Preprocessor
+class StubPreprocessor(Preprocessor):
+  """Test of a custom preprocessor - not required, for now, as this functionality is now in the wrapping Environment."""
+
+  def __init__(self, obs_space, options):
+    super().__init__(obs_space, options)
+
+  def _init_shape(self, obs_space, options):
+    print('Obs space:', str(obs_space))
+    tx_shape = (10,10,10)
+    #tx_shape = obs_space
+    return tx_shape # can vary depending on inputs
+  def transform(self, observation):
+    tx = np.zeros((10,10,10))
+    #tx = observation
+    return tx # return the preprocessed observation
 
 class StubAgent(TorchModelV2, nn.Module):
   """PyTorch custom model that flattens the input to 1d and delegates to a fc-net."""
@@ -67,28 +84,28 @@ class StubAgent(TorchModelV2, nn.Module):
     nn.Module.__init__(self)
     self.torch_sub_model = TorchFC(flat_observation_space, action_space, num_outputs, model_config, name)
 
-    # create the stubbed sub-modules of the simple agent
-    self._build()
+    # # create the stubbed sub-modules of the simple agent
+    # self._build()
 
-  def _build(self):
-    retina = Retina(1, config=None)
-    self.add_module('retina', retina)
+  # def _build(self):
+  #   retina = Retina(1, config=None)
+  #   self.add_module('retina', retina)
 
-    pe_config = self.custom_model_config["positional_encoding"]
-    pe = PositionalEncoder(config=pe_config)
-    self.add_module('pe', pe)
+  #   pe_config = self.custom_model_config["positional_encoding"]
+  #   pe = PositionalEncoder(config=pe_config)
+  #   self.add_module('pe', pe)
 
-    mtl_config = self.custom_model_config["mtl"]
-    mtl = MedialTemporalLobe(config=mtl_config)
-    self.add_module('mtl', mtl)
+  #   mtl_config = self.custom_model_config["mtl"]
+  #   mtl = MedialTemporalLobe(config=mtl_config)
+  #   self.add_module('mtl', mtl)
 
-    pfc_config = self.custom_model_config["pfc"]
-    pfc = PrefrontalCortex(config=pfc_config)
-    self.add_module('pfc', pfc)
+  #   pfc_config = self.custom_model_config["pfc"]
+  #   pfc = PrefrontalCortex(config=pfc_config)
+  #   self.add_module('pfc', pfc)
 
-    sc_config = self.custom_model_config["sc"]
-    sc = SuperiorColliculus(config=sc_config)
-    self.add_module('sc', sc)
+  #   sc_config = self.custom_model_config["sc"]
+  #   sc = SuperiorColliculus(config=sc_config)
+  #   self.add_module('sc', sc)
 
   def forward(self, input_dict, state, seq_lens):
     # flatten
@@ -98,7 +115,7 @@ class StubAgent(TorchModelV2, nn.Module):
     obs_3d = np.reshape(obs_4d, obs_3d_shape)
     input_dict["obs"] = obs_3d
 
-    print(input_dict["obs"])
+    #print(input_dict["obs"])
 
     # TODO: forward() any other PyTorch modules here, pass result to RL algo
     # img_fov = obs["fovea"]
@@ -130,3 +147,7 @@ class StubAgent(TorchModelV2, nn.Module):
 
   def value_function(self):
     return torch.reshape(self.torch_sub_model.value_function(), [-1])
+
+    # for name, module in model.named_children():
+    #  if name in ['conv4', 'conv5']:
+    #      print(module)

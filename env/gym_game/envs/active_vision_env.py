@@ -73,13 +73,42 @@ class ActiveVisionEnv(PyGameEnv):
     self.action_space = spaces.Discrete(total_actions)
 
   def _create_observation_space(self, screen_width, screen_height, channels=3):
-    full = spaces.Box(low=0, high=255, shape=(screen_height, screen_width, channels), dtype=np.uint8)
-    fovea = spaces.Box(low=0, high=1.0, shape=(channels, screen_height, screen_width), dtype=np.float32)
-    peripheral = spaces.Box(low=0, high=1.0, shape=(channels, screen_height, screen_width), dtype=np.float32)
+    full_shape = self.get_full_observation_shape()
+    fovea_shape = self.get_fovea_observation_shape()  #(channels, screen_height, screen_width)
+    peripheral_shape = self.get_peripheral_observation_shape()  #(channels, screen_height, screen_width)
+    full = spaces.Box(low=0, high=255, shape=full_shape, dtype=np.uint8)
+    fovea = spaces.Box(low=0, high=1.0, shape=fovea_shape, dtype=np.float32)
+    peripheral = spaces.Box(low=0, high=1.0, shape=peripheral_shape, dtype=np.float32)
     self.observation_space = spaces.Dict({
       'full': full,
       'fovea': fovea,
       'peripheral': peripheral})
+
+  def get_full_observation_shape(self):
+    h = self.screen_shape[0]
+    w = self.screen_shape[1]
+    c = self.screen_shape[2]
+    h2 = int(h * self.screen_scale)
+    w2 = int(w * self.screen_scale)
+    return (c, h2, w2)
+
+  def get_fovea_observation_shape(self):
+    h = self.screen_shape[0]
+    w = self.screen_shape[1]
+    c = self.screen_shape[2]
+    pixels_h = int(h * self.fov_fraction)
+    pixels_w = int(w * self.fov_fraction)
+    h2 = int(pixels_h * self.fov_scale)
+    w2 = int(pixels_w * self.fov_scale)
+    return (c, h2, w2)
+
+  def get_peripheral_observation_shape(self):
+    h = self.screen_shape[0]
+    w = self.screen_shape[1]
+    c = self.screen_shape[2]
+    h2 = int(h * self.peripheral_scale)
+    w2 = int(w * self.peripheral_scale)
+    return (c, h2, w2)
 
   def get_observation(self):
     """
