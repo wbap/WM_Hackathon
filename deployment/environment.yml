@@ -15,5 +15,10 @@ dependencies:
     - matplotlib==3.3.1
     - scikit-image==0.16.2
     - pygame==1.9.6
+    - dm-tree==0.1.5
+    - pandas==1.1.2
+    - tabulate==0.8.7
+    - lz4==3.1.0
+    - opencv-python==4.4.0.44
     
 
