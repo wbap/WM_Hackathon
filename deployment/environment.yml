@@ -1,0 +1,24 @@
+name: wm_env
+channels:
+  - defaults
+dependencies: 
+  - python==3.6.2
+  - pip:
+    - gym==0.17.2
+    - numpy==1.19.1
+    - setuptools==50.3.0
+    - torch==1.6.0
+    - scipy==1.5.2
+    - pillow==7.2.0
+    - torchvision==0.7.0
+    - ray==0.8.7
+    - matplotlib==3.3.1
+    - scikit-image==0.16.2
+    - pygame==1.9.6
+    - dm-tree==0.1.5
+    - pandas==1.1.2
+    - tabulate==0.8.7
+    - lz4==3.1.0
+    - opencv-python==4.4.0.44
+    
+
