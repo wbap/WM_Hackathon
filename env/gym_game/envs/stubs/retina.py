@@ -1,5 +1,5 @@
 import torch.nn as nn
-from utils import image_utils
+import image_utils
 
 
 class Retina(nn.Module):

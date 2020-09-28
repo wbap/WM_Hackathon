@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import torch
 import torchvision
 from PIL import Image
-from utils.retina import Retina
+from retina import Retina
 
 config = {
   'f_size': 7,
@@ -11,12 +11,14 @@ config = {
   'f_k': 1.6  # approximates Laplacian of Gaussian
 }
 
-model = Retina(channels=1, config=config)
+channels = 3
+model = Retina(channels=channels, config=config)
 
 file_path = sys.argv[1]
 print('Loading image: ', file_path)
 img = Image.open(file_path)
-img = img.convert("L")
+if channels == 1:
+  img = img.convert("L")
 print(img.size)
 
 img_tensor = torchvision.transforms.ToTensor()(img)
@@ -25,12 +27,14 @@ img_tensor = torch.unsqueeze(img_tensor, 0)  # insert batch dimensions
 
 dog_pos_tensor, dog_neg_tensor = model(img_tensor)
 
+print('dog shape', dog_pos_tensor.shape)
 # remove batch and channel dimensions
 dog_pos_tensor = torch.squeeze(dog_pos_tensor)
 dog_neg_tensor = torch.squeeze(dog_neg_tensor)
 
 dog_pos = torchvision.transforms.ToPILImage()(dog_pos_tensor)
 dog_neg = torchvision.transforms.ToPILImage()(dog_neg_tensor)
+print('dog shape squeezed', dog_pos_tensor.shape)
 print(dog_pos.size)
 print(dog_neg.size)
 

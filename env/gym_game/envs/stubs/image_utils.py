@@ -47,11 +47,15 @@ class ImageFilter(nn.Module):
     """
     super(ImageFilter, self).__init__()
 
-    self.groups = channels
+    self.groups = 1  #channels
 
     weight = torch.from_numpy(kernel).float()
-    weight = torch.reshape(weight,
-                           [channels, 1, weight.shape[0], weight.shape[1]])  # [out_c, in_c/group, ksize[0], kszie[1]]
+    shape_4d1 = [1, 1, weight.shape[0], weight.shape[1]]
+    weight = torch.reshape(weight, shape_4d1)
+    #shape_4d = [channels, channels, weight.shape[0], weight.shape[1]]
+    #weight = torch.reshape(weight, shape_4d)  # [out_c, in_c/group, ksize[0], kszie[1]]
+    weight = weight.repeat([channels,channels,1,1])
+    print('ImageFilter weight shape', weight.shape)
     self.register_buffer('weight', weight)
 
   def forward(self, input):
@@ -62,9 +66,14 @@ class ImageFilter(nn.Module):
     Returns:
       filtered (torch.Tensor): Filtered output.
     """
-    print("input shape: ", input.shape)
-    print("weight shape: ", self.weight.shape)
+    print("ImageFilter f() input shape: ", input.shape)
+    print("ImageFilter f() weight shape: ", self.weight.shape)
 
+    # conv2d args:
+    # input=[b,c,h,w]
+    # weight = [c_out, c_in, kH, kW]
+    # groups = 1 by default; split into groups. c_in should be divisible by groups
+    # stride = not used
     return torch.conv2d(input, weight=self.weight, groups=self.groups)
 
 
