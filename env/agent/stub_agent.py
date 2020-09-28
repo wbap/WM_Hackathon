@@ -5,11 +5,6 @@ from gym import error, spaces, utils
 import gym_game
 import pygame
 
-import numpy as np
-from gym import error, spaces, utils
-import gym_game
-import pygame
-
 import ray
 import ray.tune as tune
 from ray.tune.registry import register_env
@@ -26,11 +21,11 @@ import ray.rllib.agents.ppo as ppo
 from ray.rllib.utils.framework import try_import_torch
 
 
-from utils.medial_temporal_lobe import MedialTemporalLobe
-from utils.positional_encoding import PositionalEncoder
-from utils.prefrontal_cortex import PrefrontalCortex
-from utils.retina import Retina
-from utils.superior_colliculus import SuperiorColliculus
+# from utils.medial_temporal_lobe import MedialTemporalLobe
+# from utils.positional_encoding import PositionalEncoder
+# from utils.prefrontal_cortex import PrefrontalCortex
+# from utils.retina import Retina
+# from utils.superior_colliculus import SuperiorColliculus
 
 torch, nn = try_import_torch()
 

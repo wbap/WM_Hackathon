@@ -1,6 +1,5 @@
 import torch.nn as nn
-import image_utils
-
+from .image_utils import *
 
 class Retina(nn.Module):
 
@@ -33,12 +32,12 @@ class Retina(nn.Module):
 
   def _build(self):
     # DoG kernel - edge and corner detection plus smoothing
-    self._dog_filter_pos = image_utils.get_dog_image_filter(channels=self.channels,
+    self._dog_filter_pos = get_dog_image_filter(channels=self.channels,
                                                             size=self._config['f_size'],
                                                             sigma=self._config['f_sigma'],
                                                             k=self._config['f_k'])
 
-    self._dog_filter_neg = image_utils.get_dog_image_filter(channels=self.channels,
+    self._dog_filter_neg = get_dog_image_filter(channels=self.channels,
                                                             size=self._config['f_size'],
                                                             sigma=self._config['f_sigma'],
                                                             k=self._config['f_k'],

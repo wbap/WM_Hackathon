@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 import torch
 import torchvision
 from PIL import Image
-from retina import Retina
+#from retina import Retina
+from gym_game.stubs import *
+#from gym_game.retina import Retina
 
 config = {
   'f_size': 7,
