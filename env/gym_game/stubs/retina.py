@@ -47,3 +47,8 @@ class Retina(nn.Module):
     interest_pos = self._dog_filter_pos(image_tensor)
     interest_neg = self._dog_filter_neg(image_tensor)
     return interest_pos, interest_neg
+
+  def get_output_shape(self, h, w):
+    kernel_size = self._config['f_size']
+    output_shape = conv2d_output_shape([h,w], kernel_size=kernel_size, stride=1, pad=0, dilation=1)
+    return output_shape

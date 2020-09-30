@@ -52,6 +52,13 @@ class StubAgentEnv(gym.Env):
     self.retina = Retina(channels, config=None)
     self.module.add_module('retina', self.retina)
 
+    c_in = obs_fovea.shape[0]
+    h = obs_fovea.shape[1]
+    w = obs_fovea.shape[2]
+    fovea_output_size = self.retina.get_output_shape(h, w)
+    c_out = 2 * channels  # because 2x 3 channels (+/-)
+    print('>>>>>>>>>>>>>>>>>>fovea fovea_output_size = ', fovea_output_size)
+
     obs_shape_fovea = [6,34,34]#obs_fovea.shape
     obs_space_fovea = spaces.Box(low=-math.inf, high=math.inf, shape=obs_shape_fovea, dtype=np.float32)
 
