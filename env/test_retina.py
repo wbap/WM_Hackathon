@@ -27,7 +27,7 @@ img_tensor = torchvision.transforms.ToTensor()(img)
 img_tensor_shape = img_tensor.shape
 img_tensor = torch.unsqueeze(img_tensor, 0)  # insert batch dimensions
 
-dog_pos_tensor, dog_neg_tensor = model(img_tensor)
+dog, dog_pos_tensor, dog_neg_tensor = model(img_tensor)
 
 print('dog shape', dog_pos_tensor.shape)
 # remove batch and channel dimensions
