@@ -1,0 +1,7 @@
+{
+  "frame_rate":10,
+  "grid_size":6,
+  "px_size":50,
+  "timeout":4000,
+  "num_goals":5
+}
