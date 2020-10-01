@@ -12,9 +12,11 @@ These tests allow you to evaluate custom env gameplay manually.
 ## Simple RL task
 `python keyboard_agent.py simple-v0 configs/simple_env_human.json`
 
+## Match to Sample task
+`python keyboard_agent.py m2s-v0 configs/m2s_env.par `
+
 ## Delayed Match to Sample task
 `python keyboard_agent.py dm2s-v0 configs/dm2s_env.par `
-
 
 # Reinforcement Learning agent test
 These tests allow you to verify that the RL training regime works.

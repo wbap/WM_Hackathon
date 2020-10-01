@@ -90,8 +90,8 @@ class PyGameEnv(gym.Env, ABC):
   def get_time(self):
     """Returns game time in milliseconds"""
     if self.use_wall_clock:
-      #time = pygame.time.get_ticks()
-      time = self.clock.get_ticks()
+      time = pygame.time.get_ticks()
+      #time = self.clock.get_ticks()
     else:  # serve frames at a fixed rate
       # Times are measured in milliseconds
       # We count the steps taken and calculate the time based on steps.
