@@ -55,10 +55,12 @@ RUN conda clean --all -y
 EXPOSE 6006
 
 # Setup .bashrc
-RUN echo "umask 002" >> $HOME/.bashrc
 RUN echo "export LANG=C.UTF-8" >> $HOME/.bashrc
 RUN echo "export LC_ALL=C.UTF-8" >> $HOME/.bashrc
 RUN echo "export PATH=/usr/local/cuda-9.0/bin:$PATH" >> $HOME/.bashrc
 RUN echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64/:$LD_LIBRARY_PATH" >> $HOME/.bashrc
+
+# set the default path to the mounted folder (commands passed to the container are run from there)
+WORKDIR wm/env
 
 CMD ["bash"]
