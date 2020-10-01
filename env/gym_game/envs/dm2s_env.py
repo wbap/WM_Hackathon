@@ -39,6 +39,7 @@ class Dm2sEnv(FiniteStateEnv):
   WHITE = (255, 255, 255)
   YELLOW = (255, 255, 0)
   BLUE = (0, 0, 255)
+  GRAY = (128,128,128)
 
   # define global variables
   gParams = {}  # parameter dictionary
@@ -51,7 +52,7 @@ class Dm2sEnv(FiniteStateEnv):
 
   def __init__(self, config_file=None):
     # obtain parameters from a file
-    print('D2MS Config file:', config_file)
+    print('Env config file:', config_file)
     with open(config_file) as f:
       for line in f:
         buf = line.strip().split(",")
@@ -138,7 +139,6 @@ class Dm2sEnv(FiniteStateEnv):
       self.result = None
       
   def _update_state_key(self, old_state_key, action, elapsed_time):
-
     # Don't transition from end states
     is_end_state = self.is_end_state(old_state_key)
     if is_end_state:
@@ -248,49 +248,60 @@ class Dm2sEnv(FiniteStateEnv):
 
     # fill screen
     screen.fill(self.WHITE)
+    screen_options = self.get_screen_options(state, elapsed_time)
+    self.draw_screen(screen, screen_options)
 
-    show_tutoring = False
+  def get_screen_options(self, state, elapsed_time):
+    screen_options = self.get_default_screen_options()
+
     if state == self.STATE_TUTOR_STIM or state == self.STATE_TUTOR_HIDE or state == self.STATE_TUTOR_SHOW or state == self.STATE_TUTOR_FEEDBACK:
-      show_tutoring = True 
+      screen_options['tutoring'] = True
 
-    show_correct = False
     if state == self.STATE_PLAY_FEEDBACK and self.result == self.RESULT_CORRECT:
-      show_correct = True
+      screen_options['correct'] = True
 
-    flash = None
     if state == self.STATE_TUTOR_FEEDBACK or state == self.STATE_PLAY_FEEDBACK:
       # flash the correct button
       elapsed_coarse = int(elapsed_time / self.feedback_flash)
       if (elapsed_coarse % 2) == 1:
-        flash = self.position
+        #flash = self.position
+        screen_options['flash'] = self.position
 
-    show_sample = False
     if state == self.STATE_TUTOR_STIM or state == self.STATE_PLAY_STIM:
-      show_sample = True
+      screen_options['sample'] = True
 
-    show_targets = False
     if state == self.STATE_TUTOR_SHOW or state == self.STATE_PLAY_SHOW:
-      show_targets = True
+      screen_options['targets'] = True
 
-    self.draw_screen(screen, tutoring=show_tutoring, correct=show_correct, sample=show_sample, targets=show_targets, flash=flash)
+    return screen_options
 
-  def draw_screen(self, screen, tutoring=False, correct=False, sample=False, targets=False, flash=None):
+  def get_default_screen_options(self):
+    screen_options = {
+      'tutoring': False,
+      'correct': False,
+      'sample': False,
+      'targets': False,
+      'flash': None
+    }
+    return screen_options
+
+  def draw_screen(self, screen, screen_options):
     # fill screen
     screen.fill(self.WHITE)
 
-    if correct:
+    if screen_options['correct']:
         # draw Result Bar 
         pygame.draw.rect(screen, self.YELLOW, self.gCorrectFB)
 
-    if tutoring:
+    if screen_options['tutoring']:
         # draw Observation Bar (ie being tutored)
         pygame.draw.rect(screen, self.BLUE, self.gObservBar)
 
-    if sample:
+    if screen_options['sample']:
       sample_image = self.read_sample_image(self.sample)
       screen.blit(sample_image, (int(self.gVideoWidth/2 - sample_image.get_width()/2), 140))
 
-    if targets:
+    if screen_options['targets']:
       if self.position == self.POSITION_L:
         target1_image = self.read_sample_image(self.sample)
         target2_image = self.read_sample_image(self.target)
@@ -301,6 +312,7 @@ class Dm2sEnv(FiniteStateEnv):
       screen.blit(target2_image, (int(self.gVideoWidth/2 - target2_image.get_width()/2) + 160, 410))
 
     # draw button images
+    flash = screen_options['flash']
     gButton1 = self.gButton1  # default
     gButton2 = self.gButton2  # default
     if flash is not None:

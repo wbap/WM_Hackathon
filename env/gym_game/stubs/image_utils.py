@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import scipy.ndimage
 import torch
@@ -6,6 +7,17 @@ import torch.nn as nn
 
 # TODO: add appropriate padding so that the filtered image is the correct size
 
+def conv2d_output_shape(h_w, kernel_size=1, stride=1, pad=0, dilation=1):
+  """
+  Utility function for computing output of convolutions
+  takes a tuple of (h,w) and returns a tuple of (h,w)
+  """
+  from math import floor
+  if type(kernel_size) is not tuple:
+      kernel_size = (kernel_size, kernel_size)
+  h = floor( ((h_w[0] + (2 * pad) - ( dilation * (kernel_size[0] - 1) ) - 1 )/ stride) + 1)
+  w = floor( ((h_w[1] + (2 * pad) - ( dilation * (kernel_size[1] - 1) ) - 1 )/ stride) + 1)
+  return h, w
 
 def gaussian_kernel(size, stddev):
   if size % 2 == 0:

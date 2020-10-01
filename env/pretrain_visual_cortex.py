@@ -28,6 +28,8 @@ from cls_module.components.simple_autoencoder import SimpleAutoencoder
 
 from agent.stub_agent import StubAgent
 from gym_game.envs.pygame_dataset import PyGameDataset
+from gym_game.stubs.posterior_cortex import PosteriorCortex
+from gym_game.envs.stub_agent_env import StubAgentEnv
 
 def train(args, model, device, train_loader, global_step, optimizer, epoch, writer):
   """Trains the model for one epoch."""
@@ -40,16 +42,17 @@ def train(args, model, device, train_loader, global_step, optimizer, epoch, writ
     data = data.to(device)
 
     optimizer.zero_grad()
-    encoding, output = model(data)
+    encoding, output, target = model(data)
     #print('input min/max=', data.min(), data.max())
     #print('encoding shape', encoding.shape)
     #print('DEcoding shape', output.shape)
-    loss = F.mse_loss(output, data)
+    loss = F.mse_loss(output, target)
     loss.backward()
     optimizer.step()
 
     writer.add_image('train/inputs', torchvision.utils.make_grid(data), global_step)
-    writer.add_image('train/outputs', torchvision.utils.make_grid(output), global_step)
+    # TODO fix this when input has 6 channels...
+    #writer.add_image('train/outputs', torchvision.utils.make_grid(output), global_step)
     writer.add_scalar('train/loss', loss, global_step)
 
     global_step += 1
@@ -72,10 +75,11 @@ def test(model, device, test_loader, global_step, writer):
   with torch.no_grad():
     for batch_idx, (data) in enumerate(test_loader):
       data = data.to(device)
-      _, output = model(data)
+      _, output, target = model(data)
 
       writer.add_image('test/inputs', torchvision.utils.make_grid(data), global_step)
-      writer.add_image('test/outputs', torchvision.utils.make_grid(output), global_step)
+      # TODO fix this when input has 6 channels...
+      #writer.add_image('test/outputs', torchvision.utils.make_grid(output), global_step)
 
       test_loss += F.mse_loss(output, data, reduction='sum').item()  # sum up batch loss
 
@@ -165,14 +169,19 @@ def main():
   input_shape = (-1,) + data_shape #[-1, 1, 28, 28]
   print('Final dataset shape:', input_shape)
 
-  if config['model'] == 'sae':
-    model = SparseAutoencoder(input_shape, config['model_config']).to(device)
-  elif config['model'] == 'ae':
-    model = SimpleAutoencoder(input_shape, config['model_config']).to(device)
-  else:
-    raise NotImplementedError('Model not supported: ' + str(config['model']))
-  model.float()
-
+  # if config['model'] == 'sae':
+  #   model = SparseAutoencoder(input_shape, config['model_config']).to(device)
+  # elif config['model'] == 'ae':
+  #   model = SimpleAutoencoder(input_shape, config['model_config']).to(device)
+  # else:
+  #   raise NotImplementedError('Model not supported: ' + str(config['model']))
+  # model.float()
+  
+  #env_observation_space = self.env.observation_space
+  #obs_keys = [args.env_obs_key]  # pretrain just one
+  obs_key = args.env_obs_key
+  cortex_config = PosteriorCortex.get_default_config()
+  model = PosteriorCortex(obs_key, input_shape, cortex_config)
   print('Model:', model)
 
   optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])

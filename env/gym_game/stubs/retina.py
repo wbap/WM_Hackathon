@@ -9,6 +9,15 @@ class Retina(nn.Module):
     'f_k': 1.6  # approximates Laplacian of Gaussian
   }
 
+  @staticmethod
+  def get_default_config():
+    config = {
+      'f_size': 7,
+      'f_sigma': 2.0,
+      'f_k': 1.6  # approximates Laplacian of Gaussian
+    }
+    return config    
+
   def __init__(self, channels, config=None):
     super().__init__()
 
@@ -32,18 +41,26 @@ class Retina(nn.Module):
 
   def _build(self):
     # DoG kernel - edge and corner detection plus smoothing
-    self._dog_filter_pos = get_dog_image_filter(channels=self.channels,
-                                                            size=self._config['f_size'],
-                                                            sigma=self._config['f_sigma'],
-                                                            k=self._config['f_k'])
-
-    self._dog_filter_neg = get_dog_image_filter(channels=self.channels,
-                                                            size=self._config['f_size'],
-                                                            sigma=self._config['f_sigma'],
-                                                            k=self._config['f_k'],
-                                                            invert=True)
+    size = self._config['f_size']
+    sigma = self._config['f_sigma']
+    k = self._config['f_k']
+    self._dog_filter_pos = get_dog_image_filter(channels=self.channels, size=size, sigma=sigma, k=k)
+    self._dog_filter_neg = get_dog_image_filter(channels=self.channels, size=size, sigma=sigma, k=k, invert=True)
 
   def forward(self, image_tensor):
     interest_pos = self._dog_filter_pos(image_tensor)
     interest_neg = self._dog_filter_neg(image_tensor)
-    return interest_pos, interest_neg
+    channel_dim = 1  # B,C,H,W
+    interest = torch.cat([interest_pos, interest_neg], dim=channel_dim)
+    #return interest_pos, interest_neg
+    return interest, interest_pos, interest_neg
+
+  def get_output_size(self, h, w):
+    kernel_size = self._config['f_size']
+    output_shape = conv2d_output_shape([h,w], kernel_size=kernel_size, stride=1, pad=0, dilation=1)
+    return output_shape
+
+  def get_output_shape(self, h, w):
+    output_size = self.get_output_size(h, w)
+    output_shape = [-1, self.channels * 2, output_size[0], output_size[1]] # because 2x 3 channels (+/-)
+    return output_shape
