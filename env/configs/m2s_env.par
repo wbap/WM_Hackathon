@@ -8,3 +8,4 @@ gaze_step_size,100
 peripheral_scale,0.05
 screen_scale,0.1
 show_fovea_on_screen,0
+enable_active_vision,1

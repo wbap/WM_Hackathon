@@ -30,6 +30,8 @@ class ActiveVisionEnv(PyGameEnv):
     self.step_size = int(config["gaze_step_size"])  # step size of gaze movement, in pixels in the screen image
     self.peripheral_scale = float(config["peripheral_scale"])  # peripheral image size, expressed as fraction of screen size
     self.screen_scale = float(config["screen_scale"])  # resize the screen image before returning as an observation
+    self.enabled = bool(int(config["enable_active_vision"]))
+
     self.fov_size = np.array([int(self.fov_fraction * screen_width), int(self.fov_fraction * screen_height)])
     self.gaze = np.array([screen_width // 2, screen_height // 2])  # gaze position - (x, y)--> *top left of fovea*
     self._action_2_xy = {  # map actions (integers) to x,y gaze delta
@@ -59,6 +61,10 @@ class ActiveVisionEnv(PyGameEnv):
   def _do_step(self, action, time):
     # update the position of the fovea (fov_pos), given the action taken
     logging.debug("Received action: ", action)
+
+    if not self.enabled:
+      return
+
     # if within action scope, modify gaze
     if self._actions_start <= action < self._actions_end:
       self.gaze = self.gaze + self._action_2_xy[action] * self.step_size
@@ -69,7 +75,11 @@ class ActiveVisionEnv(PyGameEnv):
       #print("New gaze: ", self.gaze)
 
   def _create_action_space(self, num_actions):
-    total_actions = self._actions_end  # Gaze control
+    if self.enabled:
+      total_actions = self._actions_end  # Gaze control
+    else:
+      total_actions = self._actions_start
+
     self.action_space = spaces.Discrete(total_actions)
 
   def _create_observation_space(self, screen_width, screen_height, channels=3):
@@ -90,7 +100,7 @@ class ActiveVisionEnv(PyGameEnv):
     c = self.screen_shape[2]
     h2 = int(h * self.screen_scale)
     w2 = int(w * self.screen_scale)
-    return (c, h2, w2)
+    return c, h2, w2
 
   def get_fovea_observation_shape(self):
     h = self.screen_shape[0]
