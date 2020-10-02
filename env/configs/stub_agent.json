@@ -1,4 +1,8 @@
 {
+  "training":{
+    "steps":2000,
+    "checkpoint_interval":-1
+  },
   "model": {
     "fcnet_hiddens":[256, 256]
   }

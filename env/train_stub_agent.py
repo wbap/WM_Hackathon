@@ -101,6 +101,10 @@ if model_config_file is not None:
       print('Agent model config: ', key, ' --> ', value)
       agent_config["model"][key] = value
 
+    training_config = delta_config['training']
+    training_steps = training_config['steps']
+    checkpoint_interval = training_config['checkpoint_interval']
+
 # Register the custom items
 ModelCatalog.register_custom_model(model_name, StubAgent)
 
@@ -109,10 +113,12 @@ agent = a3c.A3CTrainer(agent_config, env=meta_env_type)  # Note use of custom En
 
 # Train the model
 status_message = "{:3d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f} saved {}"
-agent_steps = 250
-for n in range(agent_steps):
+file_name = 'n/a'
+for n in range(training_steps):
   result = agent.train()
-  file_name = agent.save(CHECKPOINT_ROOT)
+  if checkpoint_interval > 0:
+    if (n % checkpoint_interval) == 0:
+      file_name = agent.save(CHECKPOINT_ROOT)
   print(status_message.format(
     n + 1,
     result["episode_reward_min"],

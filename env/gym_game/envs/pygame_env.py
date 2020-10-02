@@ -38,9 +38,12 @@ class PyGameEnv(gym.Env, ABC):
 
   def reset(self):
     """Reset the game to a valid initial state."""
+    self.reset_time()
+    return self.get_observation()
+
+  def reset_time(self):
     self.clock = pygame.time.Clock()
     self.count = 0
-    return self.get_observation()
 
   @abstractmethod
   def get_config(self):

@@ -39,11 +39,16 @@ class FiniteStateEnv(ActiveVisionEnv):
     pass
 
   def reset(self):
+    #print('~~~~~~~~~~~~~~~~~~~~~~~~~~~ RESET ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     assert(self.start_state is not None)
     self.state_key = None
     self.state_time = None
+    self.reset_time()
     self.set_state(self.start_state)
-    return super().reset()
+    #return self.get_observation()
+    obs = super().reset()
+    #self.state_time = self.get_time()  # because the clock has been reset
+    return obs
 
   def add_state(self, state_key, start_state=False, end_state=False, next_states=[], duration=None, meta=None):
     state = {
@@ -65,6 +70,7 @@ class FiniteStateEnv(ActiveVisionEnv):
     time = self.get_time()  # Record the time of entering the state
     self.state_key = state_key  # The key, not the object
     self.state_time = time  # When we entered the state
+    #print('~~~~~~ SET STATE:', state_key, 'to time:', self.state_time)
     self.on_state_changed(old_state_key, state_key)
 
   def on_state_changed(self, old_state_key, new_state_key):
@@ -92,6 +98,7 @@ class FiniteStateEnv(ActiveVisionEnv):
     old_state_key = self.get_state_key()
     elapsed_time = self.get_state_elapsed_time()
     logging.debug('old state=', old_state_key, 'time=', elapsed_time)
+    #print('old state=', old_state_key, 'state time=', elapsed_time)
     new_state_key = self._update_state_key(old_state_key, action, elapsed_time)
     reward = self._update_reward(old_state_key, action, elapsed_time, new_state_key)
 
