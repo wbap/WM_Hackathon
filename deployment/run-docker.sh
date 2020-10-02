@@ -23,6 +23,6 @@ fi
 # cmd="docker run -dit --rm --name=wm $GPU_STR --mount type=bind,source=$SRC_DIR,target=$TRG_DIR $IMG_NAME $@"
 
 # not detached (i.e. see the output)
-cmd="docker run -it --rm --name=wm $GPU_STR --mount type=bind,source=$SRC_DIR,target=$TRG_DIR $IMG_NAME $@"
+cmd="docker run --privileged -it --rm --name=wm $GPU_STR --mount type=bind,source=$SRC_DIR,target=$TRG_DIR $IMG_NAME $@"
 echo $cmd
 eval $cmd

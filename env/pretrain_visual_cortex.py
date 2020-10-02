@@ -23,8 +23,6 @@ from torch.utils.tensorboard import SummaryWriter
 import torchvision
 from torchvision import datasets, transforms
 
-from cls_module.components.sparse_autoencoder import SparseAutoencoder
-from cls_module.components.simple_autoencoder import SimpleAutoencoder
 
 from agent.stub_agent import StubAgent
 from gym_game.envs.pygame_dataset import PyGameDataset

@@ -1,7 +1,8 @@
 import torch.nn as nn
+from cerenaut_pt_core.components.sparse_autoencoder import SparseAutoencoder
+
 from .image_utils import *
 from .retina import *
-from cls_module.components.sparse_autoencoder import SparseAutoencoder
 
 
 class PosteriorCortex(nn.Module):
