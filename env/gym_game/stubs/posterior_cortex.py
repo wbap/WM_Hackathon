@@ -25,6 +25,7 @@ class PosteriorCortex(nn.Module):
     retina_config = Retina.get_default_config()
     cortex_config = SparseAutoencoder.get_default_config()
     stream_config = {
+      'load': None,
       'retina': retina_config,
       'cortex': cortex_config
     }
@@ -34,6 +35,15 @@ class PosteriorCortex(nn.Module):
     #   config[stream] = stream_config
     # return config
     return stream_config
+
+  @staticmethod
+  def update_config(default_config, delta_config):
+    """
+    Override the config selectively. Return a complete config.
+    """
+    #updated_config = {**default_config, **delta_config}
+    updated_config = dict(mergedicts(default_config, delta_config))
+    return updated_config
 
   def __init__(self, name, input_shape, config):
     super().__init__()
@@ -70,6 +80,12 @@ class PosteriorCortex(nn.Module):
     #self._output_shapes[stream] = cortex_output_shape
     #self._output_spaces[stream] = observation_space
     self._output_shape = cortex_output_shape
+
+    # Option to reload a trained set of parameters
+    if self._config['load'] is not None:
+      cpkt_file = self._config['load']
+      print('Loading parameters from checkpoint: ', cpkt_file)
+      self.load(cpkt_file)
 
   def get_output_shape(self):
     return self._output_shape
@@ -114,13 +130,15 @@ class PosteriorCortex(nn.Module):
   #   m = self._modules[module]
   #   return m
 
-  def save(self, module, file_path):
-    m = self._modules[module]
-    torch.save(model.state_dict(), file_path)
+  def save(self, file_path):
+    #m = self._modules[module]
+    #torch.save(model.state_dict(), file_path)
+    torch.save(self.state_dict(), file_path)
 
-  def load(self, module, file_path):
-    m = self._modules[module]
-    m.load_state_dict(torch.load(file_path))
+  def load(self, file_path):
+    #m = self._modules[module]
+    #m.load_state_dict(torch.load(file_path))
+    self.load_state_dict(torch.load(file_path))
 
   # def eval(self, module=None):
   #   if module is None:  # eval all

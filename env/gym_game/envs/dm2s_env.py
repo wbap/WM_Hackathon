@@ -40,6 +40,7 @@ class Dm2sEnv(FiniteStateEnv):
   YELLOW = (255, 255, 0)
   BLUE = (0, 0, 255)
   GRAY = (128,128,128)
+  RED = (255, 0, 0)
 
   # define global variables
   gParams = {}  # parameter dictionary
@@ -257,8 +258,11 @@ class Dm2sEnv(FiniteStateEnv):
     if state == self.STATE_TUTOR_STIM or state == self.STATE_TUTOR_HIDE or state == self.STATE_TUTOR_SHOW or state == self.STATE_TUTOR_FEEDBACK:
       screen_options['tutoring'] = True
 
-    if state == self.STATE_PLAY_FEEDBACK and self.result == self.RESULT_CORRECT:
-      screen_options['correct'] = True
+    if state == self.STATE_PLAY_FEEDBACK:
+      if self.result == self.RESULT_CORRECT:
+        screen_options['correct'] = True
+      else:
+        screen_options['wrong'] = True        
 
     if state == self.STATE_TUTOR_FEEDBACK or state == self.STATE_PLAY_FEEDBACK:
       # flash the correct button
@@ -279,6 +283,7 @@ class Dm2sEnv(FiniteStateEnv):
     screen_options = {
       'tutoring': False,
       'correct': False,
+      'wrong': False,
       'sample': False,
       'targets': False,
       'flash': None
@@ -292,6 +297,10 @@ class Dm2sEnv(FiniteStateEnv):
     if screen_options['correct']:
         # draw Result Bar 
         pygame.draw.rect(screen, self.YELLOW, self.gCorrectFB)
+
+    if screen_options['wrong']:
+        # draw Result Bar 
+        pygame.draw.rect(screen, self.RED, self.gCorrectFB)
 
     if screen_options['tutoring']:
         # draw Observation Bar (ie being tutored)

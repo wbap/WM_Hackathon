@@ -1,4 +1,5 @@
 import math
+import json
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
@@ -13,6 +14,7 @@ from gym_game.stubs.posterior_cortex import PosteriorCortex
 # from utils.positional_encoding import PositionalEncoder
 # from utils.prefrontal_cortex import PrefrontalCortex
 # from utils.superior_colliculus import SuperiorColliculus
+from gym_game.stubs.image_utils import *
 
 from ray.rllib.utils.framework import try_import_torch
 torch, nn = try_import_torch()
@@ -29,40 +31,53 @@ class StubAgentEnv(gym.Env):
   NUM_OBS = 2
 
   # default config
-  default_config = {
-    "retina": {
-      'f_size': 7,
-      'f_sigma': 2.0,
-      'f_k': 1.6  # approximates Laplacian of Gaussian
-    },
-    "positional_encoding": {},
-    "vc_fovea": {},
-    "vc_periphery": {},
-    "mtl": {},
-    "sc": {},
-    "pfc": {}
-  }
+  # default_config = {
+  #   "retina": {
+  #     'f_size': 7,
+  #     'f_sigma': 2.0,
+  #     'f_k': 1.6  # approximates Laplacian of Gaussian
+  #   },
+  #   "positional_encoding": {},
+  #   "vc_fovea": {},
+  #   "vc_periphery": {},
+  #   "mtl": {},
+  #   "sc": {},
+  #   "pfc": {}
+  # }
 
   @staticmethod
   def get_default_config():
-
     cortex_f_config = PosteriorCortex.get_default_config()
     cortex_p_config = PosteriorCortex.get_default_config()
     agent_config = {
+      'obs_keys':[StubAgentEnv.OBS_FOVEA, StubAgentEnv.OBS_PERIPHERAL],
       StubAgentEnv.OBS_FOVEA: cortex_f_config,
       StubAgentEnv.OBS_PERIPHERAL: cortex_p_config
     }
     return agent_config
 
-  def __init__(self, env_type, env_config_file):
+  @staticmethod
+  def update_config(default_config, delta_config):
+    """
+    Override the config selectively. Return a complete config.
+    """
+    #updated_config = {**default_config, **delta_config}
+    updated_config = dict(mergedicts(default_config, delta_config))
+    return updated_config
+
+  def __init__(self, env_type, env_config_file, config_file):
     self.env = gym.make(env_type, config_file=env_config_file)
     #self.env = env_type(env_config_file)
     self.action_space = self.env.action_space
     env_observation_space = self.env.observation_space
 
     # Build networks to preprocess the observation space
-    self._config = self.get_default_config()  # TODO make this override
-    obs_keys = [self.OBS_FOVEA, self.OBS_PERIPHERAL]
+    default_config = self.get_default_config()  # TODO make this override
+    with open(config_file) as json_file:
+      delta_config = json.load(json_file)
+      self._config = self.update_config(default_config, delta_config)
+
+    obs_keys = self._config['obs_keys'] #[self.OBS_FOVEA, self.OBS_PERIPHERAL]
     self.modules = {}
     for obs_key in obs_keys:
       input_shape = self.create_input_shape(env_observation_space, obs_key)
@@ -138,13 +153,14 @@ class StubAgentEnv(gym.Env):
     return observation_shape
 
   def reset(self):
-    print('>>>>>>>>>>> Stub reset')
+    #print('>>>>>>>>>>> Stub reset')
     obs = self.env.reset()
     return self.forward(obs)
 
   def forward(self, observation):
     #print('-----------Obs old', observation)
-    obs_keys = [self.OBS_FOVEA, self.OBS_PERIPHERAL]
+    #obs_keys = [self.OBS_FOVEA, self.OBS_PERIPHERAL]
+    obs_keys = self._config['obs_keys'] #[self.OBS_FOVEA, self.OBS_PERIPHERAL]
 
     obs_dict = {}
     for obs_key in obs_keys:
@@ -171,13 +187,13 @@ class StubAgentEnv(gym.Env):
   def tensor_to_obs(self, output, obs_dict, obs_key):
     #print('output is', output)
     obs = torch.squeeze(output).detach().numpy()  # remove batch dim, detach graph, convert numpy
-    print('!!!!!!!!!!!!!!!!!:',obs_key,' output tensor shape:', obs.shape)
+    #print('!!!!!!!!!!!!!!!!!:',obs_key,' output tensor shape:', obs.shape)
     obs_dict[obs_key] = obs
 
   def obs_to_tensor(self, observation, obs_key):
     obs = torch.tensor(observation[obs_key])
     obs_b = torch.unsqueeze(obs, 0)  # insert batch dimension 0
-    print('!!!!!!!!!!!!!!!!!:',obs_key,' input tensor shape:', obs_b.shape)
+    #print('!!!!!!!!!!!!!!!!!:',obs_key,' input tensor shape:', obs_b.shape)
     return obs_b
 
   def get_config(self):
@@ -185,7 +201,7 @@ class StubAgentEnv(gym.Env):
     return self.env.get_config()
 
   def step(self, action):
-    print('>>>>>>>>>>> Stub step')
+    #print('>>>>>>>>>>> Stub step')
     [obs, self.reward, is_end_state, additional] = self.env.step(action)
     tx_obs = self.forward(obs)
     emit = [tx_obs, self.reward, is_end_state, additional]

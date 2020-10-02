@@ -1,0 +1,14 @@
+{
+  "optimizer": {
+    "batch_size": 128,
+    "learning_rate": 0.005
+  },
+  "model": {
+    "retina": {
+      "f_size": 7
+    },
+    "cortex": {
+      "filters": 100
+    }
+  }
+}

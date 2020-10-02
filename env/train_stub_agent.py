@@ -33,13 +33,13 @@ e.g.
   --> the StubAgent (conf simple_agent_model.json) plays the simple env (config simple_env_machine.json)  
 """
 
-def stub_env_creator(task_env_type, task_env_config_file):
+def stub_env_creator(task_env_type, task_env_config_file, stub_env_config_file):
   """Custom functor to create custom Gym environments."""
   from gym_game.envs import StubAgentEnv
-  return StubAgentEnv(task_env_type, task_env_config_file)  # Instantiate with config fil
+  return StubAgentEnv(task_env_type, task_env_config_file, stub_env_config_file)  # Instantiate with config fil
 
 if len(sys.argv) < 4:
-    print('Usage: python simple_agent.py ENV_NAME ENV_CONFIG_FILE MODEL_CONFIG_FILE')
+    print('Usage: python simple_agent.py ENV_NAME ENV_CONFIG_FILE STUB_ENV_CONFIG_FILE AGENT_CONFIG_FILE')
     sys.exit(-1)
 
 meta_env_type = 'stub-v0'
@@ -47,76 +47,65 @@ task_env_type = sys.argv[1]
 print('Task Gym[PyGame] environment:', task_env_type)
 task_env_config_file = sys.argv[2]
 print('Task Env config file:', task_env_config_file)
-env = stub_env_creator(task_env_type, task_env_config_file)#gym.make(env_name, config_file=env_config_file)
-tune.register_env(meta_env_type, lambda config: stub_env_creator(task_env_type, task_env_config_file))
+stub_env_config_file = sys.argv[3]
+print('Stub Env config file:', stub_env_config_file)
+model_config_file = sys.argv[4]
+print('Agent config file:', model_config_file)
 
-model_config_file = sys.argv[3]
-print('Model config file:', model_config_file)
+# Try to instantiate the environment
+env = stub_env_creator(task_env_type, task_env_config_file, stub_env_config_file)#gym.make(env_name, config_file=env_config_file)
+tune.register_env(meta_env_type, lambda config: stub_env_creator(task_env_type, task_env_config_file, stub_env_config_file))
 
+# Check action space of the environment
 if not hasattr(env.action_space, 'n'):
-    raise Exception('Simple agent only supports discrete action spaces')
+    raise Exception('Only supports discrete action spaces')
 ACTIONS = env.action_space.n
-
 print("ACTIONS={}".format(ACTIONS))
 
+# Some general preparations... 
 render_mode = 'rgb_array'
-
 ray.shutdown()
 ray.init(ignore_reinit_error=True)
-
 CHECKPOINT_ROOT = 'tmp/simple'
 shutil.rmtree(CHECKPOINT_ROOT, ignore_errors=True, onerror=None)
 
-config= {}
-config["log_level"] = "DEBUG"
-config["framework"] = "torch"
-config["num_workers"] = 1
-config["model"] = {}
+# Build agent config
+agent_config = {}
+agent_config["log_level"] = "DEBUG"
+agent_config["framework"] = "torch"
+agent_config["num_workers"] = 1
+agent_config["model"] = {}  # This is the "model" for the agent (i.e. Basal-Ganglia) only.
 
+# Override preprocessor and model
 model_name = 'stub_agent_model'
 preprocessor_name = 'stub_preprocessor'
-config["model"]["custom_model"] = model_name
-#config["model"]["custom_preprocessor"] = preprocessor_name
+agent_config["model"]["custom_model"] = model_name
+#agent_config["model"]["custom_preprocessor"] = preprocessor_name
 
 # Adjust model hyperparameters to tune
-config["model"]["fcnet_activation"] = 'tanh'
-config["model"]["fcnet_hiddens"] = [128, 128]
-config["model"]["max_seq_len"] = 50
-config["model"]["framestack"] = False  # default: True
+agent_config["model"]["fcnet_activation"] = 'tanh'
+agent_config["model"]["fcnet_hiddens"] = [128, 128]
+agent_config["model"]["max_seq_len"] = 50
+agent_config["model"]["framestack"] = False  # default: True
 
 # We're meant to be able to use this key for a custom config dic, but if we set any values, it causes a crash
 # https://github.com/ray-project/ray/blob/master/rllib/models/catalog.py
-config["model"]["custom_model_config"] = {}
+agent_config["model"]["custom_model_config"] = {}
 
 # Override from model config file:
 if model_config_file is not None:
   with open(model_config_file) as json_file:
-    model_config = json.load(json_file)
+    delta_config = json.load(json_file)
+    model_config = delta_config['model']
     for key, value in model_config.items():
-      # print('Override key:', key, 'value:', value)
-      config["model"][key] = value
-print('Final complete config: ', config)
-
-
-def env_creator(env_name, env_config_file):
-  """Custom functor to create custom Gym environments."""
-  if env_name == 'simple-v0':
-    from gym_game.envs import SimpleEnv as env
-  elif env_name == 'dm2s-v0':
-    from gym_game.envs import Dm2sEnv as env
-  else:
-    raise NotImplementedError
-  return env(env_config_file)  # Instantiate with config file
+      print('Agent model config: ', key, ' --> ', value)
+      agent_config["model"][key] = value
 
 # Register the custom items
-#ModelCatalog.register_custom_preprocessor(preprocessor_name, StubPreprocessor)
-# https://github.com/ray-project/ray/issues/9040
 ModelCatalog.register_custom_model(model_name, StubAgent)
-# https://stackoverflow.com/questions/58551029/rllib-use-custom-registered-environments
-#tune.register_env(env_name, lambda: config, env_creator(env_name, env_config_file))
 
-#agent = a3c.A3CTrainer(config, env=env_creator(env_name, env_config_file))  # Note use of custom Env creator fn
-agent = a3c.A3CTrainer(config, env=meta_env_type)  # Note use of custom Env creator fn
+print('Agent config:\n', agent_config)
+agent = a3c.A3CTrainer(agent_config, env=meta_env_type)  # Note use of custom Env creator fn
 
 # Train the model
 status_message = "{:3d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f} saved {}"

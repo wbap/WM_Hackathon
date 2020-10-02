@@ -73,13 +73,13 @@ def test(model, device, test_loader, global_step, writer):
   with torch.no_grad():
     for batch_idx, (data) in enumerate(test_loader):
       data = data.to(device)
-      _, output, target = model(data)
+      encoding, output, target = model(data)
 
       writer.add_image('test/inputs', torchvision.utils.make_grid(data), global_step)
       # TODO fix this when input has 6 channels...
       #writer.add_image('test/outputs', torchvision.utils.make_grid(output), global_step)
 
-      test_loss += F.mse_loss(output, data, reduction='sum').item()  # sum up batch loss
+      test_loss += F.mse_loss(output, target, reduction='sum').item()  # sum up batch loss
 
     test_loss /= len(test_loader.dataset)
 
@@ -99,8 +99,8 @@ def main():
                       help='Gym environment pre-generated data directory')
   parser.add_argument('--env-obs-key', type=str, default=None, metavar='N',
                       help='Gym environment dict observation object key')
-  parser.add_argument('--config', type=str, default='test_configs/sae.json', metavar='N',
-                      help='Model configuration (default: test_configs/sae.json')
+  parser.add_argument('--config', type=str, default='configs/pretrain.json', metavar='N',
+                      help='Model configuration (default: configs/pretrain.json')
   parser.add_argument('--epochs', type=int, default=1, metavar='N',
                       help='Number of training epochs (default: 1)')
   parser.add_argument('--no-cuda', action='store_true', default=False,
@@ -121,11 +121,15 @@ def main():
   use_cuda = not args.no_cuda and torch.cuda.is_available()
   device = torch.device("cuda" if use_cuda else "cpu")
 
+  # Read global config file
   with open(args.config) as config_file:
     config = json.load(config_file)
 
-  kwargs = {'batch_size': config['batch_size']}
+  # Obtain the Optimizer config
+  optimizer_config = config['optimizer']
+  batch_size = optimizer_config['batch_size']
 
+  kwargs = {'batch_size': batch_size}
   if use_cuda:
     kwargs.update({
         'num_workers': 1,
@@ -134,11 +138,11 @@ def main():
     })
 
   writer = SummaryWriter()
-
   transform = transforms.Compose([
       transforms.ToTensor()
   ])
 
+  # Build environment
   env_name = args.env
   print('Making Gym[PyGame] environment:', env_name)
   env_config_file = args.env_config
@@ -146,8 +150,10 @@ def main():
   env = gym.make(env_name, config_file=env_config_file)
   print('Env constructed')
 
-  print('Obs. key:', args.env_obs_key)
-  dataset = PyGameDataset(key=args.env_obs_key)
+  # We will pretrain just from one observation at a time
+  obs_key = args.env_obs_key
+  print('Obs. key:', obs_key)
+  dataset = PyGameDataset(key=obs_key)
   print('Loading pre-generated data from: ', args.env_data_dir) 
   read_ok = dataset.read(args.env_data_dir)
   print('Loaded pre-generated data?', str(read_ok)) 
@@ -156,34 +162,24 @@ def main():
   data_shape = dataset.get_shape(env)
   print('Data shape:', data_shape)
 
-  # train_dataset = datasets.MNIST('./data', train=True, download=True,
-  #                                transform=transform)
-  # test_dataset = datasets.MNIST('./data', train=False,
-  #                               transform=transform)
-
   train_loader = torch.utils.data.DataLoader(dataset, **kwargs)
   test_loader = torch.utils.data.DataLoader(dataset, **kwargs)
 
   input_shape = (-1,) + data_shape #[-1, 1, 28, 28]
   print('Final dataset shape:', input_shape)
 
-  # if config['model'] == 'sae':
-  #   model = SparseAutoencoder(input_shape, config['model_config']).to(device)
-  # elif config['model'] == 'ae':
-  #   model = SimpleAutoencoder(input_shape, config['model_config']).to(device)
-  # else:
-  #   raise NotImplementedError('Model not supported: ' + str(config['model']))
-  # model.float()
-  
-  #env_observation_space = self.env.observation_space
-  #obs_keys = [args.env_obs_key]  # pretrain just one
-  obs_key = args.env_obs_key
-  cortex_config = PosteriorCortex.get_default_config()
-  model = PosteriorCortex(obs_key, input_shape, cortex_config)
+  # Override model config
+  default_model_config = PosteriorCortex.get_default_config()
+  delta_model_config = config['model']
+  model_config = PosteriorCortex.update_config(default_model_config, delta_model_config)
+  print('Model config:\n', model_config)
+  model = PosteriorCortex(obs_key, input_shape, model_config)
   print('Model:', model)
 
-  optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])
+  # Create optimizer
+  optimizer = optim.Adam(model.parameters(), lr=optimizer_config['learning_rate'])
 
+  # Begin training
   global_step = 0
   for epoch in range(0, args.epochs):
     global_step = train(args, model, device, train_loader, global_step, optimizer, epoch, writer)
@@ -191,7 +187,8 @@ def main():
 
   if args.model_file is not None:
     print('Saving trained model to file: ', args.model_file)
-    torch.save(model.state_dict(), args.model_file)
+    #torch.save(model.state_dict(), args.model_file)
+    model.save(args.model_file)
 
 
 if __name__ == '__main__':

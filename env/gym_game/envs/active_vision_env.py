@@ -40,7 +40,6 @@ class ActiveVisionEnv(PyGameEnv):
     }
     self._actions_start = num_actions
     self._actions_end = num_actions + len(self._action_2_xy)
-
     self._img_fov = None
     self._img_periph = None
 
@@ -154,13 +153,14 @@ class ActiveVisionEnv(PyGameEnv):
     # PyTorch expects dimension order [b,c,h,w]
     # transpose dimensions from [,h,w,c] to [,c,h,w]]
     order = (2, 0, 1)
+    self._img_full = np.transpose(img, order)
     self._img_fov = np.transpose(self._img_fov, order)
     self._img_periph = np.transpose(self._img_periph, order)
     # print('fovea shape trans:', self._img_fov.shape)
 
     # Assemble dict
     observation = {
-      'full': img.astype(np.float32),
+      'full': self._img_full.astype(np.float32),#img.astype(np.float32),
       'fovea': self._img_fov.astype(np.float32),
       'peripheral': self._img_periph.astype(np.float32)}
 
