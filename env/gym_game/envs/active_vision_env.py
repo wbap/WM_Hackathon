@@ -42,6 +42,7 @@ class ActiveVisionEnv(PyGameEnv):
     self._actions_end = num_actions + len(self._action_2_xy)
     self._img_fov = None
     self._img_periph = None
+    self._img_full = None
 
     self._x_min = self.fov_size[0]
     self._x_max = screen_width - self.fov_size[0]
@@ -68,7 +69,7 @@ class ActiveVisionEnv(PyGameEnv):
       #print("New gaze: ", self.gaze)
 
   def _create_action_space(self, num_actions):
-    total_actions = num_actions + self._actions_end  # Gaze control
+    total_actions = self._actions_end  # Gaze control
     self.action_space = spaces.Discrete(total_actions)
 
   def _create_observation_space(self, screen_width, screen_height, channels=3):

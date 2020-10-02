@@ -53,7 +53,7 @@ model_config_file = sys.argv[4]
 print('Agent config file:', model_config_file)
 
 # Try to instantiate the environment
-env = stub_env_creator(task_env_type, task_env_config_file, stub_env_config_file)#gym.make(env_name, config_file=env_config_file)
+env = stub_env_creator(task_env_type, task_env_config_file, stub_env_config_file)  #gym.make(env_name, config_file=env_config_file)
 tune.register_env(meta_env_type, lambda config: stub_env_creator(task_env_type, task_env_config_file, stub_env_config_file))
 
 # Check action space of the environment
