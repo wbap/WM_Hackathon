@@ -1,0 +1,12 @@
+{
+  "training":{
+    "training_steps":10,
+    "training_epochs":2,
+    "evaluation_steps":5,
+    "evaluation_interval":5,
+    "checkpoint_interval":-1
+  },
+  "model": {
+    "fcnet_hiddens":[256, 256]
+  }
+}
