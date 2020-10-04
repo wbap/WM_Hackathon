@@ -5,9 +5,12 @@
 # python simple_agent.py Env-vN
 #
 
+import math
 import json
 import shutil
 import sys
+import collections
+from statistics import mean, median
 
 import gym
 import ray
@@ -19,6 +22,7 @@ from ray.rllib.models import ModelCatalog
 from ray.rllib.utils.framework import try_import_torch
 
 torch, nn = try_import_torch()
+from torch.utils.tensorboard import SummaryWriter
 
 """
 Create a simple RL agent using StubAgent. 
@@ -85,7 +89,7 @@ agent_config["model"]["custom_model"] = model_name
 # Adjust model hyperparameters to tune
 agent_config["model"]["fcnet_activation"] = 'tanh'
 agent_config["model"]["fcnet_hiddens"] = [128, 128]
-agent_config["model"]["max_seq_len"] = 50
+agent_config["model"]["max_seq_len"] = 50  # TODO Make this a file param. Not enough probably.
 agent_config["model"]["framestack"] = False  # default: True
 
 # We're meant to be able to use this key for a custom config dic, but if we set any values, it causes a crash
@@ -112,21 +116,55 @@ print('Agent config:\n', agent_config)
 agent = a3c.A3CTrainer(agent_config, env=meta_env_type)  # Note use of custom Env creator fn
 
 # Train the model
-status_message = "{:3d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f} saved {}"
-file_name = 'n/a'
+writer = SummaryWriter()
+results_min = collections.deque()
+results_mean = collections.deque()
+results_max = collections.deque()
+results_window_size = 100
+
+status_message = "{:3d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f}"
+file_name = 'None'
 for n in range(training_steps):
   result = agent.train()
   if checkpoint_interval > 0:
     if (n % checkpoint_interval) == 0:
       file_name = agent.save(CHECKPOINT_ROOT)
+  #print(result)
+  def update_results(result_step, results, key):
+    value = result_step[key]
+    if not math.isnan(value):
+      results.append(value)
+    while len(results) > results_window_size:
+      results.popleft()
+    # calculate stats:
+    if len(results) < 1:
+      return 0.0  # can't mean
+    mean_value = mean(results)
+    #print('list:', results)
+    #print('list mean:', mean_value)
+    return mean_value
+
+  mean_min  = update_results(result, results_min, "episode_reward_min")
+  mean_mean = update_results(result, results_mean, "episode_reward_mean")
+  mean_max  = update_results(result, results_max, "episode_reward_max")
+
+  mean_len = len(results_mean)
   print(status_message.format(
     n + 1,
-    result["episode_reward_min"],
-    result["episode_reward_mean"],
-    result["episode_reward_max"],
-    result["episode_len_mean"],
-    file_name
+    mean_min,
+    mean_mean,
+    mean_max,
+    mean_len
    ))
+
+  writer.add_scalar('reward_mean', mean_mean, n)
+  writer.add_scalar('reward_max', mean_max, n)
+  writer.flush()
+
+# Inference mode
+# https://github.com/ray-project/ray/issues/8189
+#trainer.get_policy().config["explore"] = False
+
 
 # Finish
 print('Shutting down...')
