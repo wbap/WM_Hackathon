@@ -100,10 +100,18 @@ agent_config["model"]["custom_model_config"] = {}
 if model_config_file is not None:
   with open(model_config_file) as json_file:
     delta_config = json.load(json_file)
-    model_config = delta_config['model']
-    for key, value in model_config.items():
-      print('Agent model config: ', key, ' --> ', value)
+
+    # Override model config
+    model_delta_config = delta_config['model']
+    for key, value in model_delta_config.items():
+      print('Agent.model config: ', key, ' --> ', value)
       agent_config["model"][key] = value
+
+    # Override agent config
+    agent_delta_config = delta_config['agent']
+    for key, value in agent_delta_config.items():
+      print('Agent config: ', key, ' --> ', value)
+      agent_config[key] = value
 
     # Load parameters that control the training regime
     training_config = delta_config['training']
@@ -117,7 +125,12 @@ if model_config_file is not None:
 ModelCatalog.register_custom_model(model_name, StubAgent)
 
 print('Agent config:\n', agent_config)
+#agent_config['gamma'] = 0.0
 agent = a3c.A3CTrainer(agent_config, env=meta_env_type)  # Note use of custom Env creator fn
+
+# Use this line uncommented to see the whole config and all options
+#print('\n\n\nPOLICY CONFIG',agent.get_policy().config,"\n\n\n")
+
 
 # Train the model
 writer = SummaryWriter()
@@ -143,16 +156,30 @@ def update_results(result_step, results_list, result_key):
   #print('list mean:', mean_value)
   return mean_value
 
+def find_json_value(key_path, json, delimiter='.'):
+  paths = key_path.split(delimiter)
+  data = json
+  for i in range(0,len(paths)):
+    data = data[paths[i]]
+  return data
+
 def update_writer(result_step, result_key, writer, writer_key, step):
-  value = result_step[result_key]
+  #value = result_step[result_key]
+  value = find_json_value(result_key, result_step)
   if not math.isnan(value):
     writer.add_scalar(writer_key, value, step)
 
 result_writer_keys = [
+  'info.learner.policy_entropy',
+  'info.learner.policy_loss',
+  'info.learner.vf_loss',
+  'info.num_steps_sampled',
+  'info.num_steps_trained',
   'episode_reward_min',
   'episode_reward_mean',
   'episode_reward_max' ]
 
+# TRAINING STARTS
 evaluation_epoch = 0
 for training_epoch in range(training_epochs):  # number of epochs for all training
   # Train for many steps
@@ -160,7 +187,8 @@ for training_epoch in range(training_epochs):  # number of epochs for all traini
   # https://github.com/ray-project/ray/issues/8189 - inference mode
   agent.get_policy().config['explore'] = True  # Revert to training
   for training_step in range(training_steps):  # steps in an epoch
-    result = agent.train()
+    result = agent.train()  # Runs a whole Episode, which includes several tasks and a tutoring phase
+    #print('>>> Result: \n\n', result)  # Use this find examine additional keys in the results for plotting
 
     # Calculate moving averages for console reporting
     mean_min  = update_results(result, results_min, "episode_reward_min")
