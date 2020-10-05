@@ -41,13 +41,13 @@ class M2sEnv(Dm2sEnv):
     return 'Match-to-Sample'
 
   def on_state_changed(self, old_state_key, new_state_key):
-    print('State -> ', new_state_key, '@t=', self.state_time)
+    #print('State -> ', new_state_key, '@t=', self.state_time)
     if new_state_key == self.STATE_TUTOR_SHOW or new_state_key == self.STATE_PLAY_SHOW:
       self.position = self.np_random.randint(2)+1  # Left:1 & Right:2
       self.sample = self.get_random_sample() 
       self.target = self.get_random_sample(self.sample) 
       self.result = None
-      
+
   def _update_state_key(self, old_state_key, action, elapsed_time):
     # Don't transition from end states
     is_end_state = self.is_end_state(old_state_key)

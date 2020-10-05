@@ -5,9 +5,12 @@
 # python simple_agent.py Env-vN
 #
 
+import math
 import json
 import shutil
 import sys
+import collections
+from statistics import mean, median
 
 import gym
 import ray
@@ -19,6 +22,7 @@ from ray.rllib.models import ModelCatalog
 from ray.rllib.utils.framework import try_import_torch
 
 torch, nn = try_import_torch()
+from torch.utils.tensorboard import SummaryWriter
 
 """
 Create a simple RL agent using StubAgent. 
@@ -85,7 +89,7 @@ agent_config["model"]["custom_model"] = model_name
 # Adjust model hyperparameters to tune
 agent_config["model"]["fcnet_activation"] = 'tanh'
 agent_config["model"]["fcnet_hiddens"] = [128, 128]
-agent_config["model"]["max_seq_len"] = 50
+agent_config["model"]["max_seq_len"] = 50  # TODO Make this a file param. Not enough probably.
 agent_config["model"]["framestack"] = False  # default: True
 
 # We're meant to be able to use this key for a custom config dic, but if we set any values, it causes a crash
@@ -101,6 +105,14 @@ if model_config_file is not None:
       print('Agent model config: ', key, ' --> ', value)
       agent_config["model"][key] = value
 
+    # Load parameters that control the training regime
+    training_config = delta_config['training']
+    training_steps = training_config['training_steps']
+    training_epochs = training_config['training_epochs']
+    evaluation_steps = training_config['evaluation_steps']
+    evaluation_interval = training_config['evaluation_interval']
+    checkpoint_interval = training_config['checkpoint_interval']
+
 # Register the custom items
 ModelCatalog.register_custom_model(model_name, StubAgent)
 
@@ -108,19 +120,87 @@ print('Agent config:\n', agent_config)
 agent = a3c.A3CTrainer(agent_config, env=meta_env_type)  # Note use of custom Env creator fn
 
 # Train the model
-status_message = "{:3d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f} saved {}"
-agent_steps = 250
-for n in range(agent_steps):
-  result = agent.train()
-  file_name = agent.save(CHECKPOINT_ROOT)
-  print(status_message.format(
-    n + 1,
-    result["episode_reward_min"],
-    result["episode_reward_mean"],
-    result["episode_reward_max"],
-    result["episode_len_mean"],
-    file_name
-   ))
+writer = SummaryWriter()
+results_min = collections.deque()
+results_mean = collections.deque()
+results_max = collections.deque()
+results_window_size = 100
+
+status_message = "{:3d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f}"
+file_name = 'None'
+
+def update_results(result_step, results_list, result_key):
+  value = result_step[result_key]
+  if not math.isnan(value):
+    results_list.append(value)
+  while len(results_list) > results_window_size:
+    results_list.popleft()
+  # calculate stats:
+  if len(results_list) < 1:
+    return 0.0  # can't mean if there's a nan
+  mean_value = mean(results_list)
+  #print('list:', results)
+  #print('list mean:', mean_value)
+  return mean_value
+
+def update_writer(result_step, result_key, writer, writer_key, step):
+  value = result_step[result_key]
+  if not math.isnan(value):
+    writer.add_scalar(writer_key, value, step)
+
+result_writer_keys = [
+  'episode_reward_min',
+  'episode_reward_mean',
+  'episode_reward_max' ]
+
+evaluation_epoch = 0
+for training_epoch in range(training_epochs):  # number of epochs for all training
+  # Train for many steps
+  print('Training Epoch ~~~~~~~~~> ', training_epoch)
+  # https://github.com/ray-project/ray/issues/8189 - inference mode
+  agent.get_policy().config['explore'] = True  # Revert to training
+  for training_step in range(training_steps):  # steps in an epoch
+    result = agent.train()
+
+    # Calculate moving averages for console reporting
+    mean_min  = update_results(result, results_min, "episode_reward_min")
+    mean_mean = update_results(result, results_mean, "episode_reward_mean")
+    mean_max  = update_results(result, results_max, "episode_reward_max")
+    mean_len = len(results_mean)
+
+    # Update tensorboard plots
+    writer_step = training_epoch * training_steps + training_step
+    for result_key in result_writer_keys:
+      writer_key = 'Train/' + result_key
+      update_writer(result, result_key, writer, writer_key, writer_step)
+    writer.flush()
+
+    print(status_message.format(
+      writer_step,
+      mean_min,
+      mean_mean,
+      mean_max,
+      mean_len
+     ))
+
+  # Periodically save checkpoints
+  if checkpoint_interval > 0:  # Optionally save checkpoint every n epochs of training
+    if (training_epoch % checkpoint_interval) == 0:
+      file_name = agent.save(CHECKPOINT_ROOT)
+
+  # Periodically evaluate
+  if (training_epoch % evaluation_interval) == 0:
+    print('Evaluation Epoch ~~~~~~~~~> ', evaluation_epoch)
+    agent.get_policy().config['explore'] = False  # Inference mode
+    for evaluation_step in range(evaluation_steps):  # steps in an epoch
+      result = agent.train()
+      writer_step = evaluation_epoch * evaluation_steps + evaluation_step
+      for result_key in result_writer_keys:
+        writer_key = 'Eval/' + result_key
+        update_writer(result, result_key, writer, writer_key, writer_step)
+      writer.flush()
+
+    evaluation_epoch = evaluation_epoch +1
 
 # Finish
 print('Shutting down...')

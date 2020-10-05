@@ -1,4 +1,4 @@
-mainTaskRepeat,2
+mainTaskRepeat,6
 observationRepeat,2
 frameRate,3
 imageDir,../games/dm2s/png
@@ -8,4 +8,4 @@ gaze_step_size,100
 peripheral_scale,0.05
 screen_scale,0.1
 show_fovea_on_screen,0
-enable_active_vision,1
+enable_active_vision,0
