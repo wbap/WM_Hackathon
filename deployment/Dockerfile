@@ -31,9 +31,11 @@ RUN ln -s /usr/local/cuda/lib64/libcudnn.so.7 /usr/local/cuda/lib64/libcudnn.so
 ENV HOME /root
 WORKDIR $HOME
 
-# Create and set working volume
-RUN mkdir -p $HOME/wm
-VOLUME $HOME/wm
+# Create volumes (that we'll map to when we run the container)
+RUN mkdir -p $HOME/wm_hackathon
+VOLUME $HOME/wm_hackathon
+RUN mkdir -p $HOME/cerenaut-pt-core
+VOLUME $HOME/cerenaut-pt-core
 
 # Copy Conda environment config
 COPY environment.yml ./environment.yml
@@ -61,6 +63,6 @@ RUN echo "export PATH=/usr/local/cuda-9.0/bin:$PATH" >> $HOME/.bashrc
 RUN echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64/:$LD_LIBRARY_PATH" >> $HOME/.bashrc
 
 # set the default path to the mounted folder (commands passed to the container are run from there)
-WORKDIR wm/env
+WORKDIR wm_hackathon/env
 
 CMD ["bash"]
