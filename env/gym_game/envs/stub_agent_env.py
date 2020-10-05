@@ -202,9 +202,15 @@ class StubAgentEnv(gym.Env):
 
   def step(self, action):
     #print('>>>>>>>>>>> Stub step')
+    #from timeit import default_timer as timer
+    #start = timer()
+
     [obs, self.reward, is_end_state, additional] = self.env.step(action)
-    tx_obs = self.forward(obs)
+    tx_obs = self.forward(obs)  # Process the input
     emit = [tx_obs, self.reward, is_end_state, additional]
+
+    #end = timer()
+    #print('Step elapsed time: ', str(end - start)) # Time in seconds, e.g. 5.38091952400282
     return emit
 
   def get_screen_shape(self):
