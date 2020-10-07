@@ -48,6 +48,7 @@ class Dm2sEnv(FiniteStateEnv):
   gVideoHeight = 800
   gColors = ["LB"]
   gShapes = ["Barred_Ring", "Triangle", "Crescent", "Cross", "Circle", "Heart", "Pentagon", "Ring", "Square"]
+  #gShapes = ["Barred_Ring", "Triangle"]  # Reduced shape set for quicker learning
   gCorrectFB = Rect(0, gVideoHeight - 80, gVideoWidth, 80)
   gObservBar = Rect(0, 0, gVideoWidth, 80)
 
@@ -133,6 +134,7 @@ class Dm2sEnv(FiniteStateEnv):
 
   def on_state_changed(self, old_state_key, new_state_key):
     logging.info('State -> ', new_state_key, '@t=', self.state_time)
+    #print('------------------------------------------------------------------ State -> ', new_state_key, '@t=', self.state_time)
     if new_state_key == self.STATE_TUTOR_STIM or new_state_key == self.STATE_PLAY_STIM:
       self.position = self.np_random.randint(2)+1  # Left:1 & Right:2
       self.sample = self.get_random_sample() 
@@ -190,8 +192,11 @@ class Dm2sEnv(FiniteStateEnv):
   def _update_reward(self, old_state_key, action, elapsed_time, new_state_key):
     reward = 0.0
     if old_state_key == self.STATE_PLAY_SHOW:
-      if action == self.position:
-        reward = 1.0
+      if action != self.ACTION_NONE:
+        if action == self.position:
+          reward = 1.0
+        else:
+          reward = -1.0
     return reward
 
   def get_random_sample(self, unlike_sample=None):

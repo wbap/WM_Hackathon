@@ -209,6 +209,18 @@ class StubAgentEnv(gym.Env):
     tx_obs = self.forward(obs)  # Process the input
     emit = [tx_obs, self.reward, is_end_state, additional]
 
+    ############### DEBUG - verify the observation
+    # The purpose of this section is to verify that valid observations are emitted.
+    #print('Tx Obs keys ', tx_obs.keys())
+    #o = tx_obs['full']
+    #print('Obs Shape = ', o.shape)
+    #import hashlib
+    #m = hashlib.md5()
+    #m.update(o)
+    #h = m.hexdigest()
+    #print(' Hash = ', h)
+    ############### DEBUG - verify the observation
+
     #end = timer()
     #print('Step elapsed time: ', str(end - start)) # Time in seconds, e.g. 5.38091952400282
     return emit

@@ -222,6 +222,7 @@ for training_epoch in range(training_epochs):  # number of epochs for all traini
     agent.get_policy().config['explore'] = False  # Inference mode
     for evaluation_step in range(evaluation_steps):  # steps in an epoch
       result = agent.train()
+      # TODO use compute_action
       writer_step = evaluation_epoch * evaluation_steps + evaluation_step
       for result_key in result_writer_keys:
         writer_key = 'Eval/' + result_key
