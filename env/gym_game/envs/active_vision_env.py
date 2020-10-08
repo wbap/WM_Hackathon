@@ -124,11 +124,14 @@ class ActiveVisionEnv(PyGameEnv):
     """
     Return images in PyTorch format.
     """
-
     debug = False
     multichannel = True
 
     img = self.render(mode='rgb_array')
+
+    #from timeit import default_timer as timer
+    #start = timer()
+
     img = np.transpose(img, [1, 0, 2])  # observed img is horizontally reflected, and rotated 90 deg ...
     img_shape = img.shape
 
@@ -136,18 +139,28 @@ class ActiveVisionEnv(PyGameEnv):
     from skimage.util import img_as_float
     img = img_as_float(img)
 
+    def fast_resize(image, scale, multichannel):
+      # Old way:
+      #return rescale(image, scale, multichannel=multichannel)
+      # New way:
+      from PIL import Image
+      pili = Image.fromarray(image.astype('uint8'), 'RGB')
+      size = (int(image.shape[0] * scale), int(image.shape[1] * scale))
+      pili2 = pili.resize(size, Image.ANTIALIAS)
+      return pili2
+
     # Peripheral Image - downsize to get peripheral (lower resolution) image
-    self._img_periph = rescale(img, self.peripheral_scale, multichannel=multichannel)
+    self._img_periph = fast_resize(img, self.peripheral_scale, multichannel=multichannel)
 
     # Foveal Image - crop to fovea and rescale
     h, w, ch = img.shape[0], img.shape[1], img.shape[2]
     pixels_h = int(h * self.fov_fraction)
     pixels_w = int(w * self.fov_fraction)
     self._img_fov = img[self.gaze[1]:self.gaze[1] + pixels_h, self.gaze[0]:self.gaze[0] + pixels_w, :]
-    self._img_fov = rescale(self._img_fov, self.fov_scale, multichannel=multichannel)
+    self._img_fov = fast_resize(self._img_fov, self.fov_scale, multichannel=multichannel)
 
     # resize screen image before returning as observation
-    img = rescale(img, self.screen_scale, multichannel=multichannel)
+    img = fast_resize(img, self.screen_scale, multichannel=multichannel)
 
     # debugging
     if debug:
@@ -174,5 +187,8 @@ class ActiveVisionEnv(PyGameEnv):
       'full': self._img_full.astype(np.float32),#img.astype(np.float32),
       'fovea': self._img_fov.astype(np.float32),
       'peripheral': self._img_periph.astype(np.float32)}
+
+    #end = timer()
+    #print('Step obs: ', str(end - start)) # Time in seconds, e.g. 5.38091952400282
 
     return observation
