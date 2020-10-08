@@ -29,7 +29,7 @@ fi
 # cmd="docker run --privileged -it --rm --name=wm $GPU_STR --mount type=bind,source=$SRC_DIR,target=$TGT_DIR $IMG_NAME $@"
 
 
-cmd="docker run --privileged -it --rm --name=wm $GPU_STR -v $WM_SRC_DIR:$WM_TGT_DIR -v $CORE_SRC_DIR:$CORE_TGT_DIR $IMG_NAME $@"
+cmd="docker run --privileged -it --rm --name=wm $GPU_STR -e DISPLAY=$IP:0 -e XAUTHORITY=/.Xauthority -v /tmp/.X11-unix:/tmp/.X11-unix -v ~/.Xauthority:/.Xauthority -v $WM_SRC_DIR:$WM_TGT_DIR -v $CORE_SRC_DIR:$CORE_TGT_DIR $IMG_NAME $@"
 
 echo $cmd
 eval $cmd

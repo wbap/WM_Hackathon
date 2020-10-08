@@ -23,7 +23,36 @@ class PyGameEnv(gym.Env, ABC):
     self.display_screen = None
     self.use_wall_clock = False
     self.count = 0
+
+    print("------------ init -------------------------")
     pygame.init()
+
+    import os
+    drivers = ['x11', 'directfb', 'fbcon', 'svgalib']
+    found = False
+
+    def check_vd():
+      if not os.getenv('SDL_VIDEODRIVER'):
+        print("======== SDL_VIDEODRIVER not defined")
+      else:
+        print("======== SDL_VIDEODRIVER = ", os.getenv('SDL_VIDEODRIVER'))
+
+    check_vd()
+
+    for driver in drivers:
+      try:
+        os.environ['SDL_VIDEODRIVER'] = driver
+        check_vd()
+        pygame.display.init()
+      except pygame.error:
+        print('Driver: {0} failed.'.format(driver))
+        continue
+      found = True
+      break
+
+    if not found:
+      raise Exception('No suitable video driver found!')
+
 
     # NOTE: If pygame crashing with error:
     # ALSA lib pcm.c:7963:(snd_pcm_recover) underrun occurred
