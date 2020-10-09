@@ -22,6 +22,8 @@ from ray.rllib.utils.framework import try_import_torch
 
 torch, nn = try_import_torch()
 
+import gym_game
+
 """
 Create a simple RL agent. 
 The environment can be chosen. Both environment and agent are configurable.
@@ -39,6 +41,18 @@ env_name = sys.argv[1]
 print('Using Gym[PyGame] environment:', env_name)
 env_config_file = sys.argv[2]
 print('Env config file:', env_config_file)
+
+# Customize the environment
+def env_creator(env_name, env_config_file):
+  """Custom functor to create custom Gym environments."""
+  if env_name == 'simple-v0':
+    print('this one/...................')
+    from gym_game.envs import SimpleEnv as env
+  else:
+    raise NotImplementedError
+  return env(env_config_file)  # Instantiate with config file
+
+tune.register_env(env_name, lambda config: env_creator(env_name, env_config_file))
 env = gym.make(env_name, config_file=env_config_file)
 
 model_config_file = sys.argv[3]
@@ -82,21 +96,6 @@ if model_config_file is not None:
       print('Override key:', key, 'value:', value)
       config["model"][key] = value
 print('Final complete config: ', config)
-
-
-# Customize the environment
-def env_creator(env_name, env_config_file):
-  """Custom functor to create custom Gym environments."""
-  if env_name == 'simple-v0':
-    from gym_game.envs import SimpleEnv as env
-  else:
-    raise NotImplementedError
-  return env(env_config_file)  # Instantiate with config file
-
-
-# https://stackoverflow.com/questions/58551029/rllib-use-custom-registered-environments
-# tune.register_env(env_name, lambda: config, env_creator(env_name, env_config_file))
-tune.register_env(env_name, lambda config: env_creator(env_name, env_config_file))
 
 
 # Customize the model

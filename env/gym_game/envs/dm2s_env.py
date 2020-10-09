@@ -1,5 +1,5 @@
 
-
+import json
 import os
 import pygame as pygame
 from pygame.locals import *
@@ -44,23 +44,30 @@ class Dm2sEnv(FiniteStateEnv):
 
   # define global variables
   gParams = {}  # parameter dictionary
-  gVideoWidth = 800
-  gVideoHeight = 800
-  gColors = ["LB"]
-  gShapes = ["Barred_Ring", "Triangle", "Crescent", "Cross", "Circle", "Heart", "Pentagon", "Ring", "Square"]
+  # gVideoWidth = 800
+  # gVideoHeight = 800
+  # gColors = ["LB"]
+  # gShapes = ["Barred_Ring", "Triangle", "Crescent", "Cross", "Circle", "Heart", "Pentagon", "Ring", "Square"]
   #gShapes = ["Barred_Ring", "Triangle"]  # Reduced shape set for quicker learning
-  gCorrectFB = Rect(0, gVideoHeight - 80, gVideoWidth, 80)
-  gObservBar = Rect(0, 0, gVideoWidth, 80)
 
   def __init__(self, config_file=None):
     # obtain parameters from a file
     print('Env config file:', config_file)
-    with open(config_file) as f:
-      for line in f:
-        buf = line.strip().split(",")
-        self.gParams[buf[0]] = buf[1]
+    # with open(config_file) as f:
+    #   for line in f:
+    #     buf = line.strip().split(",")
+    #     self.gParams[buf[0]] = buf[1]
+    with open(config_file) as json_file:
+      self.gParams = json.load(json_file)
     print('D2MS gParams:', self.gParams)
     #self.image_dir = 'png'
+    self.gVideoWidth = self.gParams["videoWidth"]
+    self.gVideoHeight = self.gParams["videoHeight"]
+    self.gShapes = self.gParams["shapes"]
+    self.gColors = self.gParams["colors"]
+    self.gCorrectFB = Rect(0, self.gVideoHeight - 80, self.gVideoWidth, 80)
+    self.gObservBar = Rect(0, 0, self.gVideoWidth, 80)
+
     self.inter_flash = 400
     self.feedback_flash = 100
     self.image_dir = str(self.gParams["imageDir"])
