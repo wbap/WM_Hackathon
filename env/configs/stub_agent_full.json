@@ -1,7 +1,7 @@
 {
   "training":{
-    "training_steps":3,
-    "training_epochs":50,
+    "training_steps":30,
+    "training_epochs":500,
     "evaluation_steps":5,
     "evaluation_interval":2,
     "checkpoint_interval":-1
