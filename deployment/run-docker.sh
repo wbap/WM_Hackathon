@@ -1,12 +1,10 @@
 #!/bin/sh
 
 # usage: run-docker.sh [path to wm code] [boolean for GPU or not] [command and params to run in container]
-# e.g. ../deployment/run-docker.sh ~/Dev/wm_hack ~/Dev/cerenaut-pt-core False python train_stub_agent.py dm2s-v0 configs/dm2s_env.par configs/simple_agent_model.json
-# ../deployment/run-docker.sh ~/Dev/wm_hack ~/Dev/cerenaut-pt-core False python keyboard_agent.py dm2s-v0 configs/dm2s_env.par
-# ../deployment/run-docker.sh ~/Dev/wm_hack ~/Dev/cerenaut-pt-core False bash run_kb.sh
+# e.g.  ../deployment/run-docker.sh ~/Dev/WM_Hackathon ~/Dev/cerenaut-pt-core False bash run_kb.sh
 export WM_SRC_DIR=${1:-~/Dev/WM_Hackathon}
 export CORE_SRC_DIR=${2:-~/Dev/cerenaut-pt-core}
-export GPU=${3:-False}
+export GPU=${3:-false}
 
 shift
 shift
