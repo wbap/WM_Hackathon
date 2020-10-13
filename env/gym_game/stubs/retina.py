@@ -1,6 +1,7 @@
 import torch.nn as nn
 from .image_utils import *
 
+
 class Retina(nn.Module):
 
   config = {

@@ -3,9 +3,8 @@ import matplotlib.pyplot as plt
 import torch
 import torchvision
 from PIL import Image
-#from retina import Retina
-from gym_game.stubs import *
-#from gym_game.retina import Retina
+
+from gym_game.stubs.retina import Retina
 
 config = {
   'f_size': 7,
@@ -50,7 +49,7 @@ fig = plt.figure()
 
 ax = fig.add_subplot(1, 3, 1)
 imgplot = plt.imshow(img)
-ax.set_title('DoG+')
+ax.set_title('Original')
 
 ax = fig.add_subplot(1, 3, 2)
 imgplot = plt.imshow(dog_pos)
