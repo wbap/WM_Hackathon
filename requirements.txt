@@ -8,4 +8,4 @@ pillow~=7.2.0
 torchvision~=0.7.0
 ray==0.8.7
 matplotlib~=3.3.1
-scikit-image
+scikit-image~=0.16.2

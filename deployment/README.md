@@ -27,9 +27,10 @@ If you are using a Mac, you can easily create a conda environment to run the sof
 	- WM_Hackathon repository
 	- cerenaut-pt-core repository
 3. Running the code
+    - Navigate to the `/env` folder
     - All you need to do is pass a given command to the script `bash run-docker.sh` to run it in the container.
     - The full usage instructions are:
-`run-docker.sh [path to wm code] [boolean for GPU or not] [command and params to run in container]`
+    `run-docker.sh [path to wm code] [boolean for GPU or not] [command and params to run in container]`
 
     Examples:
 

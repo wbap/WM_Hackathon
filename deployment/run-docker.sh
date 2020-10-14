@@ -12,7 +12,7 @@ shift
 
 WM_TGT_DIR=/root/wm_hackathon
 CORE_TGT_DIR=/root/cerenaut-pt-core
-IMG_NAME=wbai/wm:latest
+IMG_NAME=cerenaut/wbai_wm_hackathon:latest
 
 if $GPU
 then
