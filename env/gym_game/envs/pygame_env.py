@@ -24,34 +24,39 @@ class PyGameEnv(gym.Env, ABC):
     self.use_wall_clock = False
     self.count = 0
 
-    print("------------ init -------------------------")
     pygame.init()
 
-    import os
-    drivers = ['x11', 'directfb', 'fbcon', 'svgalib']
-    found = False
+    # Probe what is happening with initiating the video device
+    # This is useful for debugging the issue with Mac and Docker (and PyGame's SDL) - a perfect storm
+    mac_debug = False
+    if mac_debug:
+      print("------------ init -------------------------")
 
-    def check_vd():
-      if not os.getenv('SDL_VIDEODRIVER'):
-        print("======== SDL_VIDEODRIVER not defined")
-      else:
-        print("======== SDL_VIDEODRIVER = ", os.getenv('SDL_VIDEODRIVER'))
+      import os
+      drivers = ['x11', 'directfb', 'fbcon', 'svgalib']
+      found = False
 
-    check_vd()
+      def check_vd():
+        if not os.getenv('SDL_VIDEODRIVER'):
+          print("======== SDL_VIDEODRIVER not defined")
+        else:
+          print("======== SDL_VIDEODRIVER = ", os.getenv('SDL_VIDEODRIVER'))
 
-    for driver in drivers:
-      try:
-        os.environ['SDL_VIDEODRIVER'] = driver
-        check_vd()
-        pygame.display.init()
-      except pygame.error:
-        print('Driver: {0} failed.'.format(driver))
-        continue
-      found = True
-      break
+      check_vd()
 
-    if not found:
-      raise Exception('No suitable video driver found!')
+      for driver in drivers:
+        try:
+          os.environ['SDL_VIDEODRIVER'] = driver
+          check_vd()
+          pygame.display.init()
+        except pygame.error:
+          print('Driver: {0} failed.'.format(driver))
+          continue
+        found = True
+        break
+
+      if not found:
+        raise Exception('No suitable video driver found!')
 
 
     # NOTE: If pygame crashing with error:

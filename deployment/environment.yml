@@ -20,6 +20,6 @@ dependencies:
     - tabulate==0.8.7
     - lz4==3.1.0
     - opencv-python==4.4.0.44
-    - tensorboard==1.15.0
+    - tensorboard==2.3.0
     
 
