@@ -10,22 +10,19 @@
 	- cerenaut-pt-core [repository](https://github.com/Cerenaut/cerenaut-pt-core)
 
 ## Background
-
 The WM_Hackathon project contains a basic agent that can solve the match the sample task. It is provided as a basis for improved agents.
 This deployment solution allows you to run the software on any machine running docker. The environment is set up for you already. 
 You will have a local copy of the code for development with your preferred tools. It will be mounted inside the container for running.
-
 
 There is a Docker Image called wb_wm_hackathon available on Docker Hub. It contains te environment setup to run the software. 
 When you run a command using the scripts in this folder, the Image will be automatically downloaded, cached on your local machine, and used to create a container. Your commands will then be run inside the container.
 
 The container allows you to utilise the GPU if your machine has one.
-It will also by default, utilise X11 on your machine to display the GUI. Note that this is not supported for Macs.
+It will also by default, utilise X11 on your machine to display the GUI, which is relevant when you want to play the game as a human and see the screen (as opposed to letting the agent play the game without displaying anything to the user). Note that this is not supported for Macs. 
 If you are using a Mac, you can easily create a conda environment to run the software (more below)
 
 
 ## Getting Started
-
 1. Clone the code
 	- WM_Hackathon repository
 	- cerenaut-pt-core repository
@@ -34,14 +31,20 @@ If you are using a Mac, you can easily create a conda environment to run the sof
     - The full usage instructions are:
 `run-docker.sh [path to wm code] [boolean for GPU or not] [command and params to run in container]`
 
+    Examples:
 
-Examples:
+    `../deployment/run-docker.sh ~/Dev/WM_Hackathon ~/Dev/cerenaut-pt-core False python keyboard_agent.py m2s-v0 configs/m2s_env.json`
 
-`../deployment/run-docker.sh ~/Dev/WM_Hackathon ~/Dev/cerenaut-pt-core False python keyboard_agent.py m2s-v0 configs/m2s_env.json`
+    `../deployment/run-docker.sh ~/Dev/WM_Hackathon ~/Dev/cerenaut-pt-core False python train_stub_agent.py m2s-v0 configs/m2s_env.json configs/stub_model_full.json configs/stub_agent_full.json` 
 
-`../deployment/run-docker.sh ~/Dev/WM_Hackathon ~/Dev/cerenaut-pt-core False python train_stub_agent.py m2s-v0 configs/m2s_env.json configs/stub_model_full.json configs/stub_agent_full.json` 
-
-
+4. Development
+    - While running the code, you can monitor and debug using Tensorboard. 
+    - The host port `localhost:6006` is mapped to `6006` in the container, which is the default port for Tensorboard.
+    - You will need to run Tensorboard first, which can be accomplished by getting a shell in the container.
+    - See Docker documentation. In brief:
+        - see which containers are running with `docker ps`
+        - copy the container ID, then
+        - `docker exec -it [container ID] bash`
 
 ## Custom Container
 You can modify and build your own dev environment.
@@ -49,7 +52,6 @@ First modify the Dockerfile to your spec.
 Then use the script `build-docker.sh [image name]` to build a local copy of the image.
 
 You can then modify the `run-docker.sh` script to refer to your custom image name, and run as above.
-
 
 # Conda environment for display of GUI on a Mac
 
