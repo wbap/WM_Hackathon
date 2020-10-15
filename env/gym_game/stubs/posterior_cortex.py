@@ -2,6 +2,7 @@ import torch.nn as nn
 from cerenaut_pt_core.components.sparse_autoencoder import SparseAutoencoder
 
 from .image_utils import *
+from .positional_encoder import PositionalEncoder
 from .retina import *
 
 
@@ -16,8 +17,6 @@ class PosteriorCortex(nn.Module):
 
   MODULE_RETINA = 'retina'
   MODULE_CORTEX = 'cortex'
-
-  config = {}
 
   @staticmethod
   def get_default_config():  #input_config):

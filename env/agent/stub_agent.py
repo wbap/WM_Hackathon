@@ -21,12 +21,6 @@ import ray.rllib.agents.ppo as ppo
 from ray.rllib.utils.framework import try_import_torch
 
 
-# from utils.medial_temporal_lobe import MedialTemporalLobe
-# from utils.positional_encoding import PositionalEncoder
-# from utils.prefrontal_cortex import PrefrontalCortex
-# from utils.retina import Retina
-# from utils.superior_colliculus import SuperiorColliculus
-
 torch, nn = try_import_torch()
 
 # default config
@@ -59,7 +53,8 @@ class StubPreprocessor(Preprocessor):
   def transform(self, observation):
     tx = np.zeros((10,10,10))
     #tx = observation
-    return tx # return the preprocessed observation
+    return tx  # return the preprocessed observation
+
 
 class StubAgent(TorchModelV2, nn.Module):
   """PyTorch custom model that flattens the input to 1d and delegates to a fc-net."""
@@ -78,29 +73,6 @@ class StubAgent(TorchModelV2, nn.Module):
     TorchModelV2.__init__(self, flat_observation_space, action_space, num_outputs, model_config, name)
     nn.Module.__init__(self)
     self.torch_sub_model = TorchFC(flat_observation_space, action_space, num_outputs, model_config, name)
-
-    # # create the stubbed sub-modules of the simple agent
-    # self._build()
-
-  # def _build(self):
-  #   retina = Retina(1, config=None)
-  #   self.add_module('retina', retina)
-
-  #   pe_config = self.custom_model_config["positional_encoding"]
-  #   pe = PositionalEncoder(config=pe_config)
-  #   self.add_module('pe', pe)
-
-  #   mtl_config = self.custom_model_config["mtl"]
-  #   mtl = MedialTemporalLobe(config=mtl_config)
-  #   self.add_module('mtl', mtl)
-
-  #   pfc_config = self.custom_model_config["pfc"]
-  #   pfc = PrefrontalCortex(config=pfc_config)
-  #   self.add_module('pfc', pfc)
-
-  #   sc_config = self.custom_model_config["sc"]
-  #   sc = SuperiorColliculus(config=sc_config)
-  #   self.add_module('sc', sc)
 
   def forward(self, input_dict, state, seq_lens):
     # flatten

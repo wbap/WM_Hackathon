@@ -8,12 +8,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pygame as pygame
 
-from gym_game.stubs.retina import Retina
+from gym_game.stubs.positional_encoder import PositionalEncoder
 from gym_game.stubs.posterior_cortex import PosteriorCortex
-# from utils.medial_temporal_lobe import MedialTemporalLobe
-# from utils.positional_encoding import PositionalEncoder
-# from utils.prefrontal_cortex import PrefrontalCortex
-# from utils.superior_colliculus import SuperiorColliculus
 from gym_game.stubs.image_utils import *
 
 from ray.rllib.utils.framework import try_import_torch
@@ -23,36 +19,25 @@ torch, nn = try_import_torch()
   Wraps a task-specific environment and implements brain modules that are not trained by Reinforcement Learning.
 """
 
+
 class StubAgentEnv(gym.Env):
 
   # Streams
   OBS_FOVEA = 'fovea'
   OBS_PERIPHERAL = 'peripheral'
+  OBS_POSITIONAL_ENCODING = 'positional-encoding'
   NUM_OBS = 2
-
-  # default config
-  # default_config = {
-  #   "retina": {
-  #     'f_size': 7,
-  #     'f_sigma': 2.0,
-  #     'f_k': 1.6  # approximates Laplacian of Gaussian
-  #   },
-  #   "positional_encoding": {},
-  #   "vc_fovea": {},
-  #   "vc_periphery": {},
-  #   "mtl": {},
-  #   "sc": {},
-  #   "pfc": {}
-  # }
 
   @staticmethod
   def get_default_config():
+    pe_config = PositionalEncoder.get_default_config()
     cortex_f_config = PosteriorCortex.get_default_config()
     cortex_p_config = PosteriorCortex.get_default_config()
     agent_config = {
-      'obs_keys':[StubAgentEnv.OBS_FOVEA, StubAgentEnv.OBS_PERIPHERAL],
+      'obs_keys': [StubAgentEnv.OBS_FOVEA, StubAgentEnv.OBS_PERIPHERAL, StubAgentEnv.OBS_POSITIONAL_ENCODING],
       StubAgentEnv.OBS_FOVEA: cortex_f_config,
-      StubAgentEnv.OBS_PERIPHERAL: cortex_p_config
+      StubAgentEnv.OBS_PERIPHERAL: cortex_p_config,
+      StubAgentEnv.OBS_POSITIONAL_ENCODING: pe_config
     }
     return agent_config
 
@@ -77,9 +62,26 @@ class StubAgentEnv(gym.Env):
       delta_config = json.load(json_file)
       self._config = self.update_config(default_config, delta_config)
 
-    obs_keys = self._config['obs_keys'] #[self.OBS_FOVEA, self.OBS_PERIPHERAL]
+    print("=======================> CONFIG IS: ", self._config)
+
+    self._use_pe = False
+    if not self._use_pe:
+      try:
+        self._config['obs_keys'].remove(StubAgentEnv.OBS_POSITIONAL_ENCODING)
+        print('DISABLED - Positional Encoding')
+      except ValueError:
+        print('Positional Encoding already disabled')
+
+    # positional encoding
+    if self._use_pe:
+      obs_key = self.OBS_POSITIONAL_ENCODING
+      input_shape = self.create_input_shape(env_observation_space, obs_key)
+      self._build_positional_encoder(input_shape)
+
+    # visual processing - create a parietal cortex for fovea and periphery
+    obs_visual_keys = [self.OBS_FOVEA, self.OBS_PERIPHERAL]
     self.modules = {}
-    for obs_key in obs_keys:
+    for obs_key in obs_visual_keys:
       input_shape = self.create_input_shape(env_observation_space, obs_key)
       config = self._config[obs_key]
       cortex = PosteriorCortex(obs_key, input_shape, config)
@@ -111,7 +113,8 @@ class StubAgentEnv(gym.Env):
 
     # Build the new observation space dict from the cortically processed streams
     obs_dict = {}
-    for obs_key in obs_keys:
+    for obs_key in self._config['obs_keys']:
+      print("------------- obs_key: ", obs_key)
       cortex = self.modules[obs_key]
       output_shape = cortex.get_output_shape()
       obs_shape = self.create_observation_shape(output_shape)   
@@ -149,7 +152,7 @@ class StubAgentEnv(gym.Env):
     c = network_shape[1]
     h = network_shape[2]
     w = network_shape[3]
-    observation_shape = [c,h,w]
+    observation_shape = [c, h, w]
     return observation_shape
 
   def reset(self):
@@ -157,17 +160,33 @@ class StubAgentEnv(gym.Env):
     obs = self.env.reset()
     return self.forward(obs)
 
+  def _build_positional_encoder(self, input_shape):
+    obs_key = self.OBS_POSITIONAL_ENCODING
+    config = self._config[obs_key]
+    pe = PositionalEncoder("positional-encoder", input_shape, config)
+    self.modules[obs_key] = pe
+
   def forward(self, observation):
     #print('-----------Obs old', observation)
     #obs_keys = [self.OBS_FOVEA, self.OBS_PERIPHERAL]
     obs_keys = self._config['obs_keys'] #[self.OBS_FOVEA, self.OBS_PERIPHERAL]
 
+    # process foveal and peripheral parietal cortex
     obs_dict = {}
     for obs_key in obs_keys:
       cortex = self.modules[obs_key]
       input_tensor = self.obs_to_tensor(observation, obs_key)
       encoding_tensor, decoding, target = cortex.forward(input_tensor)
       self.tensor_to_obs(encoding_tensor, obs_dict, obs_key)
+
+    # process positional encoding
+    if self._use_pe:
+      obs_key = self.OBS_POSITIONAL_ENCODING
+      pe = self.modules[obs_key]
+      input_tensor = self.obs_to_tensor(observation, obs_key)
+      pe_output = pe.forward(input_tensor)
+      self.tensor_to_obs(pe_output, obs_dict, obs_key)
+
     return obs_dict
 
   #return output_f, output_p

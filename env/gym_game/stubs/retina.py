@@ -4,12 +4,6 @@ from .image_utils import *
 
 class Retina(nn.Module):
 
-  config = {
-    'f_size': 7,
-    'f_sigma': 2.0,
-    'f_k': 1.6  # approximates Laplacian of Gaussian
-  }
-
   @staticmethod
   def get_default_config():
     config = {

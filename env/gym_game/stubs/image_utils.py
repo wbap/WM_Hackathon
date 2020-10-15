@@ -13,19 +13,19 @@ def mergedicts(dict1, dict2):
   for k in set(dict1.keys()).union(dict2.keys()):
     if k in dict1 and k in dict2:
       if isinstance(dict1[k], dict) and isinstance(dict2[k], dict):
-        yield (k, dict(mergedicts(dict1[k], dict2[k])))
+        yield k, dict(mergedicts(dict1[k], dict2[k]))
       else:
         # If one of the values is not a dict, you can't continue merging it.
         # Value from second dict overrides one in first and we move on.
-        yield (k, dict2[k])
+        yield k, dict2[k]
         # Alternatively, replace this with exception raiser to alert you of value conflicts
     elif k in dict1:
-      yield (k, dict1[k])
+      yield k, dict1[k]
     else:
-      yield (k, dict2[k])
+      yield k, dict2[k]
+
 
 # TODO: add appropriate padding so that the filtered image is the correct size
-
 def conv2d_output_shape(h_w, kernel_size=1, stride=1, pad=0, dilation=1):
   """
   Utility function for computing output of convolutions
@@ -37,6 +37,7 @@ def conv2d_output_shape(h_w, kernel_size=1, stride=1, pad=0, dilation=1):
   h = floor( ((h_w[0] + (2 * pad) - ( dilation * (kernel_size[0] - 1) ) - 1 )/ stride) + 1)
   w = floor( ((h_w[1] + (2 * pad) - ( dilation * (kernel_size[1] - 1) ) - 1 )/ stride) + 1)
   return h, w
+
 
 def gaussian_kernel(size, stddev):
   if size % 2 == 0:
