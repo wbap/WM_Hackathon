@@ -34,9 +34,11 @@ If you are using a Mac, you can easily create a conda environment to run the sof
 
     Examples:
 
-    `../deployment/run-docker.sh ~/Dev/WM_Hackathon ~/Dev/cerenaut-pt-core False python keyboard_agent.py m2s-v0 configs/m2s_env.json`
+    `../deployment/run-docker.sh ~/Dev/WM_Hackathon ~/Dev/cerenaut-pt-core false python keyboard_agent.py m2s-v0 configs/m2s_env.json`
 
-    `../deployment/run-docker.sh ~/Dev/WM_Hackathon ~/Dev/cerenaut-pt-core False python train_stub_agent.py m2s-v0 configs/m2s_env.json configs/stub_model_full.json configs/stub_agent_full.json` 
+    `../deployment/run-docker.sh ~/Dev/WM_Hackathon ~/Dev/cerenaut-pt-core false python train_stub_agent.py m2s-v0 configs/m2s_env.json configs/stub_model_full.json configs/stub_agent_full.json` 
+
+    NOTE: If you are on Ubuntu, you'll need to use `sudo`
 
 4. Development
     - While running the code, you can monitor and debug using Tensorboard. 
