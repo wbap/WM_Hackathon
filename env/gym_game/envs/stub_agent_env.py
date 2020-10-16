@@ -161,8 +161,9 @@ class StubAgentEnv(gym.Env):
   def _build_positional_encoder(self, obs_spaces_dict):
     obs_key = self.OBS_POSITIONAL_ENCODING
     input_shape = self.create_input_shape_pe(self.env_observation_space, obs_key)
+    screen_shape = self.get_screen_shape()
     config = self._config[obs_key]
-    pe = PositionalEncoder(obs_key, input_shape, config)
+    pe = PositionalEncoder(obs_key, input_shape, config, max_xy=(screen_shape[0], screen_shape[1]))
     self.modules[obs_key] = pe
 
     output_shape = pe.get_output_shape()

@@ -10,21 +10,19 @@ class PositionalEncoder(nn.Module):
   @staticmethod
   def get_default_config():
     config = {
-      'dims': 10,
-      'max_x': 100,     # TODO this must be max number of pixels, better if it can be computed
-      'max_y': 100
+      'dims': 10
     }
     return config
 
-  def __init__(self, name, input_shape, config):
+  def __init__(self, name, input_shape, config, max_xy):
     super().__init__()
 
     self._name = name
     self._input_shape = input_shape
     self._config = config
-    self._output_shape = self._build()
+    self._output_shape = self._build(max_xy)
 
-  def _build(self):
+  def _build(self, max_xy):
     """
     # input = gaze x, y
     # output = position
@@ -33,12 +31,10 @@ class PositionalEncoder(nn.Module):
     """
 
     dims = self._config['dims']
-    max_x = self._config['max_x']
-    max_y = self._config['max_y']
 
     # create constant 'pe' matrix with values dependant on pos (pixel position) and number of dimensions (i)
 
-    max_lengths = {'x': max_x, 'y': max_y}
+    max_lengths = {'x': max_xy[0], 'y': max_xy[1]}
     pe = {}
     for key, mx in max_lengths.items():
       pe[key] = torch.zeros(mx, dims)
@@ -54,8 +50,8 @@ class PositionalEncoder(nn.Module):
     return output_shape
 
   def forward(self, xy_tensor):
-    x = xy_tensor[0]
-    y = xy_tensor[1]
+    x = xy_tensor[0][0]
+    y = xy_tensor[0][1]
     pe_x = Variable(self.pe_x[x, :], requires_grad=False).cuda()
     pe_y = Variable(self.pe_y[y, :], requires_grad=False).cuda()
     return pe_x, pe_y
