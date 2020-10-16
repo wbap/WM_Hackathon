@@ -1,7 +1,9 @@
 {
-  "obs_keys":["full"],
+  "obs_keys": {
+    "visual_obs_keys": ["full"]
+  },
   "full": {
-    "load":"data/pretrain/full.pt",
+    "load": "data/pretrain/full.pt",
     "retina": {
       "f_size": 7,
       "f_sigma": 2.0,

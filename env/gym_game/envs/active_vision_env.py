@@ -89,10 +89,12 @@ class ActiveVisionEnv(PyGameEnv):
     full = spaces.Box(low=0, high=255, shape=full_shape, dtype=np.uint8)
     fovea = spaces.Box(low=0, high=1.0, shape=fovea_shape, dtype=np.float32)
     peripheral = spaces.Box(low=0, high=1.0, shape=peripheral_shape, dtype=np.float32)
+    gaze = spaces.Box(low=np.array([0.0, 0.0]), high=np.array([screen_width, screen_height]), dtype=np.float32)
     self.observation_space = spaces.Dict({
       'full': full,
       'fovea': fovea,
-      'peripheral': peripheral})
+      'peripheral': peripheral,
+      'gaze': gaze})
 
   def get_full_observation_shape(self):
     h = self.screen_shape[0]
@@ -184,9 +186,11 @@ class ActiveVisionEnv(PyGameEnv):
 
     # Assemble dict
     observation = {
-      'full': self._img_full.astype(np.float32),#img.astype(np.float32),
+      'full': self._img_full.astype(np.float32),
       'fovea': self._img_fov.astype(np.float32),
-      'peripheral': self._img_periph.astype(np.float32)}
+      'peripheral': self._img_periph.astype(np.float32),
+      'gaze': self.gaze.astype(np.float32)
+    }
 
     #end = timer()
     #print('Step obs: ', str(end - start)) # Time in seconds, e.g. 5.38091952400282

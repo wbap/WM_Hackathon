@@ -50,7 +50,7 @@ class PositionalEncoder(nn.Module):
       pe[key] = pe[key].unsqueeze(0)
       self.register_buffer('pe_' + key, pe[key])
 
-    output_shape = (self._config['dims'])
+    output_shape = [-1, self._config['dims']]
     return output_shape
 
   def forward(self, xy_tensor):

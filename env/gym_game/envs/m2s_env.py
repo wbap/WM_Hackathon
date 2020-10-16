@@ -14,6 +14,7 @@ from .pygame_env import PyGameEnv
 from .finite_state_env import FiniteStateEnv
 from .dm2s_env import Dm2sEnv
 
+
 class M2sEnv(Dm2sEnv):
 
   def __init__(self, config_file=None):

@@ -25,7 +25,7 @@ class StubAgentEnv(gym.Env):
   # Streams
   OBS_FOVEA = 'fovea'
   OBS_PERIPHERAL = 'peripheral'
-  OBS_POSITIONAL_ENCODING = 'positional-encoding'
+  OBS_POSITIONAL_ENCODING = 'gaze'
   NUM_OBS = 2
 
   @staticmethod
@@ -34,7 +34,10 @@ class StubAgentEnv(gym.Env):
     cortex_f_config = PosteriorCortex.get_default_config()
     cortex_p_config = PosteriorCortex.get_default_config()
     agent_config = {
-      'obs_keys': [StubAgentEnv.OBS_FOVEA, StubAgentEnv.OBS_PERIPHERAL, StubAgentEnv.OBS_POSITIONAL_ENCODING],
+      'obs_keys': {
+        'visual_obs_keys': [StubAgentEnv.OBS_FOVEA, StubAgentEnv.OBS_PERIPHERAL],
+        'pe_obs_keys': [StubAgentEnv.OBS_POSITIONAL_ENCODING]
+      },
       StubAgentEnv.OBS_FOVEA: cortex_f_config,
       StubAgentEnv.OBS_PERIPHERAL: cortex_p_config,
       StubAgentEnv.OBS_POSITIONAL_ENCODING: pe_config
@@ -54,7 +57,7 @@ class StubAgentEnv(gym.Env):
     self.env = gym.make(env_type, config_file=env_config_file)
     #self.env = env_type(env_config_file)
     self.action_space = self.env.action_space
-    env_observation_space = self.env.observation_space
+    self.env_observation_space = self.env.observation_space
 
     # Build networks to preprocess the observation space
     default_config = self.get_default_config()  # TODO make this override
@@ -64,66 +67,40 @@ class StubAgentEnv(gym.Env):
 
     print("=======================> CONFIG IS: ", self._config)
 
-    self._use_pe = False
-    if not self._use_pe:
-      try:
-        self._config['obs_keys'].remove(StubAgentEnv.OBS_POSITIONAL_ENCODING)
-        print('DISABLED - Positional Encoding')
-      except ValueError:
-        print('Positional Encoding already disabled')
+    # gather all obs keys
+    self._obs_keys = []
+    for obs_keys_key in self._config['obs_keys'].keys():
+      for obs_key in self._config['obs_keys'][obs_keys_key]:
+        self._obs_keys += obs_key
+
+    # build all the components, and add the observation spaces to obs_spaces_dict
+    obs_spaces_dict = {}
+    self.modules = {}
 
     # positional encoding
+    self._use_pe = "pe_obs_keys" in self._config["obs_keys"]
     if self._use_pe:
-      obs_key = self.OBS_POSITIONAL_ENCODING
-      input_shape = self.create_input_shape(env_observation_space, obs_key)
-      self._build_positional_encoder(input_shape)
+      self._build_positional_encoder(obs_spaces_dict)
 
     # visual processing - create a parietal cortex for fovea and periphery
-    obs_visual_keys = [self.OBS_FOVEA, self.OBS_PERIPHERAL]
-    self.modules = {}
-    for obs_key in obs_visual_keys:
-      input_shape = self.create_input_shape(env_observation_space, obs_key)
-      config = self._config[obs_key]
-      cortex = PosteriorCortex(obs_key, input_shape, config)
-      self.modules[obs_key] = cortex
+    self._use_visual = "visual_obs_keys" in self._config["obs_keys"]
+    if self._use_visual:
+      self._build_visual_stream(obs_spaces_dict)
 
-    # input_config = {}
-    # for stream in streams:
-    #   env_obs = env_observation_space[stream]
-    #   c_in = env_obs.shape[0]
-    #   h = env_obs.shape[1]
-    #   w = env_obs.shape[2]
-    #   input_config[stream] = [-1, c_in, h, w]
-    #   print('input config[',stream,':',input_config[stream])
+    # the new observation space dict from the processed streams
+    self.observation_space = spaces.Dict(obs_spaces_dict)
 
-    ############################################
-    #channels = 3
-    #self.retina = Retina(channels, config=None)
-    #self.module.add_module('retina', self.retina)
-    # c_in = obs_fovea.shape[0]
-    # h = obs_fovea.shape[1]
-    # w = obs_fovea.shape[2]
-    # fovea_output_size = self.retina.get_output_shape(h, w)
-    # c_out = 2 * channels  # because 2x 3 channels (+/-)
-    # print('>>>>>>>>>>>>>>>>>>fovea fovea_output_size = ', fovea_output_size)
-    # obs_shape_fovea = [6,34,34]#obs_fovea.shape
-    # obs_space_fovea = spaces.Box(low=-math.inf, high=math.inf, shape=obs_shape_fovea, dtype=np.float32)
-    #self.observation_space = obs_space_fovea
-    ############################################
+  def reset(self):
+    #print('>>>>>>>>>>> Stub reset')
+    obs = self.env.reset()
+    return self.forward(obs)
 
-    # Build the new observation space dict from the cortically processed streams
-    obs_dict = {}
-    for obs_key in self._config['obs_keys']:
-      print("------------- obs_key: ", obs_key)
-      cortex = self.modules[obs_key]
-      output_shape = cortex.get_output_shape()
-      obs_shape = self.create_observation_shape(output_shape)   
-      obs_space = self.create_observation_space(obs_shape)
-      obs_dict[obs_key] = obs_space
-    self.observation_space = spaces.Dict(obs_dict)
+  # -------------------------------------- Building Regions --------------------------------------
+  # ------------ Visual Streams
 
   @staticmethod
-  def create_input_shape(env_observation_space, env_obs_key):
+  def create_input_shape_visual(env_observation_space, env_obs_key):
+    """ Convert from observation space to PyTorch tensor """
     env_obs = env_observation_space[env_obs_key]
     c_in = env_obs.shape[0]
     h = env_obs.shape[1]
@@ -131,23 +108,15 @@ class StubAgentEnv(gym.Env):
     input_shape = [-1, c_in, h, w]
     return input_shape
 
-  # @staticmethod
-  # def create_input_config(self, env_observation_space, env_observation_keys):
-  #   input_config = {}
-  #   for env_observation_key in env_observation_keys:
-  #     env_obs = env_observation_space[env_observation_key]
-  #     c_in = env_obs.shape[0]
-  #     h = env_obs.shape[1]
-  #     w = env_obs.shape[2]
-  #     input_config[env_observation_key] = [-1, c_in, h, w]
-  #     print('input config[',env_observation_key,':',input_config[env_observation_key])
-  #   return input_config
-
-  def create_observation_space(self, observation_shape):
+  @staticmethod
+  def create_observation_space_visual(observation_shape):
+    """ Convert from observation shape to space"""
     observation_space = spaces.Box(low=-math.inf, high=math.inf, shape=observation_shape, dtype=np.float32)
     return observation_space
 
-  def create_observation_shape(self, network_shape):
+  @staticmethod
+  def create_observation_shape_visual(network_shape):
+    """ Convert from PyTorch tensor to observation shape """
     b = network_shape[0]
     c = network_shape[1]
     h = network_shape[2]
@@ -155,29 +124,66 @@ class StubAgentEnv(gym.Env):
     observation_shape = [c, h, w]
     return observation_shape
 
-  def reset(self):
-    #print('>>>>>>>>>>> Stub reset')
-    obs = self.env.reset()
-    return self.forward(obs)
+  def _build_visual_stream(self, obs_spaces_dict):
+    for obs_key in self._config["obs_keys"]["visual_obs_keys"]:
+      input_shape = self.create_input_shape_visual(self.env_observation_space, obs_key)
+      config = self._config[obs_key]
+      cortex = PosteriorCortex(obs_key, input_shape, config)
+      self.modules[obs_key] = cortex
 
-  def _build_positional_encoder(self, input_shape):
+      output_shape = cortex.get_output_shape()
+      obs_shape = self.create_observation_shape_visual(output_shape)
+      obs_space = self.create_observation_space_visual(obs_shape)
+      obs_spaces_dict.update({obs_key: obs_space})
+
+  # ------------ Positional Encoding
+  @staticmethod
+  def create_input_shape_pe(env_observation_space, env_obs_key):
+    """ Convert from observation space to PyTorch tensor """
+    env_obs = env_observation_space[env_obs_key]
+    gaze_shape = env_obs.shape[0]   # 1 dimensional list, with length 2 for x and y
+    input_shape = [-1, gaze_shape]
+    return input_shape
+
+  @staticmethod
+  def create_observation_space_pe(observation_shape):
+    """ Convert from observation shape to space"""
+    observation_space = spaces.Box(low=-math.inf, high=math.inf, shape=observation_shape, dtype=np.float32)
+    return observation_space
+
+  @staticmethod
+  def create_observation_shape_pe(network_shape):
+    """ Convert from PyTorch tensor to observation shape """
+    b = network_shape[0]
+    xy = network_shape[1]
+    observation_shape = [xy]
+    return observation_shape
+
+  def _build_positional_encoder(self, obs_spaces_dict):
     obs_key = self.OBS_POSITIONAL_ENCODING
+    input_shape = self.create_input_shape_pe(self.env_observation_space, obs_key)
     config = self._config[obs_key]
-    pe = PositionalEncoder("positional-encoder", input_shape, config)
+    pe = PositionalEncoder(obs_key, input_shape, config)
     self.modules[obs_key] = pe
 
+    output_shape = pe.get_output_shape()
+    obs_shape = self.create_observation_shape_pe(output_shape)
+    obs_space = self.create_observation_space_pe(obs_shape)
+    obs_spaces_dict.update({obs_key: obs_space})
+
+  # -----------------------------------------------------------------------------------------------
+
   def forward(self, observation):
-    #print('-----------Obs old', observation)
-    #obs_keys = [self.OBS_FOVEA, self.OBS_PERIPHERAL]
-    obs_keys = self._config['obs_keys'] #[self.OBS_FOVEA, self.OBS_PERIPHERAL]
+    print('-----------Obs old', observation)
 
     # process foveal and peripheral parietal cortex
     obs_dict = {}
-    for obs_key in obs_keys:
-      cortex = self.modules[obs_key]
-      input_tensor = self.obs_to_tensor(observation, obs_key)
-      encoding_tensor, decoding, target = cortex.forward(input_tensor)
-      self.tensor_to_obs(encoding_tensor, obs_dict, obs_key)
+    if self._use_visual:
+      for obs_key in self._config["obs_keys"]["visual_obs_keys"]:
+        cortex = self.modules[obs_key]
+        input_tensor = self.obs_to_tensor(observation, obs_key)
+        encoding_tensor, decoding, target = cortex.forward(input_tensor)
+        self.tensor_to_obs(encoding_tensor, obs_dict, obs_key)
 
     # process positional encoding
     if self._use_pe:
@@ -188,20 +194,6 @@ class StubAgentEnv(gym.Env):
       self.tensor_to_obs(pe_output, obs_dict, obs_key)
 
     return obs_dict
-
-  #return output_f, output_p
-  # obs_fovea = torch.tensor(observation['fovea'])
-  # obs_fovea = torch.unsqueeze(obs_fovea, 0)  # insert batch dimension 0
-  # print('!!!!!!!!!!!!!!!!! fovea shape:', obs_fovea.shape)
-  # #dog_pos_fovea, dog_neg_fovea = self.retina(obs_fovea)
-  # # dog_pos_fovea = dog_pos_fovea.to(device)
-  # # dog_neg_fovea = dog_neg_fovea.to(device)
-  # #print('dog shape:', dog_pos_fovea.shape)
-  # #retina_fovea = torch.cat([dog_pos_fovea, dog_neg_fovea], 1)
-  # retina_fovea = torch.squeeze(retina_fovea).detach().numpy()  # remove batch dim
-  # print('>>>>>>> final obs shape:', retina_fovea.shape)
-  #print('-----------Obs new', tx_observation)
-  #return retina_fovea
 
   def tensor_to_obs(self, output, obs_dict, obs_key):
     #print('output is', output)
@@ -266,3 +258,4 @@ class StubAgentEnv(gym.Env):
 
   def render(self, mode='human', close=False):
     return self.env.render(mode, close)
+
