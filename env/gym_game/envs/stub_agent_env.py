@@ -35,8 +35,7 @@ class StubAgentEnv(gym.Env):
     cortex_p_config = PosteriorCortex.get_default_config()
     agent_config = {
       'obs_keys': {
-        'visual_obs_keys': [StubAgentEnv.OBS_FOVEA, StubAgentEnv.OBS_PERIPHERAL],
-        'pe_obs_keys': [StubAgentEnv.OBS_POSITIONAL_ENCODING]
+        'visual': [StubAgentEnv.OBS_FOVEA, StubAgentEnv.OBS_PERIPHERAL]
       },
       StubAgentEnv.OBS_FOVEA: cortex_f_config,
       StubAgentEnv.OBS_PERIPHERAL: cortex_p_config,
@@ -78,12 +77,12 @@ class StubAgentEnv(gym.Env):
     self.modules = {}
 
     # positional encoding
-    self._use_pe = "pe_obs_keys" in self._config["obs_keys"]
+    self._use_pe = "pe" in self._config["obs_keys"]
     if self._use_pe:
       self._build_positional_encoder(obs_spaces_dict)
 
     # visual processing - create a parietal cortex for fovea and periphery
-    self._use_visual = "visual_obs_keys" in self._config["obs_keys"]
+    self._use_visual = "visual" in self._config["obs_keys"]
     if self._use_visual:
       self._build_visual_stream(obs_spaces_dict)
 
@@ -125,7 +124,7 @@ class StubAgentEnv(gym.Env):
     return observation_shape
 
   def _build_visual_stream(self, obs_spaces_dict):
-    for obs_key in self._config["obs_keys"]["visual_obs_keys"]:
+    for obs_key in self._config["obs_keys"]["visual"]:
       input_shape = self.create_input_shape_visual(self.env_observation_space, obs_key)
       config = self._config[obs_key]
       cortex = PosteriorCortex(obs_key, input_shape, config)
@@ -179,7 +178,7 @@ class StubAgentEnv(gym.Env):
     # process foveal and peripheral parietal cortex
     obs_dict = {}
     if self._use_visual:
-      for obs_key in self._config["obs_keys"]["visual_obs_keys"]:
+      for obs_key in self._config["obs_keys"]["visual"]:
         cortex = self.modules[obs_key]
         input_tensor = self.obs_to_tensor(observation, obs_key)
         encoding_tensor, decoding, target = cortex.forward(input_tensor)
