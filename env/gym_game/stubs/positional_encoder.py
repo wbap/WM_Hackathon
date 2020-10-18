@@ -46,15 +46,22 @@ class PositionalEncoder(nn.Module):
       pe[key].unsqueeze(0)
       self.register_buffer('pe_' + key, pe[key])
 
-    output_shape = [-1, self._config['dims']]
+    output_shape = [-1, 2 * self._config['dims']]   # x2 because of concatenation of x and y
     return output_shape
 
   def forward(self, xy_tensor):
+    """ Take the appropriate slice (based on x and y) of the pre-computed positional encoding values """
+
     x = int(xy_tensor[0][0])
     y = int(xy_tensor[0][1])
-    pe_x = self.pe_x[x, :]
-    pe_y = self.pe_y[y, :]
-    return pe_x, pe_y
+
+    pe_x_copy = self.pe_x[x, :].clone().detach()  # ensure copy, not view
+    pe_y_copy = self.pe_y[y, :].clone().detach()
+
+    pe_xy = torch.cat([pe_x_copy, pe_y_copy])   # concatenate the x and y components
+    pe_xy = torch.unsqueeze(pe_xy, 0)           # add in an empty batch dim
+
+    return pe_xy
 
   def get_output_shape(self):
     return self._output_shape

@@ -102,7 +102,7 @@ class ImageFilter(nn.Module):
     #print("ImageFilter f() weight shape: ", self.weight.shape)
 
     # conv2d args:
-    # input=[b,c,h,w]
+    # input = [b,c,h,w]
     # weight = [c_out, c_in, kH, kW]
     # groups = 1 by default; split into groups. c_in should be divisible by groups
     # stride = not used

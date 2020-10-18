@@ -47,7 +47,6 @@ class Retina(nn.Module):
     interest_neg = self._dog_filter_neg(image_tensor)
     channel_dim = 1  # B,C,H,W
     interest = torch.cat([interest_pos, interest_neg], dim=channel_dim)
-    #return interest_pos, interest_neg
     return interest, interest_pos, interest_neg
 
   def get_output_size(self, h, w):
