@@ -1,5 +1,7 @@
 import math
 import json
+from collections import deque
+
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
@@ -14,10 +16,17 @@ from gym_game.stubs.image_utils import *
 
 from ray.rllib.utils.framework import try_import_torch
 torch, nn = try_import_torch()
+from timeit import default_timer as timer
 
 """
   Wraps a task-specific environment and implements brain modules that are not trained by Reinforcement Learning.
 """
+
+
+def prefrontal_cortex(mtl, bg_action):
+  pfc_action = bg_action
+  print("======> StubAgent: bg_action", bg_action)
+  return pfc_action
 
 
 def superior_colliculus(pfc_action):
@@ -31,9 +40,14 @@ def superior_colliculus(pfc_action):
 
   # absolute coordinates(pixels in screen space)
 
-  print("======> StubAgentEnv: agent_action", pfc_action)
+  sc_action = pfc_action
+  print("======> StubAgentEnv: agent_action", sc_action)
 
-  return pfc_action
+  return sc_action
+
+
+def sc_2_env(sc_action):
+  return sc_action
 
 
 class StubAgentEnv(gym.Env):
@@ -92,6 +106,9 @@ class StubAgentEnv(gym.Env):
     # build all the components, and add the observation spaces to obs_spaces_dict
     obs_spaces_dict = {}
     self.modules = {}
+
+    # Medial Temporal Lobe
+    self.mtl = deque([], self._config["mtl_max_length"])
 
     # positional encoding
     self._use_pe = "pe" in self._config["obs_keys"]
@@ -191,7 +208,7 @@ class StubAgentEnv(gym.Env):
   # -----------------------------------------------------------------------------------------------
 
   def forward(self, observation):
-    print('-----------Obs old', observation)
+    # print('-----------Obs old', observation)
 
     # process foveal and peripheral parietal cortex
     obs_dict = {}
@@ -208,8 +225,6 @@ class StubAgentEnv(gym.Env):
       pe = self.modules[obs_key]
       input_tensor = self.obs_to_tensor(observation, obs_key)
       pe_output = pe.forward(input_tensor)
-
-      print(" ----------------------------- pe_output", pe_output)
 
       self.tensor_to_obs(pe_output, obs_dict, obs_key)
 
@@ -236,16 +251,22 @@ class StubAgentEnv(gym.Env):
     debug_observation = False
     debug_timing = False
 
+    start = None
     if debug_timing:
       print('>>>>>>>>>>> Stub step')
-      from timeit import default_timer as timer
       start = timer()
 
-    env_action = superior_colliculus(pfc_action=action)
+    # compute action for the environment (based on the StubAgent's action on the StubAgentEnv)
+    pfc_action = prefrontal_cortex(self.mtl, bg_action=action)
+    sc_action = superior_colliculus(pfc_action=pfc_action)
+    env_action = sc_2_env(sc_action)
 
     [obs, self.reward, is_end_state, additional] = self.env.step(env_action)
     tx_obs = self.forward(obs)  # Process the input
     emit = [tx_obs, self.reward, is_end_state, additional]
+
+    # add observations to the MTL
+    self.mtl.append(tx_obs)
 
     # The purpose of this section is to verify that valid observations are emitted.
     if debug_observation:
@@ -286,4 +307,5 @@ class StubAgentEnv(gym.Env):
 
   def render(self, mode='human', close=False):
     return self.env.render(mode, close)
+
 
