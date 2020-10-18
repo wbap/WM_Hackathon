@@ -20,6 +20,22 @@ torch, nn = try_import_torch()
 """
 
 
+def superior_colliculus(pfc_action):
+  """
+    pfc_action: command from PFC. Gaze target in 'action' space
+    Return: gaze target in absolute coordinates (pixels in screen space)
+
+    Currently, this is a 'pass-through" component.
+    In the future, one may want to change the implementation e.g. progressively move toward the target
+  """
+
+  # absolute coordinates(pixels in screen space)
+
+  print("======> StubAgentEnv: agent_action", pfc_action)
+
+  return pfc_action
+
+
 class StubAgentEnv(gym.Env):
 
   # Streams
@@ -57,6 +73,7 @@ class StubAgentEnv(gym.Env):
     #self.env = env_type(env_config_file)
     self.action_space = self.env.action_space
     self.env_observation_space = self.env.observation_space
+    self.reward = None
 
     # Build networks to preprocess the observation space
     default_config = self.get_default_config()  # TODO make this override
@@ -191,6 +208,9 @@ class StubAgentEnv(gym.Env):
       pe = self.modules[obs_key]
       input_tensor = self.obs_to_tensor(observation, obs_key)
       pe_output = pe.forward(input_tensor)
+
+      print(" ----------------------------- pe_output", pe_output)
+
       self.tensor_to_obs(pe_output, obs_dict, obs_key)
 
     return obs_dict
@@ -212,28 +232,36 @@ class StubAgentEnv(gym.Env):
     return self.env.get_config()
 
   def step(self, action):
-    #print('>>>>>>>>>>> Stub step')
-    #from timeit import default_timer as timer
-    #start = timer()
 
-    [obs, self.reward, is_end_state, additional] = self.env.step(action)
+    debug_observation = False
+    debug_timing = False
+
+    if debug_timing:
+      print('>>>>>>>>>>> Stub step')
+      from timeit import default_timer as timer
+      start = timer()
+
+    env_action = superior_colliculus(pfc_action=action)
+
+    [obs, self.reward, is_end_state, additional] = self.env.step(env_action)
     tx_obs = self.forward(obs)  # Process the input
     emit = [tx_obs, self.reward, is_end_state, additional]
 
-    ############### DEBUG - verify the observation
     # The purpose of this section is to verify that valid observations are emitted.
-    #print('Tx Obs keys ', tx_obs.keys())
-    #o = tx_obs['full']
-    #print('Obs Shape = ', o.shape)
-    #import hashlib
-    #m = hashlib.md5()
-    #m.update(o)
-    #h = m.hexdigest()
-    #print(' Hash = ', h)
-    ############### DEBUG - verify the observation
+    if debug_observation:
+      print('Tx Obs keys ', tx_obs.keys())
+      o = tx_obs['full']
+      print('Obs Shape = ', o.shape)
+      import hashlib
+      m = hashlib.md5()
+      m.update(o)
+      h = m.hexdigest()
+      print(' Hash = ', h)
 
-    #end = timer()
-    #print('Step elapsed time: ', str(end - start)) # Time in seconds, e.g. 5.38091952400282
+    if debug_timing:
+      end = timer()
+      print('Step elapsed time: ', str(end - start))  # Time in seconds, e.g. 5.38091952400282
+
     return emit
 
   def get_screen_shape(self):

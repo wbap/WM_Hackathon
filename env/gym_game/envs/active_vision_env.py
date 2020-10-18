@@ -1,4 +1,5 @@
 import logging
+from enum import Enum
 
 import numpy as np
 from gym import spaces
@@ -12,11 +13,44 @@ from .pygame_env import PyGameEnv
 """
 
 
+# row major
+# (0,0) is top left
+
+grid_length_x = 10
+grid_length_y = 12
+screen_height = 800
+screen_width = 800
+
+grid_length = np.array([grid_length_x, grid_length_y])
+screen_size = np.array([screen_width, screen_height])
+grid_cell_size = np.array([screen_width / grid_length_x, screen_height / grid_length_y])
+
+
+def action_2_xy(action):
+  xy_grid = np.array([action % grid_length_x, action / grid_length_x])
+  xy_coord = np.multiply(xy_grid, grid_cell_size) + 0.5 * grid_cell_size
+  return xy_coord
+
+
+def xy_2_action(xy_coord):
+  xy_grid = (xy_coord - 0.5 * grid_cell_size).divide(grid_cell_size)
+  x = xy_grid[0]
+  y = xy_grid[1]
+  action = y * grid_length_x + x
+  return action
+
+
+class GazeMode(Enum):
+  ABSOLUTE = 1
+  ITERATIVE = 2
+
+
 class ActiveVisionEnv(PyGameEnv):
   metadata = {'render.modes': ['human', 'rgb_array']}
 
   HUMAN = 'human'
   ARRAY = 'rgb_array'
+  GAZE_CONTROL_MODE = GazeMode.ITERATIVE
 
   def __init__(self, num_actions, screen_width, screen_height, frame_rate):
     """
@@ -34,14 +68,21 @@ class ActiveVisionEnv(PyGameEnv):
 
     self.fov_size = np.array([int(self.fov_fraction * screen_width), int(self.fov_fraction * screen_height)])
     self.gaze = np.array([screen_width // 2, screen_height // 2])  # gaze position - (x, y)--> *top left of fovea*
-    self._action_2_xy = {  # map actions (integers) to x,y gaze delta
-      num_actions: np.array([-1, 0]),      # 3. left
-      num_actions + 1: np.array([1, 0]),   # 4. right
-      num_actions + 2: np.array([0, -1]),  # 5. up
-      num_actions + 3: np.array([0, 1])    # 6. down
-    }
-    self._actions_start = num_actions
-    self._actions_end = num_actions + len(self._action_2_xy)
+
+    if self.GAZE_CONTROL_MODE is GazeMode.ITERATIVE:
+      self._action_2_xy = {  # map actions (integers) to x,y gaze delta
+        num_actions: np.array([-1, 0]),      # 3. left
+        num_actions + 1: np.array([1, 0]),   # 4. right
+        num_actions + 2: np.array([0, -1]),  # 5. up
+        num_actions + 3: np.array([0, 1])    # 6. down
+      }
+
+      self._actions_start = num_actions
+      self._actions_end = num_actions + len(self._action_2_xy)
+    else:
+      self._actions_start = num_actions
+      self._actions_end = num_actions + (grid_length_x * grid_length_y)
+
     self._img_fov = None
     self._img_periph = None
     self._img_full = None
@@ -67,7 +108,11 @@ class ActiveVisionEnv(PyGameEnv):
 
     # if within action scope, modify gaze
     if self._actions_start <= action < self._actions_end:
-      self.gaze = self.gaze + self._action_2_xy[action] * self.step_size
+
+      if self.GAZE_CONTROL_MODE is GazeMode.ITERATIVE:
+        self.gaze = self.gaze + self._action_2_xy[action] * self.step_size
+      else:
+        self.gaze = action_2_xy(action)
 
       self.gaze[0] = np.clip(self.gaze[0], self._x_min, self._x_max)   # ensure x coord is in bounds
       self.gaze[1] = np.clip(self.gaze[1], self._y_min, self._y_max)   # ensure y coord is in bounds
@@ -112,7 +157,7 @@ class ActiveVisionEnv(PyGameEnv):
     pixels_w = int(w * self.fov_fraction)
     h2 = int(pixels_h * self.fov_scale)
     w2 = int(pixels_w * self.fov_scale)
-    return (c, h2, w2)
+    return c, h2, w2
 
   def get_peripheral_observation_shape(self):
     h = self.screen_shape[0]
@@ -120,7 +165,7 @@ class ActiveVisionEnv(PyGameEnv):
     c = self.screen_shape[2]
     h2 = int(h * self.peripheral_scale)
     w2 = int(w * self.peripheral_scale)
-    return (c, h2, w2)
+    return c, h2, w2
 
   def get_observation(self):
     """

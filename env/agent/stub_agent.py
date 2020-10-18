@@ -1,3 +1,4 @@
+import logging
 import sys
 import numpy as np
 
@@ -25,14 +26,6 @@ torch, nn = try_import_torch()
 
 # default config
 config = {
-  "retina": {
-    'f_size': 7,
-    'f_sigma': 2.0,
-    'f_k': 1.6  # approximates Laplacian of Gaussian
-  },
-  "positional_encoding": {},
-  "vc_fovea": {},
-  "vc_periphery": {},
   "mtl": {},
   "sc": {},
   "pfc": {}
@@ -54,6 +47,12 @@ class StubPreprocessor(Preprocessor):
     tx = np.zeros((10,10,10))
     #tx = observation
     return tx  # return the preprocessed observation
+
+
+def prefrontal_cortex(agent_action):
+  pfc_action = agent_action
+  print("======> StubAgent: agent_action", agent_action)
+  return pfc_action
 
 
 class StubAgent(TorchModelV2, nn.Module):
@@ -82,7 +81,7 @@ class StubAgent(TorchModelV2, nn.Module):
     obs_3d = np.reshape(obs_4d, obs_3d_shape)
     input_dict["obs"] = obs_3d
 
-    #print(input_dict["obs"])
+    # print(input_dict["obs"])
 
     # TODO: forward() any other PyTorch modules here, pass result to RL algo
     # img_fov = obs["fovea"]
@@ -104,13 +103,13 @@ class StubAgent(TorchModelV2, nn.Module):
     # gaze_target, buffer = self.pfc.forward(gaze_target, buffer)
     #
     # 'buffer' goes to BG (the rllib agent)
-    #
-    # gaze_dx, gaze_dy = self.sc.forward(gaze_target)
-    # actions = [gaze_dx, gaze_dy]
 
     # Defer to default FC model
     fc_out, _ = self.torch_sub_model(input_dict, state, seq_lens)
-    return fc_out, []
+
+    pfc_action = prefrontal_cortex(fc_out)
+
+    return pfc_action, []
 
   def value_function(self):
     return torch.reshape(self.torch_sub_model.value_function(), [-1])
