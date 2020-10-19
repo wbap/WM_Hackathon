@@ -19,7 +19,7 @@ class GazeMode(Enum):
 
 class GridUtil:
   """
-    row major
+    Row major
     (0,0) is top left
   """
 
@@ -34,16 +34,28 @@ class GridUtil:
     self.grid_cell_size = np.array([screen_width / grid_length_x, screen_height / grid_length_y])
 
   def action_2_xy(self, action):
-    xy_grid = np.array([action % self.grid_length_x, action / self.grid_length_x])
+    """
+      input action: integer represented an absolute position
+      return: type ndarray, (x,y) coordinate in pixel space
+    """
+    xy_grid = np.array([action % self.grid_length_x, action // self.grid_length_x])   # x, y
     xy_coord = np.multiply(xy_grid, self.grid_cell_size) + 0.5 * self.grid_cell_size
     return xy_coord.astype(int)
 
   def xy_2_action(self, xy_coord):
-    xy_grid = (xy_coord - 0.5 * self.grid_cell_size).divide(self.grid_cell_size)
+    """
+      input xy_coord: type ndarray, (x,y) coordinate in pixel space
+      return: action, integer represented an absolute position
+    """
+
+    xy_grid = np.floor(np.divide(xy_coord, self.grid_cell_size))
     x = xy_grid[0]
     y = xy_grid[1]
     action = y * self.grid_length_x + x
     return int(action)
+
+  def num_cells(self):
+    return self.grid_length_x * self.grid_length_y
 
 
 class ActiveVisionEnv(PyGameEnv):
@@ -70,10 +82,10 @@ class ActiveVisionEnv(PyGameEnv):
     self.fov_size = np.array([int(self.fov_fraction * screen_width), int(self.fov_fraction * screen_height)])
     self.gaze = np.array([screen_width // 2, screen_height // 2])  # gaze position - (x, y)--> *top left of fovea*
 
+    self.grid_utils = None
     self.grid_length_x = None
     self.grid_length_y = None
     self._action_2_xy = None
-    self.grid_utils = None
 
     if self.GAZE_CONTROL_MODE is GazeMode.ITERATIVE:
       self._action_2_xy = {  # map actions (integers) to x,y gaze delta
@@ -90,7 +102,7 @@ class ActiveVisionEnv(PyGameEnv):
       self.grid_utils = GridUtil(self.grid_length_x, self.grid_length_y, screen_height, screen_width)
 
       self._actions_start = num_actions
-      self._actions_end = num_actions + int(self.grid_length_x * self.grid_length_y)
+      self._actions_end = num_actions + self.grid_utils.num_cells()
 
     self._img_fov = None
     self._img_periph = None

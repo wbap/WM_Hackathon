@@ -1,6 +1,7 @@
 import math
 import json
 from collections import deque
+from timeit import default_timer as timer
 
 import gym
 from gym import error, spaces, utils
@@ -16,7 +17,7 @@ from gym_game.stubs.image_utils import *
 
 from ray.rllib.utils.framework import try_import_torch
 torch, nn = try_import_torch()
-from timeit import default_timer as timer
+
 
 """
   Wraps a task-specific environment and implements brain modules that are not trained by Reinforcement Learning.
@@ -37,8 +38,6 @@ def superior_colliculus(pfc_action):
     Currently, this is a 'pass-through" component.
     In the future, one may want to change the implementation e.g. progressively move toward the target
   """
-
-  # absolute coordinates(pixels in screen space)
 
   sc_action = pfc_action
   print("======> StubAgentEnv: agent_action", sc_action)
@@ -111,12 +110,12 @@ class StubAgentEnv(gym.Env):
     self.mtl = deque([], self._config["mtl_max_length"])
 
     # positional encoding
-    self._use_pe = "pe" in self._config["obs_keys"]
+    self._use_pe = "pe" in self._config["obs_keys"] and self._config["obs_keys"]["pe"]
     if self._use_pe:
       self._build_positional_encoder(obs_spaces_dict)
 
     # visual processing - create a parietal cortex for fovea and periphery
-    self._use_visual = "visual" in self._config["obs_keys"]
+    self._use_visual = "visual" in self._config["obs_keys"] and self._config["obs_keys"]["visual"]
     if self._use_visual:
       self._build_visual_stream(obs_spaces_dict)
 
