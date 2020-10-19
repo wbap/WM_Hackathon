@@ -1,7 +1,9 @@
 import math
-
 import torch.nn as nn
 import torch
+import matplotlib.pyplot as plt
+
+debug = True
 
 
 class PositionalEncoder(nn.Module):
@@ -9,7 +11,7 @@ class PositionalEncoder(nn.Module):
   @staticmethod
   def get_default_config():
     config = {
-      'dims': 10
+      'dims': 1000
     }
     return config
 
@@ -37,13 +39,33 @@ class PositionalEncoder(nn.Module):
     pe = {}
     for key, mx in max_lengths.items():
       pe[key] = torch.zeros(mx, dims)
-      for pos in range(mx):
-        for i in range(0, dims, 2):
-          pe[key][pos, i] = math.sin(pos / (10000 ** ((2 * i) / dims)))
-          pe[key][pos, i + 1] = math.cos(pos / (10000 ** ((2 * (i + 1)) / dims)))
+      for pos in range(mx):   # y axis
+        for i in range(0, dims, 2):   # x axis
+          pe[key][pos, i] = math.sin(pos / (10000 ** (2*i / dims)))
+          pe[key][pos, i + 1] = math.cos(pos / (10000 ** (2*(i+1) / dims)))
 
-      pe[key].unsqueeze(0)
       self.register_buffer('pe_' + key, pe[key])
+
+    if debug:
+      print(self.pe_x.shape)
+      print(self.pe_y.shape)
+
+      fig = plt.figure()
+
+      ax = fig.add_subplot(1, 2, 1)
+      plt.pcolormesh(self.pe_x, cmap='viridis')
+      plt.ylim((max_xy[0], 0))
+      ax.set_title('pe_x')
+
+      ax = fig.add_subplot(1, 2, 2)
+      plt.pcolormesh(self.pe_y, cmap='viridis')
+      plt.ylim((max_xy[1], 0))
+      ax.set_title('pe_y')
+
+      plt.colorbar()
+
+      plt.show()
+      plt.savefig('positional_encoding.png')
 
     output_shape = [-1, 2 * self._config['dims']]   # x2 because of concatenation of x and y
     return output_shape

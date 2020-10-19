@@ -28,12 +28,6 @@ class Retina(nn.Module):
 
     self._build()
 
-  # def set_image(self, name, val):
-  #   self._image_dic[name] = val
-  #
-  # def get_image(self, name):
-  #   return self._image_dic[name]
-
   def _build(self):
     # DoG kernel - edge and corner detection plus smoothing
     size = self._config['f_size']
