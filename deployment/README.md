@@ -4,6 +4,8 @@
 - Docker
     - Follow instructions on [website](https://www.docker.com) to set it up locally (depends on your environment)
 - X11 if you want to display a GUI
+- Nvidia Docker Package (if you have a GPU)
+    - Follow instructions on [website](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#installing-on-ubuntu-and-debian)
 
 - Source code
 	- WM_Hackathon [repository](https://github.com/wbap/WM_Hackathon)
