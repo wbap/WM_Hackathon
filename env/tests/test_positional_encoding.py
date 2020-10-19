@@ -1,9 +1,9 @@
 from gym_game.stubs.positional_encoder import PositionalEncoder
 import matplotlib.pyplot as plt
 
-pe_config = PositionalEncoder.get_default_config()
+pe_config = {'dims': 64}
 input_shape = [-1, 2]
-pe = PositionalEncoder('pe', input_shape=input_shape, config=pe_config, max_xy=(400, 800))
+pe = PositionalEncoder('pe', input_shape=input_shape, config=pe_config, max_xy=(10, 20))
 
 
 print(pe.pe_x.shape)
