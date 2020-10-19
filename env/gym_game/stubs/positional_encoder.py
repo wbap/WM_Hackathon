@@ -1,9 +1,6 @@
 import math
 import torch.nn as nn
 import torch
-import matplotlib.pyplot as plt
-
-debug = True
 
 
 class PositionalEncoder(nn.Module):
@@ -21,9 +18,13 @@ class PositionalEncoder(nn.Module):
     self._name = name
     self._input_shape = input_shape
     self._config = config
-    self._output_shape = self._build(max_xy)
 
-  def _build(self, max_xy):
+    self.dims = self._config['dims']
+    self.max_xy = max_xy
+
+    self._output_shape = self._build()
+
+  def _build(self):
     """
     # input = gaze x, y
     # output = position
@@ -31,43 +32,20 @@ class PositionalEncoder(nn.Module):
     Ideas from code at: https://towardsdatascience.com/how-to-code-the-transformer-in-pytorch-24db27c8f9ec
     """
 
-    dims = self._config['dims']
-
     # create constant 'pe' matrix with values dependant on pos (pixel position) and number of dimensions (i)
 
-    max_lengths = {'x': max_xy[0], 'y': max_xy[1]}
+    max_lengths = {'x': self.max_xy[0], 'y': self.max_xy[1]}
     pe = {}
     for key, mx in max_lengths.items():
-      pe[key] = torch.zeros(mx, dims)
+      pe[key] = torch.zeros(mx, self.dims)
       for pos in range(mx):   # y axis
-        for i in range(0, dims, 2):   # x axis
-          pe[key][pos, i] = math.sin(pos / (10000 ** (2*i / dims)))
-          pe[key][pos, i + 1] = math.cos(pos / (10000 ** (2*(i+1) / dims)))
+        for i in range(0, self.dims, 2):   # x axis
+          pe[key][pos, i] = math.sin(pos / (10000 ** (2*i / self.dims)))
+          pe[key][pos, i + 1] = math.cos(pos / (10000 ** (2*(i+1) / self.dims)))
 
       self.register_buffer('pe_' + key, pe[key])
 
-    if debug:
-      print(self.pe_x.shape)
-      print(self.pe_y.shape)
-
-      fig = plt.figure()
-
-      ax = fig.add_subplot(1, 2, 1)
-      plt.pcolormesh(self.pe_x, cmap='viridis')
-      plt.ylim((max_xy[0], 0))
-      ax.set_title('pe_x')
-
-      ax = fig.add_subplot(1, 2, 2)
-      plt.pcolormesh(self.pe_y, cmap='viridis')
-      plt.ylim((max_xy[1], 0))
-      ax.set_title('pe_y')
-
-      plt.colorbar()
-
-      plt.show()
-      plt.savefig('positional_encoding.png')
-
-    output_shape = [-1, 2 * self._config['dims']]   # x2 because of concatenation of x and y
+    output_shape = [-1, 2 * self.dims]   # x2 because of concatenation of x and y
     return output_shape
 
   def forward(self, xy_tensor):
