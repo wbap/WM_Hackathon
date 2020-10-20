@@ -23,7 +23,7 @@ class GridUtil:
     (0,0) is top left
   """
 
-  def __init__(self, grid_length_x, grid_length_y, screen_height, screen_width):
+  def __init__(self, grid_length_x, grid_length_y, screen_height, screen_width, offset):
     self.grid_length_x = grid_length_x
     self.grid_length_y = grid_length_y
     self.screen_height = screen_height
@@ -33,11 +33,16 @@ class GridUtil:
     self.screen_size = np.array([screen_width, screen_height])
     self.grid_cell_size = np.array([screen_width / grid_length_x, screen_height / grid_length_y])
 
+    self.offset = offset
+
   def action_2_xy(self, action):
     """
       input action: integer represented an absolute position
       return: type ndarray, (x,y) coordinate in pixel space
     """
+
+    action = action - self.offset
+
     xy_grid = np.array([action % self.grid_length_x, action // self.grid_length_x])   # x, y
     xy_coord = np.multiply(xy_grid, self.grid_cell_size) + 0.5 * self.grid_cell_size
     return xy_coord.astype(int)
@@ -52,7 +57,8 @@ class GridUtil:
     x = xy_grid[0]
     y = xy_grid[1]
     action = y * self.grid_length_x + x
-    return int(action)
+    action = int(action + self.offset)
+    return action
 
   def num_cells(self):
     return self.grid_length_x * self.grid_length_y
@@ -82,6 +88,8 @@ class ActiveVisionEnv(PyGameEnv):
     self.fov_size = np.array([int(self.fov_fraction * screen_width), int(self.fov_fraction * screen_height)])
     self.gaze = np.array([screen_width // 2, screen_height // 2])  # gaze position - (x, y)--> *top left of fovea*
 
+    self._show_fovea = True if config["show_fovea_on_screen"] else False
+
     self.grid_utils = None
     self.grid_length_x = None
     self.grid_length_y = None
@@ -99,7 +107,8 @@ class ActiveVisionEnv(PyGameEnv):
     else:
       self.grid_length_x = config["grid_length_x"]
       self.grid_length_y = config["grid_length_y"]
-      self.grid_utils = GridUtil(self.grid_length_x, self.grid_length_y, screen_height, screen_width)
+      self.grid_utils = GridUtil(self.grid_length_x, self.grid_length_y, screen_height, screen_width,
+                                 offset=num_actions)
 
       self._actions_start = num_actions
       self._actions_end = num_actions + self.grid_utils.num_cells()
@@ -262,3 +271,13 @@ class ActiveVisionEnv(PyGameEnv):
     #print('Step obs: ', str(end - start)) # Time in seconds, e.g. 5.38091952400282
 
     return observation
+
+  def draw_screen(self, screen, screen_options):
+    import pygame as pygame
+    # draw the gaze position
+    if self._show_fovea:
+      BLACK = (0, 0, 0)
+      # gaze pos is top left of fovea
+      fovea_rect = pygame.Rect(self.gaze[0], self.gaze[1],
+                               self.fov_size[0], self.fov_size[1])
+      pygame.draw.rect(screen, BLACK, fovea_rect, 1)

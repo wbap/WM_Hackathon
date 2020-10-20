@@ -9,7 +9,7 @@ import pygame as pygame
 
 class PyGameEnv(gym.Env, ABC):
 
-  metadata = {'render.modes': ['human','rgb_array']}
+  metadata = {'render.modes': ['human', 'rgb_array']}
 
   HUMAN = 'human'
   ARRAY = 'rgb_array'

@@ -23,3 +23,9 @@ register(
   entry_point='gym_game.envs:StubAgentEnv',
   kwargs={'env_type': None, 'env_config_file': None}
 )
+
+register(
+  id='light-v0',
+  entry_point='gym_game.envs:MoveToLightEnv',
+  kwargs={'config_file': 'env_config.json'}
+)
