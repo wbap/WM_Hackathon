@@ -29,6 +29,7 @@ from gym_game.envs.pygame_dataset import PyGameDataset
 from gym_game.stubs.posterior_cortex import PosteriorCortex
 from gym_game.envs.stub_agent_env import StubAgentEnv
 
+
 def train(args, model, device, train_loader, global_step, optimizer, epoch, writer):
   """Trains the model for one epoch."""
   model.train()
@@ -121,6 +122,13 @@ def main():
   use_cuda = not args.no_cuda and torch.cuda.is_available()
   device = torch.device("cuda" if use_cuda else "cpu")
 
+  # Ensure output folder exists
+  import os
+  file_path = args.model_file
+  dirname = os.path.dirname(file_path)
+  if not os.path.exists(dirname):
+    os.mkdir(dirname)
+
   # Read global config file
   with open(args.config) as config_file:
     config = json.load(config_file)
@@ -187,7 +195,6 @@ def main():
 
   if args.model_file is not None:
     print('Saving trained model to file: ', args.model_file)
-    #torch.save(model.state_dict(), args.model_file)
     model.save(args.model_file)
 
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys, gym, time
+import os
 import json
 
 #
@@ -35,8 +36,11 @@ env_config_file = sys.argv[2]
 print('Env config file:', env_config_file)
 num_samples = int(sys.argv[3])
 print('Number of samples:', num_samples)
-file_name = sys.argv[4]
-print('Data directory:', file_name)
+dir_name = sys.argv[4]
+print('Data directory:', dir_name)
+
+if not os.path.exists(dir_name):
+    os.makedirs(dir_name)
 
 # Custom env creator
 def env_creator(env_name, env_config_file):
@@ -55,7 +59,7 @@ dataset = PyGameDataset()
 print('Generating samples...')
 dataset.generate(num_samples, env, policy)
 print('Writing samples...')
-dataset.write(file_name)
+dataset.write(dir_name)
 
 # Uncomment to test recovery of the data
 #dataset.read(file_name)

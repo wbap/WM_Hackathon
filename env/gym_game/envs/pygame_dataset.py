@@ -79,9 +79,6 @@ class PyGameDataset(torch.utils.data.Dataset):
       sample = self._samples[i]
 
       #print('sample:', sample)
-      print('full:', sample['full'].shape)
-      print('fov:', sample['fovea'].shape)
-      print('per:', sample['peripheral'].shape)
       # try:
       #   f = bz2.BZ2File(file_path, 'wb')
       # except (IOError):

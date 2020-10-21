@@ -4,7 +4,8 @@
 - Docker
     - Follow instructions on [website](https://www.docker.com) to set it up locally (depends on your environment)
 - X11 if you want to display a GUI
-- Nvidia Docker Package (if you have a GPU)
+- NVIDIA Docker Package (if you have an NVIDIA GPU)
+    - NOTE: This will not apply if you are using a Mac.
     - Follow instructions on [website](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#installing-on-ubuntu-and-debian)
 
 - Source code
@@ -32,13 +33,13 @@ If you are using a Mac, you can easily create a conda environment to run the sof
     - Navigate to the `/env` folder
     - All you need to do is pass a given command to the script `bash run-docker.sh` to run it in the container.
     - The full usage instructions are:
-    `run-docker.sh [path to wm code] [boolean for GPU or not] [command and params to run in container]`
+    `run-docker.sh [absolute path to wm code] [absolute path to cerenaut-pt-core code] [boolean for GPU or not] [command and params to run in container]`
 
     Examples:
 
     `../deployment/run-docker.sh ~/Dev/WM_Hackathon ~/Dev/cerenaut-pt-core false python keyboard_agent.py m2s-v0 configs/m2s_env.json`
 
-    `../deployment/run-docker.sh ~/Dev/WM_Hackathon ~/Dev/cerenaut-pt-core false python train_stub_agent.py m2s-v0 configs/m2s_env.json configs/stub_model_full.json configs/stub_agent_full.json` 
+    See the main README for examples of other commands that can be run e.g. to pretrain the visual cortex or to train the agent to complete the m2s task.
 
     NOTE: If you are on Ubuntu, you'll need to use `sudo`
 

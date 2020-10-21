@@ -73,6 +73,8 @@ Example:
 
 This command will train the default stub agent on the full image, using a pretrained visual cortex, and learn via RL to play the M2S task.
 
+To work effectively, you will need to pre-train the visual cortices. If you don't want to load a pre-trained model, you can set the field `"load"` to `null` in STUB_ENV_CONFIG_FILE.
+
 # Stub Agent Validation 
 The Stub Agent is provided as a working baseline for you to build on. You can change any part you wish, but the intention is for you to focus on adding working memory to enable the agent to solve the DM2S task.
 
