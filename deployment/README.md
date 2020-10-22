@@ -59,7 +59,9 @@ Then use the script `build-docker.sh [image name]` to build a local copy of the 
 
 You can then modify the `run-docker.sh` script to refer to your custom image name, and run as above.
 
-# Conda environment for display of GUI on a Mac
+# Running without Docker
+This is useful if you use a Mac and you want to see the PyGame GUI (which is a special case that does not work).
+The instructions show how you can create your own Conda environment for development and running.
 
 ## Requirements
 - Conda
@@ -73,7 +75,7 @@ You can use it to create a conda environment with the command below, see instruc
 
 2. Then, when you want to dev and run, change into the environment. This is a platform specific command. It is usually:
 
-    `source activate [env-name]`
+    `source activate wm_env`
 
 3. Finally, you need to setup a dependency, the project `cerenaut-pt-core` by following the `README.md`. In brief, navigate to the folder and then use the following command:
 
