@@ -16,7 +16,7 @@ import pygame as pygame
 from ray.rllib.utils.framework import try_import_torch
 
 from agent.stubs.positional_encoder import PositionalEncoder
-from agent.stubs.posterior_cortex import PosteriorCortex
+from agent.stubs.posterior_cortex import VisualCortex
 from utils.general_utils import mergedicts
 
 torch, nn = try_import_torch()
@@ -63,8 +63,8 @@ class StubAgentEnv(gym.Env):
   @staticmethod
   def get_default_config():
     pe_config = PositionalEncoder.get_default_config()
-    cortex_f_config = PosteriorCortex.get_default_config()
-    cortex_p_config = PosteriorCortex.get_default_config()
+    cortex_f_config = VisualCortex.get_default_config()
+    cortex_p_config = VisualCortex.get_default_config()
     agent_config = {
       'obs_keys': {
         'visual': [StubAgentEnv.OBS_FOVEA, StubAgentEnv.OBS_PERIPHERAL]
@@ -173,7 +173,7 @@ class StubAgentEnv(gym.Env):
     for obs_key in self._config["obs_keys"]["visual"]:
       input_shape = self.create_input_shape_visual(self.env_observation_space, obs_key)
       config = self._config[obs_key]
-      cortex = PosteriorCortex(obs_key, input_shape, config)
+      cortex = VisualCortex(obs_key, input_shape, config)
       self.modules[obs_key] = cortex
 
       output_shape = cortex.get_output_shape()

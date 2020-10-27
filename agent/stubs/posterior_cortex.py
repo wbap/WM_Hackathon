@@ -5,7 +5,7 @@ from utils.general_utils import mergedicts
 from .retina import *
 
 
-class PosteriorCortex(nn.Module):
+class VisualCortex(nn.Module):
   """
   Retinal coding, then Visual Cortex feature extraction, and positional encoding of the gaze.
   """
