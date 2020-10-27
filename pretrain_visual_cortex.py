@@ -25,7 +25,7 @@ from torchvision import datasets, transforms
 
 
 from agent.stub_agent import StubAgent
-from agent.stubs.posterior_cortex import VisualCortex
+from agent.stubs.visual_cortex import VisualCortex
 from gym_game.envs.pygame_dataset import PyGameDataset
 
 
@@ -173,7 +173,7 @@ def main():
   train_loader = torch.utils.data.DataLoader(dataset, **kwargs)
   test_loader = torch.utils.data.DataLoader(dataset, **kwargs)
 
-  input_shape = (-1,) + data_shape #[-1, 1, 28, 28]
+  input_shape = (-1,) + data_shape  #[-1, 1, 28, 28]
   print('Final dataset shape:', input_shape)
 
   # Override model config

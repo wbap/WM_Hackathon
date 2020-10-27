@@ -16,7 +16,7 @@ import pygame as pygame
 from ray.rllib.utils.framework import try_import_torch
 
 from agent.stubs.positional_encoder import PositionalEncoder
-from agent.stubs.posterior_cortex import VisualCortex
+from agent.stubs.visual_cortex import VisualCortex
 from utils.general_utils import mergedicts
 
 torch, nn = try_import_torch()
