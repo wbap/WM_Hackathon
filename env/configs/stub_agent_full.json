@@ -1,19 +1,19 @@
 {
   "training":{
-    "training_steps":30,
-    "training_epochs":500,
-    "evaluation_steps":5,
-    "evaluation_interval":2,
-    "checkpoint_interval":-1
+    "training_steps": 30,
+    "training_epochs": 500,
+    "evaluation_steps": 5,
+    "evaluation_interval": 2,
+    "checkpoint_interval": -1
   },
   "agent":{
-    "num_workers":1,
-    "num_gpus_per_worker":0,
-    "rollout_fragment_length":50,
-    "gamma":0.8
+    "num_workers": 1,
+    "num_gpus_per_worker": 0,
+    "rollout_fragment_length": 50,
+    "gamma": 0.8
   },
   "model": {
-    "use_lstm":false,
+    "use_lstm": false,
     "fcnet_hiddens":[256, 256]
   }
 }

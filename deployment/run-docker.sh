@@ -19,7 +19,7 @@ then
 	GPU_STR="--gpus all"
 fi
 
-cmd="docker run --privileged -it --rm --name=wm $GPU_STR -e DISPLAY=$IP:0 -e XAUTHORITY=/.Xauthority -p 127.0.0.1:6006:6006/tcp -v /tmp/.X11-unix:/tmp/.X11-unix -v ~/.Xauthority:/.Xauthority -v $WM_SRC_DIR:$WM_TGT_DIR -v $CORE_SRC_DIR:$CORE_TGT_DIR $IMG_NAME bash ../deployment/setupcore_and_run.sh $@"
+cmd="docker run --privileged -it --rm --name=wm $GPU_STR -e DISPLAY=$IP:0 -e XAUTHORITY=/.Xauthority -v /tmp/.X11-unix:/tmp/.X11-unix -v ~/.Xauthority:/.Xauthority -v $WM_SRC_DIR:$WM_TGT_DIR -v $CORE_SRC_DIR:$CORE_TGT_DIR $IMG_NAME bash ../deployment/setupcore_and_run.sh $@"
 
 echo $cmd
 eval $cmd

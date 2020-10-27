@@ -2,6 +2,7 @@ import math
 import json
 from collections import deque
 from timeit import default_timer as timer
+import logging
 
 import gym
 from gym import error, spaces, utils
@@ -26,7 +27,7 @@ torch, nn = try_import_torch()
 
 def prefrontal_cortex(mtl, bg_action):
   pfc_action = bg_action
-  print("======> StubAgent: bg_action", bg_action)
+  logging.debug("======> StubAgent: bg_action", bg_action)
   return pfc_action
 
 
@@ -40,7 +41,7 @@ def superior_colliculus(pfc_action):
   """
 
   sc_action = pfc_action
-  print("======> StubAgentEnv: agent_action", sc_action)
+  logging.debug("======> StubAgentEnv: agent_action", sc_action)
 
   return sc_action
 
@@ -122,10 +123,20 @@ class StubAgentEnv(gym.Env):
     # the new observation space dict from the processed streams
     self.observation_space = spaces.Dict(obs_spaces_dict)
 
+    self._writer = None
+
   def reset(self):
     #print('>>>>>>>>>>> Stub reset')
     obs = self.env.reset()
     return self.forward(obs)
+
+  def set_writer(self, writer):
+    self._writer = writer
+    try:
+      self.env.set_writer(writer)
+    except AttributeError as error:
+      print(error)
+      print("This environment does not use the TensorBoard writer.")
 
   # -------------------------------------- Building Regions --------------------------------------
   # ------------ Visual Streams

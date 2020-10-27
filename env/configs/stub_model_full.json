@@ -2,6 +2,7 @@
   "obs_keys": {
     "visual": ["full"]
   },
+  "mtl_max_length": 6,
   "full": {
     "load": "data/pretrain/full.pt",
     "retina": {

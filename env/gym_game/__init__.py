@@ -25,7 +25,7 @@ register(
 )
 
 register(
-  id='light-v0',
+  id='m2l-v0',
   entry_point='gym_game.envs:MoveToLightEnv',
   kwargs={'config_file': 'env_config.json'}
 )

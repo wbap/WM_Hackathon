@@ -344,4 +344,4 @@ class Dm2sEnv(FiniteStateEnv):
     screen.blit(gButton1, (int(self.gVideoWidth/2 - self.gButton1.get_width()/2) - 160, 610))
     screen.blit(gButton2, (int(self.gVideoWidth/2 - self.gButton2.get_width()/2) + 160, 610))
 
-    super().draw_screen(screen)
+    super().draw_screen(screen, [])

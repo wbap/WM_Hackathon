@@ -1,6 +1,8 @@
 import json
 import pygame as pygame
 import numpy as np
+import logging
+
 from .finite_state_env import FiniteStateEnv
 
 near_target_radius = 20
@@ -18,6 +20,7 @@ class MoveToLightEnv(FiniteStateEnv):
   STATE_END = 'end'                  # end of game
 
   # Define actions
+  ACTION_NONE = 0
   NUM_ACTIONS = 1  # action=0 is 'no action'. Additional actions will be added by base classes if necessary.
 
   RESULT_WRONG = 0
@@ -85,8 +88,7 @@ class MoveToLightEnv(FiniteStateEnv):
     return super().reset()
 
   def on_state_changed(self, old_state_key, new_state_key):
-    # logging.info('State -> ', new_state_key, '@t=', self.state_time)
-    print('-------------------------------------------------------- State -> ', new_state_key, '@t=', self.state_time)
+    logging.info('State -> ', new_state_key, '@t=', self.state_time)
 
   def _update_state_key(self, old_state_key, action, elapsed_time):
     """
@@ -139,8 +141,7 @@ class MoveToLightEnv(FiniteStateEnv):
 
   def _update_reward(self, old_state_key, action, elapsed_time, new_state_key):
     reward = 0.0
-    if old_state_key != self.STATE_IDLE:
-
+    if action != self.ACTION_NONE:
       if self.state_key == self.STATE_ON_TARGET:
         reward = 1.0
       else:

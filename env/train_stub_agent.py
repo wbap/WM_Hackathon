@@ -136,6 +136,13 @@ results_window_size = 100
 status_message = "{:3d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f}"
 file_name = 'None'
 
+# Set Env writer for summaries
+try:
+    env.set_writer(writer)
+except AttributeError as error:
+    print(error)
+    print("This environment does not use the TensorBoard writer.")
+
 
 def update_results(result_step, results_list, result_key):
   value = result_step[result_key]
@@ -175,7 +182,7 @@ result_writer_keys = [
   'info.num_steps_trained',
   'episode_reward_min',
   'episode_reward_mean',
-  'episode_reward_max' ]
+  'episode_reward_max']
 
 # TRAINING STARTS
 evaluation_epoch = 0
@@ -227,7 +234,7 @@ for training_epoch in range(training_epochs):  # number of epochs for all traini
         update_writer(result, result_key, writer, writer_key, writer_step)
       writer.flush()
 
-    evaluation_epoch = evaluation_epoch +1
+    evaluation_epoch = evaluation_epoch + 1
 
 # Finish
 print('Shutting down...')

@@ -78,12 +78,18 @@ class ActiveVisionEnv(PyGameEnv):
     i.e. the params are available via self.get_config()
     """
     config = self.get_config()
+
+    self.screen_scale = float(config["screen_scale"])  # resize the screen image before returning as an observation
+
+    self.enabled = False if config["enable_active_vision"] == 0 else True
+    if not self.enabled:
+      super().__init__(num_actions, screen_width, screen_height, frame_rate)
+      return
+
     self.fov_fraction = float(config["fovea_fraction"])  # fovea occupies this fraction of the screen image (applied to x and y respectively)
     self.fov_scale = float(config["fovea_scale"])  # image size, expressed as fraction of screen size
     self.step_size = int(config["gaze_step_size"])  # step size of gaze movement, in pixels in the screen image
     self.peripheral_scale = float(config["peripheral_scale"])  # peripheral image size, expressed as fraction of screen size
-    self.screen_scale = float(config["screen_scale"])  # resize the screen image before returning as an observation
-    self.enabled = False if config["enable_active_vision"] == 0 else True
 
     self.fov_size = np.array([int(self.fov_fraction * screen_width), int(self.fov_fraction * screen_height)])
     self.gaze = np.array([screen_width // 2, screen_height // 2])  # gaze position - (x, y)--> *top left of fovea*
@@ -123,11 +129,16 @@ class ActiveVisionEnv(PyGameEnv):
     self._y_max = screen_height - self.fov_size[1]
     # self.i = 0      # used for debugging
 
+    self._writer = None
+
     super().__init__(num_actions, screen_width, screen_height, frame_rate)
 
   def reset(self):
     """Reset gaze coordinates"""
     return super().reset()
+
+  def set_writer(self, writer):
+    self._writer = writer
 
   def _do_step(self, action, time):
     # update the position of the fovea (fov_pos), given the action taken
@@ -153,23 +164,25 @@ class ActiveVisionEnv(PyGameEnv):
     if self.enabled:
       total_actions = self._actions_end  # Gaze control
     else:
-      total_actions = self._actions_start
+      total_actions = num_actions  # in this case, do not add any actions
 
     self.action_space = spaces.Discrete(total_actions)
 
   def _create_observation_space(self, screen_width, screen_height, channels=3):
-    full_shape = self.get_full_observation_shape()
-    fovea_shape = self.get_fovea_observation_shape()  #(channels, screen_height, screen_width)
-    peripheral_shape = self.get_peripheral_observation_shape()  #(channels, screen_height, screen_width)
-    full = spaces.Box(low=0, high=255, shape=full_shape, dtype=np.uint8)
-    fovea = spaces.Box(low=0, high=1.0, shape=fovea_shape, dtype=np.float32)
-    peripheral = spaces.Box(low=0, high=1.0, shape=peripheral_shape, dtype=np.float32)
-    gaze = spaces.Box(low=np.array([0.0, 0.0]), high=np.array([screen_width, screen_height]), dtype=np.float32)
-    self.observation_space = spaces.Dict({
-      'full': full,
-      'fovea': fovea,
-      'peripheral': peripheral,
-      'gaze': gaze})
+    if not self.enabled:
+      full_shape = self.get_full_observation_shape()
+      full = spaces.Box(low=0, high=255, shape=full_shape, dtype=np.uint8)
+      self.observation_space = spaces.Dict({'full': full})
+    else:
+      fovea_shape = self.get_fovea_observation_shape()  #(channels, screen_height, screen_width)
+      peripheral_shape = self.get_peripheral_observation_shape()  #(channels, screen_height, screen_width)
+      fovea = spaces.Box(low=0, high=1.0, shape=fovea_shape, dtype=np.float32)
+      peripheral = spaces.Box(low=0, high=1.0, shape=peripheral_shape, dtype=np.float32)
+      gaze = spaces.Box(low=np.array([0.0, 0.0]), high=np.array([screen_width, screen_height]), dtype=np.float32)
+      self.observation_space = spaces.Dict({
+        'fovea': fovea,
+        'peripheral': peripheral,
+        'gaze': gaze})
 
   def get_full_observation_shape(self):
     h = self.screen_shape[0]
@@ -217,55 +230,60 @@ class ActiveVisionEnv(PyGameEnv):
     img = img_as_float(img)
 
     def fast_resize(image, scale, multichannel):
-      # Old way:
-      #return rescale(image, scale, multichannel=multichannel)
-      # New way:
       from PIL import Image
       pili = Image.fromarray(image.astype('uint8'), 'RGB')
       size = (int(image.shape[0] * scale), int(image.shape[1] * scale))
       pili2 = pili.resize(size, Image.ANTIALIAS)
       return pili2
 
-    # Peripheral Image - downsize to get peripheral (lower resolution) image
-    self._img_periph = fast_resize(img, self.peripheral_scale, multichannel=multichannel)
-
-    # Foveal Image - crop to fovea and rescale
-    h, w, ch = img.shape[0], img.shape[1], img.shape[2]
-    pixels_h = int(h * self.fov_fraction)
-    pixels_w = int(w * self.fov_fraction)
-    self._img_fov = img[self.gaze[1]:self.gaze[1] + pixels_h, self.gaze[0]:self.gaze[0] + pixels_w, :]
-    self._img_fov = fast_resize(self._img_fov, self.fov_scale, multichannel=multichannel)
-
     # resize screen image before returning as observation
-    img = fast_resize(img, self.screen_scale, multichannel=multichannel)
-
-    # debugging
-    if debug:
-      print('img orig screen shape:', img_shape)
-      print('img periph shape:', self._img_periph.shape)
-      print('img fovea shape:', self._img_fov.shape)
-      print('img screen rescaled shape:', img.shape)
-
-      # import matplotlib.pyplot as plt
-      # plt.imsave(str(self.i)+'_fov.png', self._img_fov)
-      # plt.imsave(str(self.i)+'_periph.png', self._img_periph)
-      # self.i += 1
+    img_resized = fast_resize(img, self.screen_scale, multichannel=multichannel)
 
     # PyTorch expects dimension order [b,c,h,w]
     # transpose dimensions from [,h,w,c] to [,c,h,w]]
     order = (2, 0, 1)
-    self._img_full = np.transpose(img, order)
-    self._img_fov = np.transpose(self._img_fov, order)
-    self._img_periph = np.transpose(self._img_periph, order)
-    # print('fovea shape trans:', self._img_fov.shape)
 
-    # Assemble dict
-    observation = {
-      'full': self._img_full.astype(np.float32),
-      'fovea': self._img_fov.astype(np.float32),
-      'peripheral': self._img_periph.astype(np.float32),
-      'gaze': self.gaze.astype(np.float32)
-    }
+    if not self.enabled:
+      self._img_full = np.transpose(img_resized, order)
+
+      # Assemble dict
+      observation = {
+        'full': self._img_full.astype(np.float32),
+      }
+    else:
+      # Peripheral Image - downsize to get peripheral (lower resolution) image
+      self._img_periph = fast_resize(img, self.peripheral_scale, multichannel=multichannel)
+
+      # Foveal Image - crop to fovea and rescale
+      h, w, ch = img.shape[0], img.shape[1], img.shape[2]
+      pixels_h = int(h * self.fov_fraction)
+      pixels_w = int(w * self.fov_fraction)
+      self._img_fov = img[self.gaze[1]:self.gaze[1] + pixels_h, self.gaze[0]:self.gaze[0] + pixels_w, :]
+      self._img_fov = fast_resize(self._img_fov, self.fov_scale, multichannel=multichannel)
+
+      # debugging
+      if debug:
+        print('img orig screen shape:', img_shape)
+        print('img periph shape:', self._img_periph.shape)
+        print('img fovea shape:', self._img_fov.shape)
+        print('img screen rescaled shape:', img_resized.shape)
+
+      if self._writer:
+        import torchvision
+        import torch
+        self._writer.add_image('av/fovea', torchvision.utils.make_grid(torch.tensor(self._img_fov)))
+        self._writer.add_image('av/periphery', torchvision.utils.make_grid(torch.tensor(self._img_periph)))
+
+      self._img_fov = np.transpose(self._img_fov, order)
+      self._img_periph = np.transpose(self._img_periph, order)
+      # print('fovea shape trans:', self._img_fov.shape)
+
+      # Assemble dict
+      observation = {
+        'fovea': self._img_fov.astype(np.float32),
+        'peripheral': self._img_periph.astype(np.float32),
+        'gaze': self.gaze.astype(np.float32)
+      }
 
     #end = timer()
     #print('Step obs: ', str(end - start)) # Time in seconds, e.g. 5.38091952400282
@@ -275,7 +293,7 @@ class ActiveVisionEnv(PyGameEnv):
   def draw_screen(self, screen, screen_options):
     import pygame as pygame
     # draw the gaze position
-    if self._show_fovea:
+    if self.enabled and self._show_fovea:
       BLACK = (0, 0, 0)
       # gaze pos is top left of fovea
       fovea_rect = pygame.Rect(self.gaze[0], self.gaze[1],

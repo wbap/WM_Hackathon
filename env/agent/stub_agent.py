@@ -26,12 +26,11 @@ torch, nn = try_import_torch()
 
 # default config
 config = {
-  "mtl": {},
-  "sc": {},
-  "pfc": {}
 }
 
 from ray.rllib.models.preprocessors import Preprocessor
+
+
 class StubPreprocessor(Preprocessor):
   """Test of a custom preprocessor - not required, for now, as this functionality is now in the wrapping Environment."""
 
@@ -40,11 +39,12 @@ class StubPreprocessor(Preprocessor):
 
   def _init_shape(self, obs_space, options):
     print('Obs space:', str(obs_space))
-    tx_shape = (10,10,10)
+    tx_shape = (10, 10, 10)
     #tx_shape = obs_space
     return tx_shape # can vary depending on inputs
+
   def transform(self, observation):
-    tx = np.zeros((10,10,10))
+    tx = np.zeros((10, 10, 10))
     #tx = observation
     return tx  # return the preprocessed observation
 
