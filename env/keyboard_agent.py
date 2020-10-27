@@ -34,6 +34,7 @@ env.use_wall_clock = True
 env.reset()
 #env.render(render_mode)
 
+
 def get_action(pressed_keys):
   action = None
   if pressed_keys[pygame.K_0] == 1:

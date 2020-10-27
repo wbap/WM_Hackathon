@@ -1,3 +1,4 @@
+import logging
 import sys
 import numpy as np
 
@@ -21,30 +22,15 @@ import ray.rllib.agents.ppo as ppo
 from ray.rllib.utils.framework import try_import_torch
 
 
-# from utils.medial_temporal_lobe import MedialTemporalLobe
-# from utils.positional_encoding import PositionalEncoder
-# from utils.prefrontal_cortex import PrefrontalCortex
-# from utils.retina import Retina
-# from utils.superior_colliculus import SuperiorColliculus
-
 torch, nn = try_import_torch()
 
 # default config
 config = {
-  "retina": {
-    'f_size': 7,
-    'f_sigma': 2.0,
-    'f_k': 1.6  # approximates Laplacian of Gaussian
-  },
-  "positional_encoding": {},
-  "vc_fovea": {},
-  "vc_periphery": {},
-  "mtl": {},
-  "sc": {},
-  "pfc": {}
 }
 
 from ray.rllib.models.preprocessors import Preprocessor
+
+
 class StubPreprocessor(Preprocessor):
   """Test of a custom preprocessor - not required, for now, as this functionality is now in the wrapping Environment."""
 
@@ -53,13 +39,15 @@ class StubPreprocessor(Preprocessor):
 
   def _init_shape(self, obs_space, options):
     print('Obs space:', str(obs_space))
-    tx_shape = (10,10,10)
+    tx_shape = (10, 10, 10)
     #tx_shape = obs_space
     return tx_shape # can vary depending on inputs
+
   def transform(self, observation):
-    tx = np.zeros((10,10,10))
+    tx = np.zeros((10, 10, 10))
     #tx = observation
-    return tx # return the preprocessed observation
+    return tx  # return the preprocessed observation
+
 
 class StubAgent(TorchModelV2, nn.Module):
   """PyTorch custom model that flattens the input to 1d and delegates to a fc-net."""
@@ -79,29 +67,6 @@ class StubAgent(TorchModelV2, nn.Module):
     nn.Module.__init__(self)
     self.torch_sub_model = TorchFC(flat_observation_space, action_space, num_outputs, model_config, name)
 
-    # # create the stubbed sub-modules of the simple agent
-    # self._build()
-
-  # def _build(self):
-  #   retina = Retina(1, config=None)
-  #   self.add_module('retina', retina)
-
-  #   pe_config = self.custom_model_config["positional_encoding"]
-  #   pe = PositionalEncoder(config=pe_config)
-  #   self.add_module('pe', pe)
-
-  #   mtl_config = self.custom_model_config["mtl"]
-  #   mtl = MedialTemporalLobe(config=mtl_config)
-  #   self.add_module('mtl', mtl)
-
-  #   pfc_config = self.custom_model_config["pfc"]
-  #   pfc = PrefrontalCortex(config=pfc_config)
-  #   self.add_module('pfc', pfc)
-
-  #   sc_config = self.custom_model_config["sc"]
-  #   sc = SuperiorColliculus(config=sc_config)
-  #   self.add_module('sc', sc)
-
   def forward(self, input_dict, state, seq_lens):
     # flatten
     obs_4d = input_dict["obs"].float()
@@ -110,34 +75,13 @@ class StubAgent(TorchModelV2, nn.Module):
     obs_3d = np.reshape(obs_4d, obs_3d_shape)
     input_dict["obs"] = obs_3d
 
-    #print(input_dict["obs"])
+    # print(input_dict["obs"])
 
     # TODO: forward() any other PyTorch modules here, pass result to RL algo
-    # img_fov = obs["fovea"]
-    # img_periph = obs["peripheral"]
-    # fov_dog_pos, fov_dog_neg = self.retina.forward(img_fov)
-    # periph_dog_pos, periph_dog_neg = self.retina.forward(img_periph)
-    # what = self.vc_fovea.forward(fov_dog_pos, fov_dog_neg)
-    # context = self.vc_periph.forward(periph_dog_pos, periph_dog_neg)
-    #
-    # gaze_pos = obs["gaze"]
-    # where = self.pe.forward(gaze_pos)
-    # what_where = (where, what, context)
-    #
-    # mtl_out = self.mtl.forward(what_where)
-    #
-    # ---> create circular buffer for mtl outputs
-    # buffer = buffer.add(mtl_out)
-    #
-    # gaze_target, buffer = self.pfc.forward(gaze_target, buffer)
-    #
-    # 'buffer' goes to BG (the rllib agent)
-    #
-    # gaze_dx, gaze_dy = self.sc.forward(gaze_target)
-    # actions = [gaze_dx, gaze_dy]
 
     # Defer to default FC model
     fc_out, _ = self.torch_sub_model(input_dict, state, seq_lens)
+
     return fc_out, []
 
   def value_function(self):

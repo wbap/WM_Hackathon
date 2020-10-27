@@ -4,12 +4,6 @@ from .image_utils import *
 
 class Retina(nn.Module):
 
-  config = {
-    'f_size': 7,
-    'f_sigma': 2.0,
-    'f_k': 1.6  # approximates Laplacian of Gaussian
-  }
-
   @staticmethod
   def get_default_config():
     config = {
@@ -34,12 +28,6 @@ class Retina(nn.Module):
 
     self._build()
 
-  # def set_image(self, name, val):
-  #   self._image_dic[name] = val
-  #
-  # def get_image(self, name):
-  #   return self._image_dic[name]
-
   def _build(self):
     # DoG kernel - edge and corner detection plus smoothing
     size = self._config['f_size']
@@ -53,7 +41,6 @@ class Retina(nn.Module):
     interest_neg = self._dog_filter_neg(image_tensor)
     channel_dim = 1  # B,C,H,W
     interest = torch.cat([interest_pos, interest_neg], dim=channel_dim)
-    #return interest_pos, interest_neg
     return interest, interest_pos, interest_neg
 
   def get_output_size(self, h, w):

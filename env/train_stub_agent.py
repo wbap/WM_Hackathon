@@ -27,20 +27,14 @@ from torch.utils.tensorboard import SummaryWriter
 """
 Create a simple RL agent using StubAgent. 
 The environment can be chosen. Both environment and agent are configurable.
-
-Usage: python simple_agent.py ENV_NAME ENV_CONFIG_FILE MODEL_CONFIG_FILE
-e.g.
-  python simple_agent.py dm2s-v0 ../games/dm2s/DM2S.par simple_agent_model.json
-  --> the StubAgent plays the dm2s game
-
-  python simple_agent.py simple-v0 simple_env_machine.json simple_agent_model.json
-  --> the StubAgent (conf simple_agent_model.json) plays the simple env (config simple_env_machine.json)  
 """
+
 
 def stub_env_creator(task_env_type, task_env_config_file, stub_env_config_file):
   """Custom functor to create custom Gym environments."""
   from gym_game.envs import StubAgentEnv
   return StubAgentEnv(task_env_type, task_env_config_file, stub_env_config_file)  # Instantiate with config fil
+
 
 if len(sys.argv) < 4:
     print('Usage: python simple_agent.py ENV_NAME ENV_CONFIG_FILE STUB_ENV_CONFIG_FILE AGENT_CONFIG_FILE')
@@ -142,6 +136,14 @@ results_window_size = 100
 status_message = "{:3d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f}"
 file_name = 'None'
 
+# Set Env writer for summaries
+try:
+    env.set_writer(writer)
+except AttributeError as error:
+    print(error)
+    print("This environment does not use the TensorBoard writer.")
+
+
 def update_results(result_step, results_list, result_key):
   value = result_step[result_key]
   if not math.isnan(value):
@@ -156,6 +158,7 @@ def update_results(result_step, results_list, result_key):
   #print('list mean:', mean_value)
   return mean_value
 
+
 def find_json_value(key_path, json, delimiter='.'):
   paths = key_path.split(delimiter)
   data = json
@@ -163,11 +166,13 @@ def find_json_value(key_path, json, delimiter='.'):
     data = data[paths[i]]
   return data
 
+
 def update_writer(result_step, result_key, writer, writer_key, step):
   #value = result_step[result_key]
   value = find_json_value(result_key, result_step)
   if not math.isnan(value):
     writer.add_scalar(writer_key, value, step)
+
 
 result_writer_keys = [
   'info.learner.policy_entropy',
@@ -177,7 +182,7 @@ result_writer_keys = [
   'info.num_steps_trained',
   'episode_reward_min',
   'episode_reward_mean',
-  'episode_reward_max' ]
+  'episode_reward_max']
 
 # TRAINING STARTS
 evaluation_epoch = 0
@@ -229,7 +234,7 @@ for training_epoch in range(training_epochs):  # number of epochs for all traini
         update_writer(result, result_key, writer, writer_key, writer_step)
       writer.flush()
 
-    evaluation_epoch = evaluation_epoch +1
+    evaluation_epoch = evaluation_epoch + 1
 
 # Finish
 print('Shutting down...')
