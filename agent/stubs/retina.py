@@ -1,5 +1,7 @@
 import torch.nn as nn
-from .image_utils import *
+import torch
+
+from utils.image_utils import get_dog_image_filter, conv2d_output_shape
 
 
 class Retina(nn.Module):

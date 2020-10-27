@@ -2,7 +2,7 @@
   "mainTaskRepeat": 6,
   "observationRepeat": 2,
   "frameRate": 3,
-  "imageDir": "../games/dm2s/png",
+  "imageDir": "resources/dm2s",
   "fovea_fraction": 0.1,
   "fovea_scale": 0.5,
   "gaze_step_size": 100,
@@ -13,5 +13,17 @@
   "videoWidth": 800,
   "videoHeight": 800,
   "colors": ["LB"],
-  "shapes": ["Barred_Ring", "Triangle", "Cross", "Heart"]
+  "shapes": [
+    "Barred_Ring",
+    "Triangle",
+    "Crescent",
+    "Cross",
+    "Circle",
+    "Heart",
+    "Pentagon",
+    "Ring",
+    "Square"
+  ],
+  "grid_length_x": 10,
+  "grid_length_y": 10
 }

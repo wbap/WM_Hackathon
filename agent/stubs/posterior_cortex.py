@@ -1,8 +1,7 @@
 import torch.nn as nn
 from cerenaut_pt_core.components.sparse_autoencoder import SparseAutoencoder
 
-from .image_utils import *
-from .positional_encoder import PositionalEncoder
+from utils.general_utils import mergedicts
 from .retina import *
 
 

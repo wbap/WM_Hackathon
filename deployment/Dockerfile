@@ -63,6 +63,6 @@ RUN echo "export PATH=/usr/local/cuda-9.0/bin:$PATH" >> $HOME/.bashrc
 RUN echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64/:$LD_LIBRARY_PATH" >> $HOME/.bashrc
 
 # set the default path to the mounted folder (commands passed to the container are run from there)
-WORKDIR wm_hackathon/env
+WORKDIR wm_hackathon
 
 CMD ["bash"]

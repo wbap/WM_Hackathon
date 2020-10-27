@@ -12,11 +12,13 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pygame as pygame
 
-from gym_game.stubs.positional_encoder import PositionalEncoder
-from gym_game.stubs.posterior_cortex import PosteriorCortex
-from gym_game.stubs.image_utils import *
 
 from ray.rllib.utils.framework import try_import_torch
+
+from agent.stubs.positional_encoder import PositionalEncoder
+from agent.stubs.posterior_cortex import PosteriorCortex
+from utils.general_utils import mergedicts
+
 torch, nn = try_import_torch()
 
 
