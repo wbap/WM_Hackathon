@@ -74,8 +74,8 @@ class MoveToLightEnv(FiniteStateEnv):
     on_target_duration = 500
 
     self.add_state(self.STATE_IDLE, next_states=[self.STATE_SHOW_TARGET], duration=idle_duration, start_state=True)
-    self.add_state(self.STATE_ON_TARGET, next_states=[self.STATE_SHOW_TARGET], duration=on_target_duration)
     self.add_state(self.STATE_SHOW_TARGET, next_states=[self.STATE_IDLE, self.STATE_ON_TARGET], duration=light_duration)
+    self.add_state(self.STATE_ON_TARGET, next_states=[self.STATE_SHOW_TARGET], duration=on_target_duration)
     self.add_state(self.STATE_END, end_state=True)
 
   def _get_caption(self):
@@ -89,6 +89,9 @@ class MoveToLightEnv(FiniteStateEnv):
 
   def on_state_changed(self, old_state_key, new_state_key):
     logging.info('State -> ', new_state_key, '@t=', self.state_time)
+
+    if new_state_key == self.STATE_SHOW_TARGET:
+      self.position = self.get_random_sample()
 
   def _update_state_key(self, old_state_key, action, elapsed_time):
     """
@@ -116,10 +119,6 @@ class MoveToLightEnv(FiniteStateEnv):
       if elapsed_time > duration:
         new_state_key = next_state_keys[0]
 
-        # 'starting up' or time for next target, select new position
-        if old_state_key == self.STATE_IDLE or old_state_key == self.STATE_ON_TARGET:
-          self.position = self.get_random_sample()
-
         # continue showing new targets (until max reached)
         if old_state_key == self.STATE_SHOW_TARGET:
           self.play_counts += 1
@@ -140,12 +139,12 @@ class MoveToLightEnv(FiniteStateEnv):
       return False
 
   def _update_reward(self, old_state_key, action, elapsed_time, new_state_key):
+    """ At the end of game (timed-out or reached target), give the +ve or -ve reward """
     reward = 0.0
-    if action != self.ACTION_NONE:
-      if self.state_key == self.STATE_ON_TARGET:
-        reward = 1.0
-      else:
-        reward = -1.0
+    if old_state_key == self.STATE_SHOW_TARGET and new_state_key == self.STATE_ON_TARGET:   # reached target
+      reward = 1.0
+    elif old_state_key == self.STATE_SHOW_TARGET and new_state_key == self.STATE_IDLE:      # timed out
+      reward = -1.0
     return reward
 
   def get_random_sample(self):

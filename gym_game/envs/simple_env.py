@@ -66,7 +66,7 @@ class SimpleEnv(PyGameEnv):
     if action == self.ACTION_N:
       self.pose[1] -= 1
       if self.pose[1] < 0:
-        self.pose[1] = self.GRID_SIZE -1
+        self.pose[1] = self.GRID_SIZE - 1
     elif action == self.ACTION_S:
       self.pose[1] += 1
       if self.pose[1] == self.GRID_SIZE:
@@ -78,7 +78,7 @@ class SimpleEnv(PyGameEnv):
     elif action == self.ACTION_W:
       self.pose[0] -= 1
       if self.pose[0] < 0:
-        self.pose[0] = self.GRID_SIZE -1
+        self.pose[0] = self.GRID_SIZE - 1
 
   def at_goal(self):
     if (self.pose[0] == self.goal[0]) and (self.pose[1] == self.goal[1]):
@@ -116,17 +116,17 @@ class SimpleEnv(PyGameEnv):
       'goal': self.goal,
       'reward': reward, 
       'action': action,
-      'done': done }
+      'done': done}
     return [observation, reward, done, additional]
    
   def render_screen(self, screen):
     #print('RENDER ENV ------------------------------')
-    screen.fill((0,0,0))
+    screen.fill((0, 0, 0))
 
     if self.goal is None or self.pose is None:
       return
-    YELLOW = (255,255,0)
-    BLUE = (0,0,255)
+    YELLOW = (255, 255, 0)
+    BLUE = (0, 0, 255)
 
     rect = pygame.Rect(self.goal[0]*self.PX_SIZE, self.goal[1]*self.PX_SIZE, self.PX_SIZE, self.PX_SIZE)
     pygame.draw.rect(screen, BLUE, rect)
