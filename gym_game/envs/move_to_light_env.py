@@ -5,7 +5,7 @@ import logging
 
 from .finite_state_env import FiniteStateEnv
 
-near_target_radius = 20
+near_target_radius = 0
 
 
 class MoveToLightEnv(FiniteStateEnv):
@@ -53,7 +53,7 @@ class MoveToLightEnv(FiniteStateEnv):
     w = self.gVideoWidth
     h = self.gVideoHeight
 
-    self.position = None
+    self.target_centre = None    # x, y
     self.result = None
     self.play_counts = 0
 
@@ -70,8 +70,8 @@ class MoveToLightEnv(FiniteStateEnv):
     # note, the first 'next_state' is the default state to transition to, when interval has elapsed
 
     idle_duration = 0
-    light_duration = 3000
-    on_target_duration = 500
+    light_duration = 10000
+    on_target_duration = 1000
 
     self.add_state(self.STATE_IDLE, next_states=[self.STATE_SHOW_TARGET], duration=idle_duration, start_state=True)
     self.add_state(self.STATE_SHOW_TARGET, next_states=[self.STATE_IDLE, self.STATE_ON_TARGET], duration=light_duration)
@@ -82,16 +82,16 @@ class MoveToLightEnv(FiniteStateEnv):
     return 'Move To Light'
 
   def reset(self):
-    self.position = np.array([self.gVideoWidth // 2, self.gVideoHeight // 2])
+    self.target_centre = np.array([self.gVideoWidth // 2, self.gVideoHeight // 2])
     self.result = None
     self.play_counts = 0
     return super().reset()
 
   def on_state_changed(self, old_state_key, new_state_key):
-    logging.info('State -> ', new_state_key, '@t=', self.state_time)
+    print('State -> ', new_state_key, '@t=', self.state_time)
 
     if new_state_key == self.STATE_SHOW_TARGET:
-      self.position = self.get_random_sample()
+      self.target_centre = self.get_random_sample()
 
   def _update_state_key(self, old_state_key, action, elapsed_time):
     """
@@ -129,9 +129,11 @@ class MoveToLightEnv(FiniteStateEnv):
     return old_state_key
 
   def is_on_target(self):
-    touching_distance = self.target_radius + self.fov_size[0]  # assumes fovea is equal size in both x and y
-    distance = np.sqrt(np.sum(np.square(self.gaze - self.position)))
+    touching_distance = self.target_radius + self.fov_size_half[0]  # assumes fovea is equal size in both x and y
+    distance = np.sqrt(np.sum(np.square(self.gaze_centre - self.target_centre)))
     gap = distance - touching_distance
+
+    print(" ** gap calc ** touching_dist = {}, distance = {}, gap = {} ".format(touching_distance, distance, gap))
 
     if gap <= near_target_radius:
       return True
@@ -143,13 +145,35 @@ class MoveToLightEnv(FiniteStateEnv):
     reward = 0.0
     if old_state_key == self.STATE_SHOW_TARGET and new_state_key == self.STATE_ON_TARGET:   # reached target
       reward = 1.0
+      print(" -------- Reward = 1")
     elif old_state_key == self.STATE_SHOW_TARGET and new_state_key == self.STATE_IDLE:      # timed out
       reward = -1.0
+      print(" ++++++++ Reward = -1")
     return reward
 
   def get_random_sample(self):
-    y = self.np_random.randint(0, self.screen_shape[0])
-    x = self.np_random.randint(0, self.screen_shape[1])
+
+    mode_grid = True
+
+    if mode_grid:
+      grid_cell = self.np_random.randint(0, self.grid_utils.num_cells()-1)
+
+      # convert to action space
+      action = grid_cell + self._actions_start
+
+      # convert to xy
+      xy = self.grid_utils.action_2_xy(action)
+      x = xy[0]
+      y = xy[1]
+
+    else:   # continuous
+      min_xy = self.target_radius
+      max_x = self.screen_shape[0] - self.target_radius
+      max_y = self.screen_shape[1] - self.target_radius
+
+      y = self.np_random.randint(min_xy, max_x)
+      x = self.np_random.randint(min_xy, max_y)
+
     return np.array([x, y])
 
   def render_screen(self, screen):
@@ -182,6 +206,8 @@ class MoveToLightEnv(FiniteStateEnv):
     screen.fill(self.WHITE)
 
     if screen_options['target']:
-      pygame.draw.circle(screen, self.RED, self.position, self.target_radius)
+      target_rect = pygame.Rect(self.target_centre[0]-self.target_radius, self.target_centre[1]-self.target_radius,
+                                2*self.target_radius, 2*self.target_radius)
+      pygame.draw.rect(screen, self.RED, target_rect)
 
     super().draw_screen(screen, [])

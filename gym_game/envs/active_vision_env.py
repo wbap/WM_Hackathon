@@ -92,7 +92,8 @@ class ActiveVisionEnv(PyGameEnv):
     self.peripheral_scale = float(config["peripheral_scale"])  # peripheral image size, expressed as fraction of screen size
 
     self.fov_size = np.array([int(self.fov_fraction * screen_width), int(self.fov_fraction * screen_height)])
-    self.gaze = np.array([screen_width // 2, screen_height // 2])  # gaze position - (x, y)--> *top left of fovea*
+    self.fov_size_half = 0.5*self.fov_size
+    self.gaze_centre = np.array([screen_width // 2, screen_height // 2])  # gaze position - (x, y)--> *center of fovea*
 
     self._show_fovea = True if config["show_fovea_on_screen"] else False
 
@@ -123,10 +124,11 @@ class ActiveVisionEnv(PyGameEnv):
     self._img_periph = None
     self._img_full = None
 
-    self._x_min = self.fov_size[0]
-    self._x_max = screen_width - self.fov_size[0]
-    self._y_min = self.fov_size[1]
-    self._y_max = screen_height - self.fov_size[1]
+    # bounds for centre of gaze
+    self._x_min = self.fov_size_half[0]
+    self._x_max = screen_width - self.fov_size_half[0]
+    self._y_min = self.fov_size_half[1]
+    self._y_max = screen_height - self.fov_size_half[1]
     # self.i = 0      # used for debugging
 
     self._writer = None
@@ -151,12 +153,12 @@ class ActiveVisionEnv(PyGameEnv):
     if self._actions_start <= action < self._actions_end:
 
       if self.GAZE_CONTROL_MODE is GazeMode.ITERATIVE:
-        self.gaze = self.gaze + self._action_2_xy[action] * self.step_size
+        self.gaze_centre = self.gaze_centre + self._action_2_xy[action] * self.step_size
       else:
-        self.gaze = self.grid_utils.action_2_xy(action)
+        self.gaze_centre = self.grid_utils.action_2_xy(action)
 
-      self.gaze[0] = np.clip(self.gaze[0], self._x_min, self._x_max)   # ensure x coord is in bounds
-      self.gaze[1] = np.clip(self.gaze[1], self._y_min, self._y_max)   # ensure y coord is in bounds
+      self.gaze_centre[0] = np.clip(self.gaze_centre[0], self._x_min, self._x_max)   # ensure x coord is in bounds
+      self.gaze_centre[1] = np.clip(self.gaze_centre[1], self._y_min, self._y_max)   # ensure y coord is in bounds
 
       #print("New gaze: ", self.gaze)
 
@@ -258,7 +260,7 @@ class ActiveVisionEnv(PyGameEnv):
       h, w, ch = img.shape[0], img.shape[1], img.shape[2]
       pixels_h = int(h * self.fov_fraction)
       pixels_w = int(w * self.fov_fraction)
-      self._img_fov = img[self.gaze[1]:self.gaze[1] + pixels_h, self.gaze[0]:self.gaze[0] + pixels_w, :]
+      self._img_fov = img[self.gaze_centre[1]:self.gaze_centre[1] + pixels_h, self.gaze_centre[0]:self.gaze_centre[0] + pixels_w, :]
       self._img_fov = fast_resize(self._img_fov, self.fov_scale, multichannel=multichannel)
 
       # debugging
@@ -282,7 +284,7 @@ class ActiveVisionEnv(PyGameEnv):
       observation = {
         'fovea': self._img_fov.astype(np.float32),
         'peripheral': self._img_periph.astype(np.float32),
-        'gaze': self.gaze.astype(np.float32)
+        'gaze': self.gaze_centre.astype(np.float32)
       }
 
     #end = timer()
@@ -296,6 +298,6 @@ class ActiveVisionEnv(PyGameEnv):
     if self.enabled and self._show_fovea:
       BLACK = (0, 0, 0)
       # gaze pos is top left of fovea
-      fovea_rect = pygame.Rect(self.gaze[0], self.gaze[1],
+      fovea_rect = pygame.Rect(self.gaze_centre[0] - self.fov_size_half[0], self.gaze_centre[1] - self.fov_size_half[1],
                                self.fov_size[0], self.fov_size[1])
       pygame.draw.rect(screen, BLACK, fovea_rect, 1)

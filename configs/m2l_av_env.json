@@ -1,8 +1,8 @@
 {
   "mainTaskRepeat": 6,
   "frameRate": 3,
-  "targetRadius": 20,
-  "fovea_fraction": 0.1,
+  "targetRadius": 133,
+  "fovea_fraction": 0.3,
   "fovea_scale": 0.5,
   "gaze_step_size": 100,
   "peripheral_scale": 0.05,

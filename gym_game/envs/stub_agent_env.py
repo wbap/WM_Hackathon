@@ -128,7 +128,6 @@ class StubAgentEnv(gym.Env):
     self._writer = None
 
   def reset(self):
-    #print('>>>>>>>>>>> Stub reset')
     obs = self.env.reset()
     return self.forward(obs)
 
@@ -136,8 +135,8 @@ class StubAgentEnv(gym.Env):
     self._writer = writer
     try:
       self.env.set_writer(writer)
-    except AttributeError as error:
-      print(error)
+    except AttributeError as err:
+      print(err)
       print("This environment does not use the TensorBoard writer.")
 
   # -------------------------------------- Building Regions --------------------------------------
