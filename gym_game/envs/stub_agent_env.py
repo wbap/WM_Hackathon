@@ -132,6 +132,7 @@ class StubAgentEnv(gym.Env):
     return self.forward(obs)
 
   def set_writer(self, writer):
+    print(" ++++++++++++++++++ StubAgentEnv - using writer", writer)
     self._writer = writer
     try:
       self.env.set_writer(writer)
@@ -221,6 +222,8 @@ class StubAgentEnv(gym.Env):
   def forward(self, observation):
     # print('-----------Obs old', observation)
 
+    print("StubAgentEnv: --  --  --  --  --  --  --  --  --  -- WRITER = ", self._writer)
+
     # process foveal and peripheral parietal cortex
     obs_dict = {}
     if self._use_visual:
@@ -229,6 +232,13 @@ class StubAgentEnv(gym.Env):
         input_tensor = self.obs_to_tensor(observation, obs_key)
         encoding_tensor, decoding, target = cortex.forward(input_tensor)
         self.tensor_to_obs(encoding_tensor, obs_dict, obs_key)
+
+        if self._writer:
+          import torchvision
+          self._writer.add_image('vc_out/' + obs_key, torchvision.utils.make_grid(decoding))
+
+      if self._writer:
+        self._writer.flush()
 
     # process positional encoding
     if self._use_pe:
@@ -273,6 +283,7 @@ class StubAgentEnv(gym.Env):
     env_action = sc_2_env(sc_action)
 
     [obs, self.reward, is_end_state, additional] = self.env.step(env_action)
+
     tx_obs = self.forward(obs)  # Process the input
     emit = [tx_obs, self.reward, is_end_state, additional]
 

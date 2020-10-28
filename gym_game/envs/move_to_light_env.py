@@ -88,7 +88,7 @@ class MoveToLightEnv(FiniteStateEnv):
     return super().reset()
 
   def on_state_changed(self, old_state_key, new_state_key):
-    print('State -> ', new_state_key, '@t=', self.state_time)
+    # print('State -> ', new_state_key, '@t=', self.state_time)
 
     if new_state_key == self.STATE_SHOW_TARGET:
       self.target_centre = self.get_random_sample()
@@ -133,7 +133,7 @@ class MoveToLightEnv(FiniteStateEnv):
     distance = np.sqrt(np.sum(np.square(self.gaze_centre - self.target_centre)))
     gap = distance - touching_distance
 
-    print(" ** gap calc ** touching_dist = {}, distance = {}, gap = {} ".format(touching_distance, distance, gap))
+    # print(" ** gap calc ** touching_dist = {}, distance = {}, gap = {} ".format(touching_distance, distance, gap))
 
     if gap <= near_target_radius:
       return True
@@ -145,10 +145,10 @@ class MoveToLightEnv(FiniteStateEnv):
     reward = 0.0
     if old_state_key == self.STATE_SHOW_TARGET and new_state_key == self.STATE_ON_TARGET:   # reached target
       reward = 1.0
-      print(" -------- Reward = 1")
+      # print(" -------- Reward = 1")
     elif old_state_key == self.STATE_SHOW_TARGET and new_state_key == self.STATE_IDLE:      # timed out
       reward = -1.0
-      print(" ++++++++ Reward = -1")
+      # print(" ++++++++ Reward = -1")
     return reward
 
   def get_random_sample(self):

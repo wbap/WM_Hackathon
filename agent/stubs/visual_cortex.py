@@ -10,15 +10,11 @@ class VisualCortex(nn.Module):
   Retinal coding, then Visual Cortex feature extraction, and positional encoding of the gaze.
   """
 
-  # STREAM_FOVEA = 'fovea'
-  # STREAM_PERIPHERAL = 'peripheral'
-  # NUM_STREAMS = 2
-
   MODULE_RETINA = 'retina'
   MODULE_CORTEX = 'cortex'
 
   @staticmethod
-  def get_default_config():  #input_config):
+  def get_default_config():
 
     retina_config = Retina.get_default_config()
     cortex_config = SparseAutoencoder.get_default_config()
@@ -28,10 +24,6 @@ class VisualCortex(nn.Module):
       'cortex': cortex_config
     }
 
-    # config = {}
-    # for stream in input_config.keys():
-    #   config[stream] = stream_config
-    # return config
     return stream_config
 
   @staticmethod
@@ -39,7 +31,6 @@ class VisualCortex(nn.Module):
     """
     Override the config selectively. Return a complete config.
     """
-    #updated_config = {**default_config, **delta_config}
     updated_config = dict(mergedicts(default_config, delta_config))
     return updated_config
 
@@ -49,10 +40,6 @@ class VisualCortex(nn.Module):
     self._name = name
     self._input_shape = input_shape
     self._config = config
-    # if config is None:
-    #   self._config = PosteriorCortex.get_default_config()  #input_config)
-    # else:
-    #   self._config = config
 
     """
     We have several sub-components for the DoG+/- encodings of fovea and peripheral vision
@@ -62,21 +49,12 @@ class VisualCortex(nn.Module):
     """
 
     # Build networks to preprocess the observation space
-    # self._output_shapes = {}
-    # streams = input_config.keys()
-    # for stream in streams:
-    #   input_shape = input_config[stream]
-    print('>>>>>>>>>>>>>>>>>> ', self._name, 'posterior_input_shape: ', input_shape)
+    print('>>>>>>>>>>>>>>>>>> ', self._name, 'visual_cortex_input_shape: ', input_shape)
     retina_output_shape = self._build_retina(input_shape)
     print('>>>>>>>>>>>>>>>>>> ', self._name, 'retina_output_shape: ', retina_output_shape)
     cortex_output_shape = self._build_visual_cortex(retina_output_shape)
-    print('>>>>>>>>>>>>>>>>>> ', self._name, 'cortex_output_shape: ', cortex_output_shape)
+    print('>>>>>>>>>>>>>>>>>> ', self._name, 'visual_cortex_output_shape: ', cortex_output_shape)
 
-    #observation_shape = self.get_observation_shape(cortex_output_shape)
-    #observation_space = self.get_observation_space(observation_shape)
-
-    #self._output_shapes[stream] = cortex_output_shape
-    #self._output_spaces[stream] = observation_space
     self._output_shape = cortex_output_shape
 
     # Option to reload a trained set of parameters

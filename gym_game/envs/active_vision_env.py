@@ -140,6 +140,7 @@ class ActiveVisionEnv(PyGameEnv):
     return super().reset()
 
   def set_writer(self, writer):
+    print(" ++++++++++++++++++ ActiveVisionEnv - using writer", writer)
     self._writer = writer
 
   def _do_step(self, action, time):
@@ -258,9 +259,11 @@ class ActiveVisionEnv(PyGameEnv):
 
       # Foveal Image - crop to fovea and rescale
       h, w, ch = img.shape[0], img.shape[1], img.shape[2]
-      pixels_h = int(h * self.fov_fraction)
-      pixels_w = int(w * self.fov_fraction)
-      self._img_fov = img[self.gaze_centre[1]:self.gaze_centre[1] + pixels_h, self.gaze_centre[0]:self.gaze_centre[0] + pixels_w, :]
+      pxl_h_half = int(0.5 * h * self.fov_fraction)
+      pxl_w_half = int(0.5 * w * self.fov_fraction)
+
+      self._img_fov = img[self.gaze_centre[1] - pxl_h_half:self.gaze_centre[1] + pxl_h_half,
+                          self.gaze_centre[0] - pxl_w_half:self.gaze_centre[0] + pxl_w_half]
       self._img_fov = fast_resize(self._img_fov, self.fov_scale, multichannel=multichannel)
 
       # debugging
@@ -270,11 +273,13 @@ class ActiveVisionEnv(PyGameEnv):
         print('img fovea shape:', self._img_fov.shape)
         print('img screen rescaled shape:', img_resized.shape)
 
+      print("ActiveVisionEnv: --  --  --  --  --  --  --  --  --  -- WRITER = ", self._writer)
       if self._writer:
         import torchvision
         import torch
         self._writer.add_image('av/fovea', torchvision.utils.make_grid(torch.tensor(self._img_fov)))
         self._writer.add_image('av/periphery', torchvision.utils.make_grid(torch.tensor(self._img_periph)))
+        self._writer.flush()
 
       self._img_fov = np.transpose(self._img_fov, order)
       self._img_periph = np.transpose(self._img_periph, order)
