@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pygame as pygame
 
+from utils.writer_singleton import WriterSingleton
 from .pygame_env import PyGameEnv
 
 import torch
@@ -20,11 +21,13 @@ import torch.utils.data
 import bz2
 import pickle  # for read/write data
 
+
 class PyGameDataset(torch.utils.data.Dataset):
   """A PyTorch Dataset made from samples generated from PyGame environment rollouts"""
 
   def __init__(self, key=None):
     self.key = key
+    self._samples = None
 
   def read(self, dir_name):
     """
@@ -43,9 +46,9 @@ class PyGameDataset(torch.utils.data.Dataset):
     # self._samples = pickle.load(f)
     # f.close()
     # return True
-    
+
     # Its important to use binary mode 
-    #f = open(file_name, 'ab')   
+    #f = open(file_name, 'ab')
     self._samples = []
     files = [f for f in listdir(dir_name) if isfile(join(dir_name, f))]
     num_files = len(files)
@@ -53,7 +56,7 @@ class PyGameDataset(torch.utils.data.Dataset):
       file_name = files[i]
       file_path = os.path.join(dir_name, file_name)
       print('Reading file:', file_path)
-      f = open(file_path, 'rb')   
+      f = open(file_path, 'rb')
       sample = pickle.load(f)
       f.close()
       self._samples.append(sample)
@@ -65,7 +68,7 @@ class PyGameDataset(torch.utils.data.Dataset):
     
     @param file_name: name of destination file
     @type file_name: str
-    """    
+    """
     #with open(file_name, 'wb') as f:
     #  # Pickle the 'data' dictionary using the highest protocol available.
     #  pickle.dump(self._samples, f, pickle.HIGHEST_PROTOCOL)
@@ -84,7 +87,7 @@ class PyGameDataset(torch.utils.data.Dataset):
       # except (IOError):
       #   sys.stderr.write('File ' + file_path + ' cannot be written\n')
       #   return
-      f = open(file_path, 'wb') 
+      f = open(file_path, 'wb')
 
       print('dumping...', i, ' of ', num_samples)
       pickle.dump(sample, f)  #, pickle.HIGHEST_PROTOCOL)
@@ -96,9 +99,10 @@ class PyGameDataset(torch.utils.data.Dataset):
     # f.close()
 
   def generate(self, num_samples, env, policy, truncate=True):
-    """Pregenerate a finite set of samples from the environment"""
+    """Pre-generate a finite set of samples from the environment"""
     self._samples = []
-    while(len(self._samples) < num_samples):
+    WriterSingleton.global_step = 0
+    while len(self._samples) < num_samples:
       print('Have ', len(self._samples), ' samples.')
       samples = self.rollout(env, policy)  # perform a rollout
       self._samples = self._samples + samples
@@ -106,7 +110,10 @@ class PyGameDataset(torch.utils.data.Dataset):
       del self._samples[num_samples:]
 
   def get_shape(self, env):
-    """Obtains an observation by reset()ing the environment, then returns that shape. Assumes the observation is a numpy array."""
+    """
+    Obtains an observation by reset()ing the environment,
+    then returns that shape. Assumes the observation is a numpy array.
+    """
     observation = env.get_observation()
     if self.key is not None:
       return observation[self.key].shape
@@ -124,6 +131,7 @@ class PyGameDataset(torch.utils.data.Dataset):
       samples.append(observation)
       a = policy.get_action(observation)  # Generate policy given observation
       observation, reward, done, info = env.step(a)
+      WriterSingleton.global_step += 1
       #print('obs shape = ',observation)
       total_timesteps += 1
       total_reward += reward  # for tracking exploration

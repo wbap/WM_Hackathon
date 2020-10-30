@@ -5,7 +5,7 @@ from utils.general_utils import mergedicts
 from .retina import *
 
 
-class VisualCortex(nn.Module):
+class VisualPath(nn.Module):
   """
   Retinal coding, then Visual Cortex feature extraction, and positional encoding of the gaze.
   """
@@ -15,7 +15,6 @@ class VisualCortex(nn.Module):
 
   @staticmethod
   def get_default_config():
-
     retina_config = Retina.get_default_config()
     cortex_config = SparseAutoencoder.get_default_config()
     stream_config = {
@@ -71,7 +70,7 @@ class VisualCortex(nn.Module):
     h = input_shape[2]
     w = input_shape[3]
     config = self._config[self.MODULE_RETINA]
-    module = Retina(c, config)
+    module = Retina(self._name + '/retina', c, config)
     module_name = self.get_module_name(self.MODULE_RETINA)
     self._modules[module_name] = module
     output_shape = module.get_output_shape(h, w)

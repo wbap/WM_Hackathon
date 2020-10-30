@@ -4,7 +4,7 @@ import torch
 import torchvision
 from PIL import Image
 
-from gym_game.stubs.retina import Retina
+from agent.stubs.retina import Retina
 
 config = {
   'f_size': 7,
@@ -13,7 +13,7 @@ config = {
 }
 
 channels = 3
-model = Retina(channels=channels, config=config)
+model = Retina("retina-test", channels=channels, config=config)
 
 file_path = sys.argv[1]
 print('Loading image: ', file_path)

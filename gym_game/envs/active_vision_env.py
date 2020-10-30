@@ -4,6 +4,7 @@ from enum import Enum
 import numpy as np
 from gym import spaces
 
+from utils.writer_singleton import WriterSingleton
 from .pygame_env import PyGameEnv
 
 """
@@ -80,6 +81,7 @@ class ActiveVisionEnv(PyGameEnv):
     config = self.get_config()
 
     self.screen_scale = float(config["screen_scale"])  # resize the screen image before returning as an observation
+    self.summarise = False
 
     self.enabled = False if config["enable_active_vision"] == 0 else True
     if not self.enabled:
@@ -131,17 +133,11 @@ class ActiveVisionEnv(PyGameEnv):
     self._y_max = screen_height - self.fov_size_half[1]
     # self.i = 0      # used for debugging
 
-    self._writer = None
-
     super().__init__(num_actions, screen_width, screen_height, frame_rate)
 
   def reset(self):
     """Reset gaze coordinates"""
     return super().reset()
-
-  def set_writer(self, writer):
-    print(" ++++++++++++++++++ ActiveVisionEnv - using writer", writer)
-    self._writer = writer
 
   def _do_step(self, action, time):
     # update the position of the fovea (fov_pos), given the action taken
@@ -266,29 +262,34 @@ class ActiveVisionEnv(PyGameEnv):
                           self.gaze_centre[0] - pxl_w_half:self.gaze_centre[0] + pxl_w_half]
       self._img_fov = fast_resize(self._img_fov, self.fov_scale, multichannel=multichannel)
 
+      # convert to pytorch format
+      self._img_fov = np.transpose(self._img_fov, order).astype(np.float32)
+      self._img_periph = np.transpose(self._img_periph, order).astype(np.float32)
+      # print('fovea shape trans:', self._img_fov.shape)
+
       # debugging
       if debug:
         print('img orig screen shape:', img_shape)
         print('img periph shape:', self._img_periph.shape)
         print('img fovea shape:', self._img_fov.shape)
-        print('img screen rescaled shape:', img_resized.shape)
+        # print('img screen rescaled shape:', img_resized.shape)
 
-      print("ActiveVisionEnv: --  --  --  --  --  --  --  --  --  -- WRITER = ", self._writer)
-      if self._writer:
+      writer = WriterSingleton.get_writer()
+      if self.summarise and writer:
         import torchvision
         import torch
-        self._writer.add_image('av/fovea', torchvision.utils.make_grid(torch.tensor(self._img_fov)))
-        self._writer.add_image('av/periphery', torchvision.utils.make_grid(torch.tensor(self._img_periph)))
-        self._writer.flush()
-
-      self._img_fov = np.transpose(self._img_fov, order)
-      self._img_periph = np.transpose(self._img_periph, order)
-      # print('fovea shape trans:', self._img_fov.shape)
+        writer.add_image('av/original', torch.tensor(np.transpose(img, order).astype(np.float32)),
+                         global_step=WriterSingleton.global_step)
+        writer.add_image('av/fovea', torch.tensor(self._img_fov),
+                         global_step=WriterSingleton.global_step)
+        writer.add_image('av/periphery', torch.tensor(self._img_periph),
+                         global_step=WriterSingleton.global_step)
+        writer.flush()
 
       # Assemble dict
       observation = {
-        'fovea': self._img_fov.astype(np.float32),
-        'peripheral': self._img_periph.astype(np.float32),
+        'fovea': self._img_fov,
+        'peripheral': self._img_periph,
         'gaze': self.gaze_centre.astype(np.float32)
       }
 

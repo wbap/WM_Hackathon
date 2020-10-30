@@ -1,7 +1,9 @@
 import torch.nn as nn
 import torch
+import torchvision
 
 from utils.image_utils import get_dog_image_filter, conv2d_output_shape
+from utils.writer_singleton import WriterSingleton
 
 
 class Retina(nn.Module):
@@ -15,14 +17,17 @@ class Retina(nn.Module):
     }
     return config    
 
-  def __init__(self, channels, config=None):
+  def __init__(self, name, channels, config=None):
     super().__init__()
 
+    self._name = name
     self.channels = channels
     if config is None:
       self._config = Retina.config
     else:
       self._config = config
+
+    self.summaries = False
 
     # self._image_dic = {}
     self._dog_filter_pos = None
@@ -43,6 +48,18 @@ class Retina(nn.Module):
     interest_neg = self._dog_filter_neg(image_tensor)
     channel_dim = 1  # B,C,H,W
     interest = torch.cat([interest_pos, interest_neg], dim=channel_dim)
+
+    writer = WriterSingleton.get_writer()
+    if self.summaries and writer:
+      # print("retina/input shape: ", image_tensor.shape)
+      # print("retina/dog_neg shape: ", interest_neg.shape)
+      writer.add_image(self._name + '/input', torchvision.utils.make_grid(image_tensor),
+                       global_step=WriterSingleton.global_step)
+      writer.add_image(self._name + '/dog-', torchvision.utils.make_grid(interest_neg),
+                       global_step=WriterSingleton.global_step)
+      writer.add_image(self._name + '/dog+', torchvision.utils.make_grid(interest_pos),
+                       global_step=WriterSingleton.global_step)
+
     return interest, interest_pos, interest_neg
 
   def get_output_size(self, h, w):
@@ -52,5 +69,5 @@ class Retina(nn.Module):
 
   def get_output_shape(self, h, w):
     output_size = self.get_output_size(h, w)
-    output_shape = [-1, self.channels * 2, output_size[0], output_size[1]] # because 2x 3 channels (+/-)
+    output_shape = [-1, self.channels * 2, output_size[0], output_size[1]]  # because 2x 3 channels (+/-)
     return output_shape

@@ -42,6 +42,7 @@ print('Data directory:', dir_name)
 if not os.path.exists(dir_name):
     os.makedirs(dir_name)
 
+
 # Custom env creator
 def env_creator(env_name, env_config_file):
     """Custom functor to create custom Gym environments."""
@@ -51,7 +52,9 @@ def env_creator(env_name, env_config_file):
         raise NotImplementedError
     return env(env_config_file)  # Instantiate with config file
 
+
 tune.register_env(env_name, lambda config: env_creator(env_name, env_config_file))
+
 
 env = gym.make(env_name, config_file=env_config_file)
 policy = PyGamePretrainPolicy(env.action_space)

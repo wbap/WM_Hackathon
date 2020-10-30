@@ -25,9 +25,8 @@ from torchvision import datasets, transforms
 
 
 from agent.stub_agent import StubAgent
-from agent.stubs.visual_cortex import VisualCortex
+from agent.stubs.visual_path import VisualPath, WriterSingleton
 from gym_game.envs.pygame_dataset import PyGameDataset
-
 
 
 def train(args, model, device, train_loader, global_step, optimizer, epoch, writer):
@@ -65,6 +64,7 @@ def train(args, model, device, train_loader, global_step, optimizer, epoch, writ
         break
 
   return global_step  
+
 
 def test(model, device, test_loader, global_step, writer):
   """Evaluates the trained model."""
@@ -177,11 +177,11 @@ def main():
   print('Final dataset shape:', input_shape)
 
   # Override model config
-  default_model_config = VisualCortex.get_default_config()
+  default_model_config = VisualPath.get_default_config()
   delta_model_config = config['model']
-  model_config = VisualCortex.update_config(default_model_config, delta_model_config)
+  model_config = VisualPath.update_config(default_model_config, delta_model_config)
   print('Model config:\n', model_config)
-  model = VisualCortex(obs_key, input_shape, model_config)
+  model = VisualPath(obs_key, input_shape, model_config)
   print('Model:', model)
 
   # Create optimizer
@@ -189,8 +189,10 @@ def main():
 
   # Begin training
   global_step = 0
+  WriterSingleton.global_step = global_step
   for epoch in range(0, args.epochs):
     global_step = train(args, model, device, train_loader, global_step, optimizer, epoch, writer)
+    WriterSingleton.global_step = global_step
     test(model, device, test_loader, global_step, writer)
 
   if args.model_file is not None:

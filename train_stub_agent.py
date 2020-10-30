@@ -10,19 +10,18 @@ import json
 import shutil
 import sys
 import collections
-from statistics import mean, median
+from statistics import mean
 
-import gym
 import ray
 import ray.rllib.agents.a3c as a3c
 import ray.tune as tune
 from agent.stub_agent import StubAgent
-from agent.stub_agent import StubPreprocessor
 from ray.rllib.models import ModelCatalog
 from ray.rllib.utils.framework import try_import_torch
 
+from utils.writer_singleton import WriterSingleton
+
 torch, nn = try_import_torch()
-from torch.utils.tensorboard import SummaryWriter
 
 """
 Create a simple RL agent using StubAgent. 
@@ -127,21 +126,15 @@ agent = a3c.A3CTrainer(agent_config, env=meta_env_type)  # Note use of custom En
 
 
 # Train the model
-writer = SummaryWriter()
+writer = WriterSingleton.get_writer()
 results_min = collections.deque()
 results_mean = collections.deque()
 results_max = collections.deque()
 results_window_size = 100
 
+
 status_message = "{:3d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f}"
 file_name = 'None'
-
-# Set Env writer for summaries
-try:
-    env.set_writer(writer)
-except AttributeError as error:
-    print(error)
-    print("This environment does not use the TensorBoard writer.")
 
 
 def update_results(result_step, results_list, result_key):

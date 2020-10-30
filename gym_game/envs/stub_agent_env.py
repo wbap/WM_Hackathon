@@ -16,7 +16,8 @@ import pygame as pygame
 from ray.rllib.utils.framework import try_import_torch
 
 from agent.stubs.positional_encoder import PositionalEncoder
-from agent.stubs.visual_cortex import VisualCortex
+from agent.stubs.visual_path import VisualPath
+from utils.writer_singleton import WriterSingleton
 from utils.general_utils import mergedicts
 
 torch, nn = try_import_torch()
@@ -63,8 +64,8 @@ class StubAgentEnv(gym.Env):
   @staticmethod
   def get_default_config():
     pe_config = PositionalEncoder.get_default_config()
-    cortex_f_config = VisualCortex.get_default_config()
-    cortex_p_config = VisualCortex.get_default_config()
+    cortex_f_config = VisualPath.get_default_config()
+    cortex_p_config = VisualPath.get_default_config()
     agent_config = {
       'obs_keys': {
         'visual': [StubAgentEnv.OBS_FOVEA, StubAgentEnv.OBS_PERIPHERAL]
@@ -125,20 +126,9 @@ class StubAgentEnv(gym.Env):
     # the new observation space dict from the processed streams
     self.observation_space = spaces.Dict(obs_spaces_dict)
 
-    self._writer = None
-
   def reset(self):
     obs = self.env.reset()
     return self.forward(obs)
-
-  def set_writer(self, writer):
-    print(" ++++++++++++++++++ StubAgentEnv - using writer", writer)
-    self._writer = writer
-    try:
-      self.env.set_writer(writer)
-    except AttributeError as err:
-      print(err)
-      print("This environment does not use the TensorBoard writer.")
 
   # -------------------------------------- Building Regions --------------------------------------
   # ------------ Visual Streams
@@ -173,10 +163,10 @@ class StubAgentEnv(gym.Env):
     for obs_key in self._config["obs_keys"]["visual"]:
       input_shape = self.create_input_shape_visual(self.env_observation_space, obs_key)
       config = self._config[obs_key]
-      cortex = VisualCortex(obs_key, input_shape, config)
-      self.modules[obs_key] = cortex
+      visual_path = VisualPath(obs_key, input_shape, config)
+      self.modules[obs_key] = visual_path
 
-      output_shape = cortex.get_output_shape()
+      output_shape = visual_path.get_output_shape()
       obs_shape = self.create_observation_shape_visual(output_shape)
       obs_space = self.create_observation_space_visual(obs_shape)
       obs_spaces_dict.update({obs_key: obs_space})
@@ -222,9 +212,7 @@ class StubAgentEnv(gym.Env):
   def forward(self, observation):
     # print('-----------Obs old', observation)
 
-    print("StubAgentEnv: --  --  --  --  --  --  --  --  --  -- WRITER = ", self._writer)
-
-    # process foveal and peripheral parietal cortex
+    # process foveal and peripheral visual path
     obs_dict = {}
     if self._use_visual:
       for obs_key in self._config["obs_keys"]["visual"]:
@@ -232,13 +220,6 @@ class StubAgentEnv(gym.Env):
         input_tensor = self.obs_to_tensor(observation, obs_key)
         encoding_tensor, decoding, target = cortex.forward(input_tensor)
         self.tensor_to_obs(encoding_tensor, obs_dict, obs_key)
-
-        if self._writer:
-          import torchvision
-          self._writer.add_image('vc_out/' + obs_key, torchvision.utils.make_grid(decoding))
-
-      if self._writer:
-        self._writer.flush()
 
     # process positional encoding
     if self._use_pe:
