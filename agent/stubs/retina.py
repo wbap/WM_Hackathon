@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 import torchvision
 
-from utils.image_utils import get_dog_image_filter, conv2d_output_shape
+from utils.image_filter_utils import get_dog_image_filter, conv2d_output_shape
 from utils.writer_singleton import WriterSingleton
 
 

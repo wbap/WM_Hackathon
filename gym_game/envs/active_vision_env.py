@@ -81,7 +81,7 @@ class ActiveVisionEnv(PyGameEnv):
     config = self.get_config()
 
     self.screen_scale = float(config["screen_scale"])  # resize the screen image before returning as an observation
-    self.summarise = False
+    self.summarise = True
 
     self.enabled = False if config["enable_active_vision"] == 0 else True
     if not self.enabled:
@@ -225,10 +225,10 @@ class ActiveVisionEnv(PyGameEnv):
     img_shape = img.shape
 
     # convert to float type (the standard for pytorch and other scikit image methods)
-    from skimage.util import img_as_float
-    img = img_as_float(img)
+    # from skimage.util import img_as_float
+    # img = img_as_float(img)
 
-    def fast_resize(image, scale, multichannel):
+    def fast_resize(image, scale):
       from PIL import Image
       pili = Image.fromarray(image.astype('uint8'), 'RGB')
       size = (int(image.shape[0] * scale), int(image.shape[1] * scale))
@@ -236,22 +236,23 @@ class ActiveVisionEnv(PyGameEnv):
       return pili2
 
     # resize screen image before returning as observation
-    img_resized = fast_resize(img, self.screen_scale, multichannel=multichannel)
+    img_resized = fast_resize(img, self.screen_scale)
 
     # PyTorch expects dimension order [b,c,h,w]
     # transpose dimensions from [,h,w,c] to [,c,h,w]]
     order = (2, 0, 1)
 
-    if not self.enabled:
-      self._img_full = np.transpose(img_resized, order)
+    # convert to PyTorch format
+    self._img_full = np.transpose(img_resized, order).astype(np.float32)
 
+    if not self.enabled:
       # Assemble dict
       observation = {
-        'full': self._img_full.astype(np.float32),
+        'full': self._img_full,
       }
     else:
       # Peripheral Image - downsize to get peripheral (lower resolution) image
-      self._img_periph = fast_resize(img, self.peripheral_scale, multichannel=multichannel)
+      self._img_periph = fast_resize(img, self.peripheral_scale)
 
       # Foveal Image - crop to fovea and rescale
       h, w, ch = img.shape[0], img.shape[1], img.shape[2]
@@ -260,7 +261,7 @@ class ActiveVisionEnv(PyGameEnv):
 
       self._img_fov = img[self.gaze_centre[1] - pxl_h_half:self.gaze_centre[1] + pxl_h_half,
                           self.gaze_centre[0] - pxl_w_half:self.gaze_centre[0] + pxl_w_half]
-      self._img_fov = fast_resize(self._img_fov, self.fov_scale, multichannel=multichannel)
+      self._img_fov = fast_resize(self._img_fov, self.fov_scale)
 
       # convert to pytorch format
       self._img_fov = np.transpose(self._img_fov, order).astype(np.float32)
@@ -288,6 +289,7 @@ class ActiveVisionEnv(PyGameEnv):
 
       # Assemble dict
       observation = {
+        'full': self._img_full,
         'fovea': self._img_fov,
         'peripheral': self._img_periph,
         'gaze': self.gaze_centre.astype(np.float32)

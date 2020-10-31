@@ -209,7 +209,7 @@ class Dm2sEnv(FiniteStateEnv):
     if unlike_sample is not None:
       except_color = unlike_sample['color']
       except_shape = unlike_sample['shape']
-    while(True):
+    while True:
       color = self.gColors[self.np_random.randint(0, len(self.gColors))-1]
       shape = self.gShapes[self.np_random.randint(0, len(self.gShapes))-1]
       if unlike_sample is None:

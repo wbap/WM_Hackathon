@@ -2,6 +2,7 @@ import json
 import pygame as pygame
 import numpy as np
 import logging
+import os
 
 from .finite_state_env import FiniteStateEnv
 
@@ -45,8 +46,12 @@ class MoveToLightEnv(FiniteStateEnv):
       self.config = json.load(json_file)
     print('MoveToLightEnv config:', self.config)
 
+    self.image_dir = "resources/dm2s"
+
     self.gVideoWidth = self.config["videoWidth"]
     self.gVideoHeight = self.config["videoHeight"]
+    self.gShapes = self.config["shapes"]
+    self.gColors = self.config["colors"]
     self.play_repeats = self.config["mainTaskRepeat"]
     self.target_radius = self.config["targetRadius"]
 
@@ -201,13 +206,28 @@ class MoveToLightEnv(FiniteStateEnv):
     }
     return screen_options
 
+  def read_image(self, file_name):
+    file_path = os.path.join(self.image_dir, file_name)
+    image = pygame.image.load(file_path)
+    return image
+
   def draw_screen(self, screen, screen_options):
     # fill screen
     screen.fill(self.WHITE)
 
     if screen_options['target']:
-      target_rect = pygame.Rect(self.target_centre[0]-self.target_radius, self.target_centre[1]-self.target_radius,
-                                2*self.target_radius, 2*self.target_radius)
-      pygame.draw.rect(screen, self.RED, target_rect)
+
+      use_image = True
+
+      if use_image:
+        color = self.gColors[0]
+        shape = self.gShapes[0]
+        filename = shape + "_" + color + ".png"
+        image = self.read_image(filename)
+        screen.blit(image, (self.target_centre[0]-image.get_width()//2, self.target_centre[1]-image.get_height()//2))
+      else:
+        target_rect = pygame.Rect(self.target_centre[0]-self.target_radius, self.target_centre[1]-self.target_radius,
+                                  2*self.target_radius, 2*self.target_radius)
+        pygame.draw.rect(screen, self.RED, target_rect)
 
     super().draw_screen(screen, [])
