@@ -12,4 +12,5 @@ class WriterSingleton:
   def get_writer():
     if not WriterSingleton.writer:
       WriterSingleton.writer = SummaryWriter()
+      print("---------------> Created writer at logdir(): ", WriterSingleton.writer.get_logdir())
     return WriterSingleton.writer

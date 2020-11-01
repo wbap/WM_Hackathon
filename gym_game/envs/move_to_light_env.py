@@ -74,13 +74,13 @@ class MoveToLightEnv(FiniteStateEnv):
   def _create_states(self):
     # note, the first 'next_state' is the default state to transition to, when interval has elapsed
 
-    idle_duration = 0
-    light_duration = 10000
-    on_target_duration = 1000
+    idle_duration = 10          # at start or if did not arrive on target, amount of time till new position shown
+    light_duration = 500        # the amount of time the target is shown (and you can take actions)
+    on_target_duration = 10     # if on target, the amount of time before a new position is shown
 
-    self.add_state(self.STATE_IDLE, next_states=[self.STATE_SHOW_TARGET], duration=idle_duration, start_state=True)
+    self.add_state(self.STATE_IDLE, next_states=[self.STATE_SHOW_TARGET, self.STATE_END], duration=idle_duration, start_state=True)
     self.add_state(self.STATE_SHOW_TARGET, next_states=[self.STATE_IDLE, self.STATE_ON_TARGET], duration=light_duration)
-    self.add_state(self.STATE_ON_TARGET, next_states=[self.STATE_SHOW_TARGET], duration=on_target_duration)
+    self.add_state(self.STATE_ON_TARGET, next_states=[self.STATE_SHOW_TARGET, self.STATE_END], duration=on_target_duration)
     self.add_state(self.STATE_END, end_state=True)
 
   def _get_caption(self):
@@ -112,14 +112,15 @@ class MoveToLightEnv(FiniteStateEnv):
     next_state_keys = self.get_next_state_keys(old_state_key)
 
     # If an action was taken, check if on target
-    if action != 0:
+    if action != self.ACTION_NONE:
       if old_state_key != self.STATE_ON_TARGET and self.is_on_target():
-        print("Response: " + str(action) + ", Correct")
+        # print("Response: " + str(action) + ", Correct")
         new_state_key = self.STATE_ON_TARGET
         return new_state_key
       else:
         correct_action = self.grid_utils.xy_2_action(self.target_centre)
-        print("Response: " + str(action) + ", Correct response: " + str(correct_action))
+        # print("Response: " + str(action) + ", Correct response: " + str(correct_action))
+        return old_state_key
 
     # Otherwise, check timer
     state = self.states[old_state_key]
@@ -128,11 +129,13 @@ class MoveToLightEnv(FiniteStateEnv):
       if elapsed_time > duration:
         new_state_key = next_state_keys[0]
 
-        # continue showing new targets (until max reached)
-        if old_state_key == self.STATE_SHOW_TARGET:
-          self.play_counts += 1
+        # if transitioning back to SHOW, check if should be end of episode
+        if new_state_key == self.STATE_SHOW_TARGET:
           if self.play_counts > self.play_repeats:
             new_state_key = self.STATE_END
+          else:
+            self.play_counts += 1
+
         return new_state_key
 
     return old_state_key

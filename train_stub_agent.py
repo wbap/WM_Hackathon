@@ -133,7 +133,7 @@ results_max = collections.deque()
 results_window_size = 100
 
 
-status_message = "{:3d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f}"
+status_message = "{:3d}: reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f}"
 file_name = 'None'
 
 
@@ -155,7 +155,7 @@ def update_results(result_step, results_list, result_key):
 def find_json_value(key_path, json, delimiter='.'):
   paths = key_path.split(delimiter)
   data = json
-  for i in range(0,len(paths)):
+  for i in range(0, len(paths)):
     data = data[paths[i]]
   return data
 
@@ -195,14 +195,14 @@ for training_epoch in range(training_epochs):  # number of epochs for all traini
     mean_len = len(results_mean)
 
     # Update tensorboard plots
-    writer_step = training_epoch * training_steps + training_step
+    WriterSingleton.global_step = training_epoch * training_steps + training_step
     for result_key in result_writer_keys:
       writer_key = 'Train/' + result_key
-      update_writer(result, result_key, writer, writer_key, writer_step)
+      update_writer(result, result_key, writer, writer_key, WriterSingleton.global_step)
     writer.flush()
 
     print(status_message.format(
-      writer_step,
+      WriterSingleton.global_step,
       mean_min,
       mean_mean,
       mean_max,
@@ -221,10 +221,10 @@ for training_epoch in range(training_epochs):  # number of epochs for all traini
     for evaluation_step in range(evaluation_steps):  # steps in an epoch
       result = agent.train()
       # TODO use compute_action
-      writer_step = evaluation_epoch * evaluation_steps + evaluation_step
+      WriterSingleton.global_step = evaluation_epoch * evaluation_steps + evaluation_step
       for result_key in result_writer_keys:
         writer_key = 'Eval/' + result_key
-        update_writer(result, result_key, writer, writer_key, writer_step)
+        update_writer(result, result_key, writer, writer_key, WriterSingleton.global_step)
       writer.flush()
 
     evaluation_epoch = evaluation_epoch + 1

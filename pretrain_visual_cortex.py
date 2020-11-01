@@ -145,7 +145,7 @@ def main():
         'shuffle': True
     })
 
-  writer = SummaryWriter()
+  writer = WriterSingleton.get_writer()
   transform = transforms.Compose([
       transforms.ToTensor()
   ])
