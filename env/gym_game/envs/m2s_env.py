@@ -42,13 +42,13 @@ class M2sEnv(Dm2sEnv):
 
   def on_state_changed(self, old_state_key, new_state_key):
     #print('State -> ', new_state_key, '@t=', self.state_time)
+    #print('------------------------------------------------------------------ State -> ', new_state_key, '@t=', self.state_time)
     if new_state_key == self.STATE_TUTOR_SHOW or new_state_key == self.STATE_PLAY_SHOW:
-      self.position = self.np_random.randint(2)+1  # Left:1 & Right:2
-      self.sample = self.get_random_sample() 
-      self.target = self.get_random_sample(self.sample) 
-      self.result = None
+      self.get_random_samples()
 
   def _update_state_key(self, old_state_key, action, elapsed_time):
+    #print('Env Step')
+
     # Don't transition from end states
     is_end_state = self.is_end_state(old_state_key)
     if is_end_state:
@@ -94,23 +94,6 @@ class M2sEnv(Dm2sEnv):
             new_state_key = self.STATE_PLAY_SHOW
         return new_state_key
     return old_state_key
-
-  def get_random_sample(self, unlike_sample=None):
-    if unlike_sample is not None:
-      except_color = unlike_sample['color']
-      except_shape = unlike_sample['shape']
-    while( True ):
-      color = self.gColors[self.np_random.randint(0, len(self.gColors))-1]
-      shape = self.gShapes[self.np_random.randint(0, len(self.gShapes))-1]
-      if unlike_sample is None:
-        break
-      elif except_color!=color or except_shape!=shape:
-        break
-    sample = {
-      'color':color,
-      'shape':shape
-    }
-    return sample
 
   def get_screen_options(self, state, elapsed_time):
     screen_options = super().get_screen_options(state, elapsed_time)

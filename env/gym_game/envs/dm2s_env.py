@@ -42,6 +42,13 @@ class Dm2sEnv(FiniteStateEnv):
   GRAY = (128,128,128)
   RED = (255, 0, 0)
 
+  GAME_TYPE_SHAPE = 'shape'
+  GAME_TYPE_COLOR = 'color'
+  GAME_TYPE_POSITION = 'position'
+
+  TX_TYPES = ["None", "Reduce", "Rotate"]
+  BAR_POSITIONS = ['Bottom','Right','Left','Top']
+
   # define global variables
   gParams = {}  # parameter dictionary
   # gVideoWidth = 800
@@ -63,6 +70,8 @@ class Dm2sEnv(FiniteStateEnv):
     #self.image_dir = 'png'
     self.gVideoWidth = self.gParams["videoWidth"]
     self.gVideoHeight = self.gParams["videoHeight"]
+    self.gameTypes = self.gParams['gameTypes']
+    self.txTypes = self.gParams['txTypes']
     self.gShapes = self.gParams["shapes"]
     self.gColors = self.gParams["colors"]
     self.gCorrectFB = Rect(0, self.gVideoHeight - 80, self.gVideoWidth, 80)
@@ -84,8 +93,9 @@ class Dm2sEnv(FiniteStateEnv):
     h = self.gVideoHeight
 
     self.sample = None
-    self.target = None
-    self.position = None
+    self.sample_correct = None  # The actual, correct symbol shown as a stimulus
+    self.sample_wrong = None  # An incorrect, distractor stimulus symbol
+    self.position = None  # Where the actual symbol is shown during the choice
     self.result = None
     self.tutor_counts = 0
     self.play_counts = 0
@@ -132,21 +142,29 @@ class Dm2sEnv(FiniteStateEnv):
 
   def reset(self):
     self.sample = None
-    self.target = None
+    self.sample_correct = None
+    self.sample_wrong = None
     self.position = None
     self.result = None
     self.tutor_counts = 0
     self.play_counts = 0
+    self.gameType = self.get_random_game_type()
     return super().reset()
 
   def on_state_changed(self, old_state_key, new_state_key):
     logging.info('State -> ', new_state_key, '@t=', self.state_time)
     #print('------------------------------------------------------------------ State -> ', new_state_key, '@t=', self.state_time)
     if new_state_key == self.STATE_TUTOR_STIM or new_state_key == self.STATE_PLAY_STIM:
-      self.position = self.np_random.randint(2)+1  # Left:1 & Right:2
-      self.sample = self.get_random_sample() 
-      self.target = self.get_random_sample(self.sample) 
-      self.result = None
+      self.get_random_samples()
+
+  def get_random_samples(self):
+    """Fetch a new set of samples representing original, correct match and incorrect (distractor)"""
+    self.position = self.np_random.randint(2)+1  # Left:1 & Right:2
+    self.sample = self.get_random_sample() 
+    self.sample_correct = self.get_random_sample(like=self.sample)
+    self.sample_wrong = self.get_random_sample(unlike=self.sample) 
+    self.txType = self.get_random_tx_type()
+    self.result = None
       
   def _update_state_key(self, old_state_key, action, elapsed_time):
     # Don't transition from end states
@@ -197,6 +215,8 @@ class Dm2sEnv(FiniteStateEnv):
     return old_state_key
 
   def _update_reward(self, old_state_key, action, elapsed_time, new_state_key):
+    """Reward is always zero unless in the PLAY_SHOW state and the action is not zero. 
+    In that case it is 1 if correct and -1 otherwise."""
     reward = 0.0
     if old_state_key == self.STATE_PLAY_SHOW:
       if action != self.ACTION_NONE:
@@ -206,20 +226,66 @@ class Dm2sEnv(FiniteStateEnv):
           reward = -1.0
     return reward
 
-  def get_random_sample(self, unlike_sample=None):
-    if unlike_sample is not None:
-      except_color = unlike_sample['color']
-      except_shape = unlike_sample['shape']
+  def get_random_game_type(self):
+    """Choose a random game type from the list allowed in this instantiation of the environment"""
+    numGameTypes = len(self.gameTypes)
+    gameTypeIndex = self.np_random.randint(0, numGameTypes)    
+    gameType = self.gameTypes[gameTypeIndex]
+    print('GAME TYPE: ', gameType)
+    return gameType
+
+  def get_random_tx_type(self):
+    """Choose a random transform type from the list allowed in this instantiation of the environment"""
+    numTxTypes = len(self.txTypes)
+    txTypeIndex = self.np_random.randint(0, numTxTypes)    
+    txType = self.txTypes[txTypeIndex]
+    print('TX TYPE: ', txType)
+    return txType
+
+  def get_random_sample(self, like=None, unlike=None):
+    """The rules of the game dictate what the random samples can be. We must avoid more than one 
+    matching sample in the quality that determines the correct answer in the current game type.
+    The matching sample should ONLY be matching in the aspect that matters for the current game type."""
+    except_color = None
+    except_shape = None
+    except_position = None
+    if unlike is not None:
+      if self.gameType == self.GAME_TYPE_COLOR:
+        except_color = unlike['color']
+      if self.gameType == self.GAME_TYPE_SHAPE:
+        except_shape = unlike['shape']
+      if self.gameType == self.GAME_TYPE_POSITION:
+        except_position = unlike['position']
+
     while(True):
       color = self.gColors[self.np_random.randint(0, len(self.gColors))-1]
       shape = self.gShapes[self.np_random.randint(0, len(self.gShapes))-1]
-      if unlike_sample is None:
+      position = self.BAR_POSITIONS[self.np_random.randint(0, len(self.BAR_POSITIONS))-1]
+
+      # If like is defined, then make sure the necessary attribute is LIKE the supplied sample
+      if like is not None:
+        if self.gameType == self.GAME_TYPE_COLOR:
+          color = like['color']
+        if self.gameType == self.GAME_TYPE_SHAPE:
+          shape = like['shape']
+        if self.gameType == self.GAME_TYPE_POSITION:
+          position = like['position']
+
+      if unlike is None:
+        break  # No constraint
+      # Else: Something to avoid      
+      if except_color is not None and except_color != color:
+        # Don't allow same color, and color is different: OK.
         break
-      elif except_color != color or except_shape != shape:
+      if except_shape is not None and except_shape != shape:
+        # Don't allow same shape, and shape is different: OK.
+        break
+      if except_position is not None and except_position != position:
         break
     sample = {
       'color': color,
-      'shape': shape
+      'shape': shape,
+      'position': position
     }
     return sample
 
@@ -302,6 +368,53 @@ class Dm2sEnv(FiniteStateEnv):
     }
     return screen_options
 
+  def draw_sample(self, screen, sample, x, y, txType):
+    bar_length = 150  # TODO remove these constants
+    bar_height = 20
+    bar_dx = 120
+    bar_dy = 120
+    image = self.read_sample_image(sample)
+    image2 = self.transform_image(image, txType)
+    halfWidth = int(image2.get_width()/2)
+    halfHeight = int(image2.get_height()/2)
+    x2 = x -halfWidth  # Center it
+    y2 = y -halfHeight 
+    screen.blit(image2, (x2, y2))
+
+    # Draw bar around the sample? Only in the relevant game.
+    if self.gameType == self.GAME_TYPE_POSITION:
+      position = sample['position']
+      bar_w = bar_length # Horz bar
+      bar_h = bar_height
+      if position == 'Left' or position == 'Right':
+        bar_w = bar_height
+        bar_h = bar_length  # vertical
+      bar_x = x - int(bar_w * 0.5)
+      bar_y = y - int(bar_h * 0.5)
+      # Apply an offset to bar position reflecting the relative position to sample:
+      if position == 'Left':
+        bar_x -= bar_dx
+      elif position == 'Right':
+        bar_x += bar_dx
+      elif position == 'Top':
+        bar_y -= bar_dy
+        pass
+      elif position == 'Bottom':
+        bar_y += bar_dy
+
+      pygame.draw.rect(screen, self.GRAY, (bar_x, bar_y, bar_w, bar_h))
+
+  def transform_image(self, image, txType=None):
+    """Transforms an image being used as a sprite."""
+    if txType == 'Reduce':
+      scale_factor = 0.7
+      return pygame.transform.scale(image, (int(image.get_width() * scale_factor), int(image.get_height() * scale_factor)))
+    elif txType == 'Rotate': # +45
+      angle = 45.0
+      return pygame.transform.rotate(image, angle)
+    else:
+      return image
+
   def draw_screen(self, screen, screen_options):
     # fill screen
     screen.fill(self.WHITE)
@@ -319,18 +432,30 @@ class Dm2sEnv(FiniteStateEnv):
         pygame.draw.rect(screen, self.BLUE, self.gObservBar)
 
     if screen_options['sample']:
-      sample_image = self.read_sample_image(self.sample)
-      screen.blit(sample_image, (int(self.gVideoWidth/2 - sample_image.get_width()/2), 140))
+      # sample_image = self.read_sample_image(self.sample_correct)
+      # screen.blit(sample_image, (int(self.gVideoWidth/2 - sample_image.get_width()/2), 140))
+      x = int(self.gVideoWidth/2)
+      y = 140
+      self.draw_sample(screen, self.sample, x, y, txType='None')
 
     if screen_options['targets']:
       if self.position == self.POSITION_L:
-        target1_image = self.read_sample_image(self.sample)
-        target2_image = self.read_sample_image(self.target)
+        # target1_image = self.read_sample_image(self.sample_correct)
+        # target2_image = self.read_sample_image(self.sample_wrong)
+        option1 = self.sample_correct
+        option2 = self.sample_wrong
       else:
-        target1_image = self.read_sample_image(self.target)        
-        target2_image = self.read_sample_image(self.sample)
-      screen.blit(target1_image, (int(self.gVideoWidth/2 - target1_image.get_width()/2) - 160, 410))
-      screen.blit(target2_image, (int(self.gVideoWidth/2 - target2_image.get_width()/2) + 160, 410))
+        # target1_image = self.read_sample_image(self.sample_wrong)        
+        # target2_image = self.read_sample_image(self.sample_correct)
+        option1 = self.sample_wrong
+        option2 = self.sample_correct
+      # screen.blit(target1_image, (int(self.gVideoWidth/2 - target1_image.get_width()/2) - 160, 410))
+      # screen.blit(target2_image, (int(self.gVideoWidth/2 - target2_image.get_width()/2) + 160, 410))
+      x = int(self.gVideoWidth/2)
+      dx = 160  # TODO: Get rid of all these hardcoded constants
+      y = 410
+      self.draw_sample(screen, option1, x -dx, y, self.txType)
+      self.draw_sample(screen, option2, x +dx, y, self.txType)
 
     # draw button images
     flash = screen_options['flash']
