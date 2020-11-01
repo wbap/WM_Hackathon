@@ -1,0 +1,32 @@
+{
+  "obs_keys": {
+    "visual": ["full"]
+  },
+  "mtl_max_length": 6,
+  "full": {
+    "load": "data/pretrain/full.pt",
+    "retina": {
+      "f_size": 7,
+      "f_sigma": 2.0,
+      "f_k": 1.6
+    },
+    "cortex": {
+      "filters": 100,
+      "kernel_size": 4,
+      "stride": 2,
+
+      "use_bias": true,
+      "use_tied_weights": true,
+      "use_lifetime_sparsity": true,
+
+      "encoder_padding": 0,
+      "decoder_padding": 0,
+
+      "encoder_nonlinearity": "leaky_relu",
+      "decoder_nonlinearity": "sigmoid",
+
+      "sparsity": 5,
+      "sparsity_output_factor": 1.0
+    }
+  }
+}

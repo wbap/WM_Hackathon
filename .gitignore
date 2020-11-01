@@ -1,7 +1,9 @@
-env/gym_game.egg-info/
-env/gym_game/envs/__pycache__/
-env/agent/__pycache__/
-env/utils/__pycache__/
-env/data/
-env/tmp/
-env/runs/
+__pycache__/
+gym_game.egg-info/
+gym_game/envs/__pycache__/
+agent/__pycache__/
+utils/__pycache__/
+data/
+tmp/
+runs/
+.idea/

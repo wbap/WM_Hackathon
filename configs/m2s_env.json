@@ -1,0 +1,14 @@
+{
+  "mainTaskRepeat": 6,
+  "observationRepeat": 2,
+  "frameRate": 3,
+  "imageDir": "resources/dm2s",
+  "screen_scale": 0.1,
+  "enable_active_vision": 0,
+  "videoWidth": 800,
+  "videoHeight": 800,
+  "gameTypes":["shape"],
+  "txTypes":["None"],
+  "colors": ["LB"],
+  "shapes": ["Barred_Ring", "Triangle", "Cross", "Heart"]
+}
