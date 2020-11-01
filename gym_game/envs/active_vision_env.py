@@ -4,6 +4,7 @@ from enum import Enum
 import numpy as np
 from gym import spaces
 
+from utils.image_utils import fast_resize, to_pytorch_from_uint8
 from utils.writer_singleton import WriterSingleton
 from .pygame_env import PyGameEnv
 
@@ -211,10 +212,12 @@ class ActiveVisionEnv(PyGameEnv):
 
   def get_observation(self):
     """
-    Return images in PyTorch format.
+    The observation is a render of the screen.
+    The format is ndarray of 8 bit unsigned integers
+    Return images as ndarray, in PyTorch format: 32 bit floating point images
     """
+
     debug = False
-    multichannel = True
 
     img = self.render(mode='rgb_array')
 
@@ -224,26 +227,11 @@ class ActiveVisionEnv(PyGameEnv):
     img = np.transpose(img, [1, 0, 2])  # observed img is horizontally reflected, and rotated 90 deg ...
     img_shape = img.shape
 
-    # convert to float type (the standard for pytorch and other scikit image methods)
-    # from skimage.util import img_as_float
-    # img = img_as_float(img)
-
-    def fast_resize(image, scale):
-      from PIL import Image
-      pili = Image.fromarray(image.astype('uint8'), 'RGB')
-      size = (int(image.shape[0] * scale), int(image.shape[1] * scale))
-      pili2 = pili.resize(size, Image.ANTIALIAS)
-      return pili2
-
     # resize screen image before returning as observation
     img_resized = fast_resize(img, self.screen_scale)
 
-    # PyTorch expects dimension order [b,c,h,w]
-    # transpose dimensions from [,h,w,c] to [,c,h,w]]
-    order = (2, 0, 1)
-
     # convert to PyTorch format
-    self._img_full = np.transpose(img_resized, order).astype(np.float32)
+    self._img_full = to_pytorch_from_uint8(img_resized)
 
     if not self.enabled:
       # Assemble dict
@@ -264,8 +252,8 @@ class ActiveVisionEnv(PyGameEnv):
       self._img_fov = fast_resize(self._img_fov, self.fov_scale)
 
       # convert to pytorch format
-      self._img_fov = np.transpose(self._img_fov, order).astype(np.float32)
-      self._img_periph = np.transpose(self._img_periph, order).astype(np.float32)
+      self._img_fov = to_pytorch_from_uint8(self._img_fov)
+      self._img_periph = to_pytorch_from_uint8(self._img_periph)
       # print('fovea shape trans:', self._img_fov.shape)
 
       # debugging
@@ -273,17 +261,20 @@ class ActiveVisionEnv(PyGameEnv):
         print('img orig screen shape:', img_shape)
         print('img periph shape:', self._img_periph.shape)
         print('img fovea shape:', self._img_fov.shape)
-        # print('img screen rescaled shape:', img_resized.shape)
+        print('img full (rescaled) shape:', self._img_full.shape)
 
       writer = WriterSingleton.get_writer()
       if self.summarise and writer:
         import torchvision
         import torch
-        writer.add_image('av/original', torch.tensor(np.transpose(img, order).astype(np.float32)),
+
+        img = to_pytorch_from_uint8(img)
+
+        writer.add_image('active-vision/input', torch.tensor(img),
                          global_step=WriterSingleton.global_step)
-        writer.add_image('av/fovea', torch.tensor(self._img_fov),
+        writer.add_image('active-vision/fovea', torch.tensor(self._img_fov),
                          global_step=WriterSingleton.global_step)
-        writer.add_image('av/periphery', torch.tensor(self._img_periph),
+        writer.add_image('active-vision/periphery', torch.tensor(self._img_periph),
                          global_step=WriterSingleton.global_step)
         writer.flush()
 

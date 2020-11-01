@@ -94,7 +94,6 @@ class MoveToLightEnv(FiniteStateEnv):
 
   def on_state_changed(self, old_state_key, new_state_key):
     # print('State -> ', new_state_key, '@t=', self.state_time)
-
     if new_state_key == self.STATE_SHOW_TARGET:
       self.target_centre = self.get_random_sample()
 
@@ -112,10 +111,15 @@ class MoveToLightEnv(FiniteStateEnv):
 
     next_state_keys = self.get_next_state_keys(old_state_key)
 
-    # Check if on target
-    if old_state_key != self.STATE_ON_TARGET and self.is_on_target():
-      new_state_key = self.STATE_ON_TARGET
-      return new_state_key
+    # If an action was taken, check if on target
+    if action != 0:
+      if old_state_key != self.STATE_ON_TARGET and self.is_on_target():
+        print("Response: " + str(action) + ", Correct")
+        new_state_key = self.STATE_ON_TARGET
+        return new_state_key
+      else:
+        correct_action = self.grid_utils.xy_2_action(self.target_centre)
+        print("Response: " + str(action) + ", Correct response: " + str(correct_action))
 
     # Otherwise, check timer
     state = self.states[old_state_key]
@@ -137,9 +141,7 @@ class MoveToLightEnv(FiniteStateEnv):
     touching_distance = self.target_radius + self.fov_size_half[0]  # assumes fovea is equal size in both x and y
     distance = np.sqrt(np.sum(np.square(self.gaze_centre - self.target_centre)))
     gap = distance - touching_distance
-
     # print(" ** gap calc ** touching_dist = {}, distance = {}, gap = {} ".format(touching_distance, distance, gap))
-
     if gap <= near_target_radius:
       return True
     else:
@@ -157,9 +159,7 @@ class MoveToLightEnv(FiniteStateEnv):
     return reward
 
   def get_random_sample(self):
-
     mode_grid = True
-
     if mode_grid:
       grid_cell = self.np_random.randint(0, self.grid_utils.num_cells()-1)
 

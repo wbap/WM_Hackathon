@@ -5,7 +5,7 @@
   },
   "mtl_max_length": 6,
   "fovea": {
-    "load": "data/pretrain/fovea.pt",
+    "load": "data/pretrain_m2s_av/fovea.pt",
     "retina": {
       "f_size": 7,
       "f_sigma": 2.0,
@@ -31,7 +31,7 @@
     }
   },
   "peripheral": {
-    "load": "data/pretrain/peripheral.pt",
+    "load": "data/pretrain_m2s_av/peripheral.pt",
     "retina": {
       "f_size": 7,
       "f_sigma": 2.0,
