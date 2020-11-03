@@ -3,13 +3,18 @@
   "observationRepeat": 2,
   "frameRate": 3,
   "imageDir": "resources/dm2s",
+
   "fovea_fraction": 0.1,
   "fovea_scale": 0.5,
   "gaze_step_size": 100,
-  "peripheral_scale": 0.05,
+  "peripheral_scale": 0.02,
+  "peripheral_noise_magnitude": 0.1,
   "screen_scale": 0.1,
   "show_fovea_on_screen": 0,
-  "enable_active_vision": 0,
+  "enable_active_vision": 1,
+  "grid_length_x": 5,
+  "grid_length_y": 5,
+
   "videoWidth": 800,
   "videoHeight": 800,
 
@@ -35,7 +40,5 @@
     "Cross",
     "Heart",
     "Square"
-  ],
-  "grid_length_x": 10,
-  "grid_length_y": 10
+  ]
 }

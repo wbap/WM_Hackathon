@@ -93,6 +93,7 @@ class ActiveVisionEnv(PyGameEnv):
     self.fov_scale = float(config["fovea_scale"])  # image size, expressed as fraction of screen size
     self.step_size = int(config["gaze_step_size"])  # step size of gaze movement, in pixels in the screen image
     self.peripheral_scale = float(config["peripheral_scale"])  # peripheral image size, expressed as fraction of screen size
+    self.peripheral_noise_magnitude = float(config["peripheral_noise_magnitude"])
 
     self.fov_size = np.array([int(self.fov_fraction * screen_width), int(self.fov_fraction * screen_height)])
     self.fov_size_half = 0.5*self.fov_size
@@ -240,7 +241,7 @@ class ActiveVisionEnv(PyGameEnv):
       }
     else:
       # Peripheral Image - downsize to get peripheral (lower resolution) image
-      self._img_periph = fast_resize(img, self.peripheral_scale)
+      img_periph = fast_resize(img, self.peripheral_scale)
 
       # Foveal Image - crop to fovea and rescale
       h, w, ch = img.shape[0], img.shape[1], img.shape[2]
@@ -253,7 +254,10 @@ class ActiveVisionEnv(PyGameEnv):
 
       # convert to pytorch format
       self._img_fov = to_pytorch_from_uint8(self._img_fov)
-      self._img_periph = to_pytorch_from_uint8(self._img_periph)
+      img_periph = to_pytorch_from_uint8(img_periph)
+      img_periph_random = (np.random.random(img_periph.shape)-0.5)*self.peripheral_noise_magnitude
+      self._img_periph = np.clip(img_periph + img_periph_random, a_min=0.0, a_max=1.0)
+
       # print('fovea shape trans:', self._img_fov.shape)
 
       # debugging
@@ -274,7 +278,7 @@ class ActiveVisionEnv(PyGameEnv):
                          global_step=WriterSingleton.global_step)
         writer.add_image('active-vision/fovea', torch.tensor(self._img_fov),
                          global_step=WriterSingleton.global_step)
-        writer.add_image('active-vision/periphery', torch.tensor(self._img_periph),
+        writer.add_image('active-vision/peripheral', torch.tensor(self._img_periph),
                          global_step=WriterSingleton.global_step)
         writer.flush()
 
