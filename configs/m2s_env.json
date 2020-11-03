@@ -7,6 +7,15 @@
   "enable_active_vision": 0,
   "videoWidth": 800,
   "videoHeight": 800,
+
+  "states":{
+    "tutor-show":{"interval":2000},
+    "tutor-feedback":{"interval":1000,"flash_interval":100},
+    "inter":{"interval":1200,"flash_interval":400},
+    "play-show":{"interval":5000},
+    "play-feedback":{"interval":1000,"flash_interval":100}
+  },
+
   "gameTypes":["shape"],
   "txTypes":["None"],
   "colors": ["LB"],

@@ -12,6 +12,19 @@
   "enable_active_vision": 0,
   "videoWidth": 800,
   "videoHeight": 800,
+
+  "states":{
+    "tutor-stim":{"interval":2000},
+    "tutor-hide":{"interval":2000},
+    "tutor-show":{"interval":1000},
+    "tutor-feedback":{"interval":1000,"flash_interval":100},
+    "inter":{"interval":1200,"flash_interval":400},
+    "play-stim":{"interval":2000},
+    "play-hide":{"interval":2000},
+    "play-show":{"interval":5000},
+    "play-feedback":{"interval":1000,"flash_interval":100}
+  },
+
   "gameTypes":["color", "shape", "position"],
   "txTypes":["None", "Reduce", "Rotate"],
   "colors":["LB","LG","PINK"],

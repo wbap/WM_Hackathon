@@ -21,20 +21,20 @@ class M2sEnv(Dm2sEnv):
     super().__init__(config_file)
 
   def _create_states(self):
-    tutor_show_interval = 2000
-    play_show_interval = 5000
-    feedback_interval = 1000
-    inter_interval = 400 * 3
+    def get_interval(state):
+      interval = self.gParams['states'][state]['interval']
+      return interval
+
     #self.add_state(self.STATE_TUTOR_STIM, next_states=[self.STATE_TUTOR_SHOW], duration=show_stim_interval, start_state=True)
-    self.add_state(self.STATE_TUTOR_SHOW, next_states=[self.STATE_TUTOR_FEEDBACK], duration=tutor_show_interval, start_state=True)
-    self.add_state(self.STATE_TUTOR_FEEDBACK, next_states=[self.STATE_INTER], duration=feedback_interval)
+    self.add_state(self.STATE_TUTOR_SHOW, next_states=[self.STATE_TUTOR_FEEDBACK], duration=get_interval(self.STATE_TUTOR_SHOW), start_state=True)
+    self.add_state(self.STATE_TUTOR_FEEDBACK, next_states=[self.STATE_INTER], duration=get_interval(self.STATE_TUTOR_FEEDBACK))
 
     #self.add_state(self.STATE_INTER, next_states=[self.STATE_PLAY_STIM], duration=inter_interval)
-    self.add_state(self.STATE_INTER, next_states=[self.STATE_PLAY_SHOW], duration=inter_interval)
+    self.add_state(self.STATE_INTER, next_states=[self.STATE_PLAY_SHOW], duration=get_interval(self.STATE_INTER))
 
     #self.add_state(self.STATE_PLAY_STIM, next_states=[self.STATE_PLAY_SHOW], duration=show_stim_interval)
-    self.add_state(self.STATE_PLAY_SHOW, next_states=[self.STATE_PLAY_FEEDBACK], duration=play_show_interval)
-    self.add_state(self.STATE_PLAY_FEEDBACK, next_states=[self.STATE_END], duration=feedback_interval)
+    self.add_state(self.STATE_PLAY_SHOW, next_states=[self.STATE_PLAY_FEEDBACK], duration=get_interval(self.STATE_PLAY_SHOW))
+    self.add_state(self.STATE_PLAY_FEEDBACK, next_states=[self.STATE_END], duration=get_interval(self.STATE_PLAY_FEEDBACK))
 
     self.add_state(self.STATE_END, end_state=True)
 

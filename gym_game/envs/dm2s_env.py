@@ -77,8 +77,8 @@ class Dm2sEnv(FiniteStateEnv):
     self.gCorrectFB = Rect(0, self.gVideoHeight - 80, self.gVideoWidth, 80)
     self.gObservBar = Rect(0, 0, self.gVideoWidth, 80)
 
-    self.inter_flash = 400
-    self.feedback_flash = 100
+    #self.inter_flash = 400
+    #self.feedback_flash = 100
     self.image_dir = str(self.gParams["imageDir"])
     
     # load button images
@@ -100,9 +100,6 @@ class Dm2sEnv(FiniteStateEnv):
     self.tutor_counts = 0
     self.play_counts = 0
 
-    # gaze
-    self._mode_no_tutor_long_game = False   # currently being used for testing gaze
-
     # Create base class stuff
     frame_rate = int(self.gParams["frameRate"])
     super().__init__(self.NUM_ACTIONS, w, h, frame_rate)
@@ -111,28 +108,21 @@ class Dm2sEnv(FiniteStateEnv):
     return self.gParams
 
   def _create_states(self):
-    show_stim_interval = 2000 if not self._mode_no_tutor_long_game else 500
-    hide_stim_interval = 2000 if not self._mode_no_tutor_long_game else 500
-    tutor_show_interval = 1000
-    play_show_interval = 5000 if not self._mode_no_tutor_long_game else 20000
-    feedback_interval = 1000 if not self._mode_no_tutor_long_game else 500
-    inter_interval = 400 * 3
+    def get_interval(state):
+      interval = self.gParams['states'][state]['interval']
+      return interval
 
-    # if in mode 'no tutor, long game', don't show tutor
-    if not self._mode_no_tutor_long_game:
-      self.add_state(self.STATE_TUTOR_STIM, next_states=[self.STATE_TUTOR_HIDE], duration=show_stim_interval,
-                     start_state=True)
-      self.add_state(self.STATE_TUTOR_HIDE, next_states=[self.STATE_TUTOR_SHOW], duration=hide_stim_interval)
-      self.add_state(self.STATE_TUTOR_SHOW, next_states=[self.STATE_TUTOR_FEEDBACK], duration=tutor_show_interval)
-      self.add_state(self.STATE_TUTOR_FEEDBACK, next_states=[self.STATE_INTER], duration=feedback_interval)
+    self.add_state(self.STATE_TUTOR_STIM, next_states=[self.STATE_TUTOR_HIDE], duration=get_interval(self.STATE_TUTOR_STIM), start_state=True)
+    self.add_state(self.STATE_TUTOR_HIDE, next_states=[self.STATE_TUTOR_SHOW], duration=get_interval(self.STATE_TUTOR_HIDE))
+    self.add_state(self.STATE_TUTOR_SHOW, next_states=[self.STATE_TUTOR_FEEDBACK], duration=get_interval(self.STATE_TUTOR_SHOW))
+    self.add_state(self.STATE_TUTOR_FEEDBACK, next_states=[self.STATE_INTER], duration=get_interval(self.STATE_TUTOR_FEEDBACK))
 
-      self.add_state(self.STATE_INTER, next_states=[self.STATE_PLAY_STIM], duration=inter_interval)
+    self.add_state(self.STATE_INTER, next_states=[self.STATE_PLAY_STIM], duration=get_interval(self.STATE_INTER))
 
-    self.add_state(self.STATE_PLAY_STIM, next_states=[self.STATE_PLAY_HIDE], duration=show_stim_interval,
-                   start_state=self._mode_no_tutor_long_game)
-    self.add_state(self.STATE_PLAY_HIDE, next_states=[self.STATE_PLAY_SHOW], duration=hide_stim_interval)
-    self.add_state(self.STATE_PLAY_SHOW, next_states=[self.STATE_PLAY_FEEDBACK], duration=play_show_interval)
-    self.add_state(self.STATE_PLAY_FEEDBACK, next_states=[self.STATE_END], duration=feedback_interval)
+    self.add_state(self.STATE_PLAY_STIM, next_states=[self.STATE_PLAY_HIDE], duration=get_interval(self.STATE_PLAY_STIM))
+    self.add_state(self.STATE_PLAY_HIDE, next_states=[self.STATE_PLAY_SHOW], duration=get_interval(self.STATE_PLAY_HIDE))
+    self.add_state(self.STATE_PLAY_SHOW, next_states=[self.STATE_PLAY_FEEDBACK], duration=get_interval(self.STATE_PLAY_SHOW))
+    self.add_state(self.STATE_PLAY_FEEDBACK, next_states=[self.STATE_END], duration=get_interval(self.STATE_PLAY_FEEDBACK))
 
     self.add_state(self.STATE_END, end_state=True)
 
@@ -317,7 +307,8 @@ class Dm2sEnv(FiniteStateEnv):
     elapsed_time = self.get_state_elapsed_time()
     if state == self.STATE_INTER:
       # flash whole screen
-      elapsed_coarse = int(elapsed_time / self.inter_flash)
+      flash_interval = self.get_config()['states'][state]['flash_interval']
+      elapsed_coarse = int(elapsed_time / flash_interval)
       if (elapsed_coarse % 2) == 1:
         screen.fill(self.WHITE)
       else:
@@ -343,7 +334,9 @@ class Dm2sEnv(FiniteStateEnv):
 
     if state == self.STATE_TUTOR_FEEDBACK or state == self.STATE_PLAY_FEEDBACK:
       # flash the correct button
-      elapsed_coarse = int(elapsed_time / self.feedback_flash)
+      flash_interval = self.get_config()['states'][state]['flash_interval']
+      elapsed_coarse = int(elapsed_time / flash_interval)
+      #print('Elapsed: ', elapsed_time, 'int ', flash_interval, 'coarse ', elapsed_coarse)
       if (elapsed_coarse % 2) == 1:
         #flash = self.position
         screen_options['flash'] = self.position
