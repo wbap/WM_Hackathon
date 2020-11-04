@@ -15,7 +15,10 @@ import pygame as pygame
 
 from ray.rllib.utils.framework import try_import_torch
 
+from agent.stubs.medial_temporal_lobe import MedialTemporalLobe
 from agent.stubs.positional_encoder import PositionalEncoder
+from agent.stubs.prefrontal_cortex import PrefrontalCortex
+from agent.stubs.superior_colliculus import SuperiorColliculus
 from agent.stubs.visual_path import VisualPath
 from utils.writer_singleton import WriterSingleton
 from utils.general_utils import mergedicts
@@ -28,38 +31,21 @@ torch, nn = try_import_torch()
 """
 
 
-def prefrontal_cortex(mtl, bg_action):
-  pfc_action = bg_action
-  logging.debug("======> StubAgent: bg_action", bg_action)
-  return pfc_action
-
-
-def superior_colliculus(pfc_action):
-  """
-    pfc_action: command from PFC. Gaze target in 'action' space
-    Return: gaze target in absolute coordinates (pixels in screen space)
-
-    Currently, this is a 'pass-through" component.
-    In the future, one may want to change the implementation e.g. progressively move toward the target
-  """
-
-  sc_action = pfc_action
-  logging.debug("======> StubAgentEnv: agent_action", sc_action)
-
-  return sc_action
-
-
 def sc_2_env(sc_action):
   return sc_action
 
 
 class StubAgentEnv(gym.Env):
 
-  # Streams
+  # Observation keys - for the obs dict that is emitted by this environment
   OBS_FOVEA = 'fovea'
   OBS_PERIPHERAL = 'peripheral'
   OBS_POSITIONAL_ENCODING = 'gaze'
-  NUM_OBS = 2
+
+  # module names (some modules use the corresponding obs key)
+  MODULE_PFC = "pfc"
+  MODULE_MTL = "mtl"
+  MODULE_SC = "sc"
 
   @staticmethod
   def get_default_config():
@@ -110,9 +96,6 @@ class StubAgentEnv(gym.Env):
     obs_spaces_dict = {}
     self.modules = {}
 
-    # Medial Temporal Lobe
-    self.mtl = deque([], self._config["mtl_max_length"])
-
     # positional encoding
     self._use_pe = "pe" in self._config["obs_keys"] and self._config["obs_keys"]["pe"]
     if self._use_pe:
@@ -121,7 +104,19 @@ class StubAgentEnv(gym.Env):
     # visual processing - create a parietal cortex for fovea and periphery
     self._use_visual = "visual" in self._config["obs_keys"] and self._config["obs_keys"]["visual"]
     if self._use_visual:
-      self._build_visual_stream(obs_spaces_dict)
+      self._build_visual_paths(obs_spaces_dict)
+
+    # build Prefrontal Cortex
+    pfc = PrefrontalCortex(self.MODULE_PFC, PrefrontalCortex.get_default_config())
+    self.modules[self.MODULE_PFC] = pfc
+
+    # build Medial Temporal Lobe
+    mtl = MedialTemporalLobe(self.MODULE_MTL, MedialTemporalLobe.get_default_config())
+    self.modules[self.MODULE_MTL] = mtl
+
+    # build Superior Colliculus
+    sc = SuperiorColliculus(self.MODULE_SC, SuperiorColliculus.get_default_config())
+    self.modules[self.MODULE_SC] = sc
 
     # the new observation space dict from the processed streams
     self.observation_space = spaces.Dict(obs_spaces_dict)
@@ -159,7 +154,7 @@ class StubAgentEnv(gym.Env):
     observation_shape = [c, h, w]
     return observation_shape
 
-  def _build_visual_stream(self, obs_spaces_dict):
+  def _build_visual_paths(self, obs_spaces_dict):
     for obs_key in self._config["obs_keys"]["visual"]:
       input_shape = self.create_input_shape_visual(self.env_observation_space, obs_key)
       config = self._config[obs_key]
@@ -209,17 +204,17 @@ class StubAgentEnv(gym.Env):
 
   # -----------------------------------------------------------------------------------------------
 
-  def forward(self, observation):
+  def forward_observation(self, observation):
     # print('-----------Obs old', observation)
 
     # process foveal and peripheral visual path
-    obs_dict = {}
+    what_where_obs_dict = {}
     if self._use_visual:
       for obs_key in self._config["obs_keys"]["visual"]:
         cortex = self.modules[obs_key]
         input_tensor = self.obs_to_tensor(observation, obs_key)
         encoding_tensor, decoding, target = cortex.forward(input_tensor)
-        self.tensor_to_obs(encoding_tensor, obs_dict, obs_key)
+        self.tensor_to_obs(encoding_tensor, what_where_obs_dict, obs_key)
 
     # process positional encoding
     if self._use_pe:
@@ -228,9 +223,27 @@ class StubAgentEnv(gym.Env):
       input_tensor = self.obs_to_tensor(observation, obs_key)
       pe_output = pe.forward(input_tensor)
 
-      self.tensor_to_obs(pe_output, obs_dict, obs_key)
+      self.tensor_to_obs(pe_output, what_where_obs_dict, obs_key)
 
-    return obs_dict
+    # process everything downstream of posterior cortex
+    mtl = self.modules[self.MODULE_MTL]
+    mtl_out = mtl.forward(what_where_obs_dict)
+
+    pfc = self.modules[self.MODULE_PFC]
+    env_obs_dict, pfc_action = pfc.forward(what_where_obs_dict, mtl_out, bg_action=None)
+
+    return env_obs_dict
+
+  def forward_action(self, bg_action):
+
+    pfc = self.modules[self.MODULE_PFC]
+    env_obs_dict, pfc_action = pfc.forward(None, None, bg_action)
+
+    sc = self.modules[self.MODULE_SC]
+    sc_action = sc.forward(pfc_action)
+    env_action = sc_2_env(sc_action)    # convert to game environment action space
+
+    return env_action
 
   def tensor_to_obs(self, output, obs_dict, obs_key):
     #print('output is', output)
@@ -258,18 +271,16 @@ class StubAgentEnv(gym.Env):
       print('>>>>>>>>>>> Stub step')
       start = timer()
 
-    # compute action for the environment (based on the StubAgent's action on the StubAgentEnv)
-    pfc_action = prefrontal_cortex(self.mtl, bg_action=action)
-    sc_action = superior_colliculus(pfc_action=pfc_action)
-    env_action = sc_2_env(sc_action)
+    # Update PFC with current action, which flow through to motor actions
+    env_action = self.forward_action(action)
 
+    # Update the game env, based on actions originating in PFC (and direct from Actor)
     [obs, self.reward, is_end_state, additional] = self.env.step(env_action)    # StubAgentEnv.step
 
-    tx_obs = self.forward(obs)  # Process the input from StubAgentEnv
-    emit = [tx_obs, self.reward, is_end_state, additional]
+    # Update agent brain with new observations
+    tx_obs = self.forward_observation(obs)  # Process the input from StubAgentEnv
 
-    # add observations to the MTL
-    self.mtl.append(tx_obs)
+    emit = [tx_obs, self.reward, is_end_state, additional]
 
     # The purpose of this section is to verify that valid observations are emitted.
     if debug_observation:

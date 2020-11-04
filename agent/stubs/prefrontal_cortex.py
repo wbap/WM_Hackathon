@@ -3,14 +3,22 @@ import torch.nn as nn
 
 class PrefrontalCortex(nn.Module):
 
-  config = {
-  }
+  @staticmethod
+  def get_default_config():
+    config = {
+    }
+    return config
 
-  def __init__(self, config=None):
+  def __init__(self, name, config):
     super().__init__()
+    self._name = name
+    self._config = config
 
   def _build(self):
     pass
 
-  def forward(self):
-    pass
+  def forward(self, what_where_obs_dict, mtl_out, bg_action):
+    pfc_action = bg_action
+    pfc_observation = what_where_obs_dict
+    # print("======> StubAgent: bg_action", bg_action)
+    return pfc_observation, pfc_action

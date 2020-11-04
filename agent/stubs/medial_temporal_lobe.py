@@ -1,18 +1,27 @@
+from collections import deque
+from typing import Any
+
 import torch.nn as nn
 
 
 class MedialTemporalLobe(nn.Module):
 
-  config = {
-  }
+  @staticmethod
+  def get_default_config():
+    config = {
+    }
+    return config
 
-  def __init__(self, config=None):
+  def __init__(self, name, config):
     super().__init__()
+    self._name = name
+    self._config = config
 
   def _build(self):
-    pass
+    self.mtl = deque([], self._config["mtl_max_length"])
 
-  def forward(self):
-    pass
+  def forward(self, what_where):
+    self.mtl.append(what_where)
+
 
 
