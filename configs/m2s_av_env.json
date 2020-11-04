@@ -3,17 +3,7 @@
   "observationRepeat": 2,
   "frameRate": 3,
   "imageDir": "resources/dm2s",
-  "fovea_fraction": 0.3,
-  "fovea_scale": 0.25,
-  "gaze_step_size": 100,
-  "peripheral_scale": 0.05,
-  "peripheral_noise_magnitude": 0.1,
   "screen_scale": 0.1,
-  "show_fovea_on_screen": 0,
-  "enable_active_vision": 1,
-  "summaries": false,
-  "grid_length_x": 3,
-  "grid_length_y": 3,
   "videoWidth": 800,
   "videoHeight": 800,
 
@@ -25,8 +15,19 @@
     "play-feedback":{"interval":1000,"flash_interval":100}
   },
 
-  "gameTypes":["color", "shape", "position"],
-  "txTypes":["None", "Reduce", "Rotate"],
+  "gameTypes":["shape"],
+  "txTypes":["None"],
   "colors": ["LB"],
-  "shapes": ["Barred_Ring", "Triangle", "Cross", "Heart"]
+  "shapes": ["Barred_Ring", "Triangle", "Cross", "Heart"],
+
+  "enable_active_vision": 1,
+  "summaries": true,
+  "fovea_fraction": 0.3,
+  "fovea_scale": 0.25,
+  "gaze_step_size": 100,
+  "peripheral_scale": 0.05,
+  "peripheral_noise_magnitude": 0.1,
+  "show_fovea_on_screen": 0,
+  "grid_length_x": 5,
+  "grid_length_y": 5
 }

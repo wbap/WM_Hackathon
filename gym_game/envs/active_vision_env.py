@@ -82,13 +82,13 @@ class ActiveVisionEnv(PyGameEnv):
     config = self.get_config()
 
     self.screen_scale = float(config["screen_scale"])  # resize the screen image before returning as an observation
-    self.summaries = config['summaries']
 
     self.enabled = False if config["enable_active_vision"] == 0 else True
     if not self.enabled:
       super().__init__(num_actions, screen_width, screen_height, frame_rate)
       return
 
+    self.summaries = config['summaries']
     self.fov_fraction = float(config["fovea_fraction"])  # fovea occupies this fraction of the screen image (applied to x and y respectively)
     self.fov_scale = float(config["fovea_scale"])  # image size, expressed as fraction of screen size
     self.step_size = int(config["gaze_step_size"])  # step size of gaze movement, in pixels in the screen image

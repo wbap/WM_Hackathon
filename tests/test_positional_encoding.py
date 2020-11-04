@@ -1,10 +1,10 @@
-from gym_game.stubs.positional_encoder import PositionalEncoder
+
 import matplotlib.pyplot as plt
+from agent.stubs.positional_encoder import PositionalEncoder
 
 pe_config = {'dims': 64}
 input_shape = [-1, 2]
 pe = PositionalEncoder('pe', input_shape=input_shape, config=pe_config, max_xy=(10, 20))
-
 
 print(pe.pe_x.shape)
 print(pe.pe_y.shape)

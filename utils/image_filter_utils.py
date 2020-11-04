@@ -66,7 +66,7 @@ class ImageFilter(nn.Module):
     weight = torch.reshape(weight, shape_4d1)
     #shape_4d = [channels, channels, weight.shape[0], weight.shape[1]]
     #weight = torch.reshape(weight, shape_4d)  # [out_c, in_c/group, ksize[0], kszie[1]]
-    weight = weight.repeat([channels,channels,1,1])
+    weight = weight.repeat([channels, channels, 1, 1])
     #print('ImageFilter weight shape', weight.shape)
     self.register_buffer('weight', weight)
 

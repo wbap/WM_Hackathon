@@ -246,7 +246,7 @@ class Dm2sEnv(FiniteStateEnv):
       if self.gameType == self.GAME_TYPE_POSITION:
         except_position = unlike['position']
 
-    while(True):
+    while True:
       color = self.gColors[self.np_random.randint(0, len(self.gColors))-1]
       shape = self.gShapes[self.np_random.randint(0, len(self.gShapes))-1]
       position = self.BAR_POSITIONS[self.np_random.randint(0, len(self.BAR_POSITIONS))-1]

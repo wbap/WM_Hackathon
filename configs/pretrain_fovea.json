@@ -5,7 +5,8 @@
   },
   "model": {
     "retina": {
-      "f_size": 7
+      "f_size": 7,
+      "summaries": false
     },
     "cortex": {
       "filters": 100

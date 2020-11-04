@@ -9,7 +9,8 @@ from agent.stubs.retina import Retina
 config = {
   'f_size': 7,
   'f_sigma': 2.0,
-  'f_k': 1.6  # approximates Laplacian of Gaussian
+  'f_k': 1.6,  # approximates Laplacian of Gaussian
+  'summaries': True
 }
 
 channels = 3

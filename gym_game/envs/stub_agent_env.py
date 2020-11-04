@@ -263,9 +263,9 @@ class StubAgentEnv(gym.Env):
     sc_action = superior_colliculus(pfc_action=pfc_action)
     env_action = sc_2_env(sc_action)
 
-    [obs, self.reward, is_end_state, additional] = self.env.step(env_action)
+    [obs, self.reward, is_end_state, additional] = self.env.step(env_action)    # StubAgentEnv.step
 
-    tx_obs = self.forward(obs)  # Process the input
+    tx_obs = self.forward(obs)  # Process the input from StubAgentEnv
     emit = [tx_obs, self.reward, is_end_state, additional]
 
     # add observations to the MTL
