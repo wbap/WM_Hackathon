@@ -7,13 +7,25 @@
   "fovea_scale": 0.25,
   "gaze_step_size": 100,
   "peripheral_scale": 0.05,
+  "peripheral_noise_magnitude": 0.1,
   "screen_scale": 0.1,
   "show_fovea_on_screen": 0,
   "enable_active_vision": 1,
+  "grid_length_x": 3,
+  "grid_length_y": 3,
   "videoWidth": 800,
   "videoHeight": 800,
+
+  "states":{
+    "tutor-show":{"interval":2000},
+    "tutor-feedback":{"interval":1000,"flash_interval":100},
+    "inter":{"interval":1200,"flash_interval":400},
+    "play-show":{"interval":5000},
+    "play-feedback":{"interval":1000,"flash_interval":100}
+  },
+
+  "gameTypes":["color", "shape", "position"],
+  "txTypes":["None", "Reduce", "Rotate"],
   "colors": ["LB"],
-  "shapes": ["Barred_Ring", "Triangle", "Cross", "Heart"],
-  "grid_length_x": 3,
-  "grid_length_y": 3
+  "shapes": ["Barred_Ring", "Triangle", "Cross", "Heart"]
 }
