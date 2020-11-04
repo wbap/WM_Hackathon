@@ -27,7 +27,7 @@ class Retina(nn.Module):
     else:
       self._config = config
 
-    self.summaries = False
+    self.summaries = self._config['summaries']
 
     # self._image_dic = {}
     self._dog_filter_pos = None

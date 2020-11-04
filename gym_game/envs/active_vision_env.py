@@ -82,7 +82,7 @@ class ActiveVisionEnv(PyGameEnv):
     config = self.get_config()
 
     self.screen_scale = float(config["screen_scale"])  # resize the screen image before returning as an observation
-    self.summarise = True
+    self.summaries = config['summaries']
 
     self.enabled = False if config["enable_active_vision"] == 0 else True
     if not self.enabled:
@@ -268,7 +268,7 @@ class ActiveVisionEnv(PyGameEnv):
         print('img full (rescaled) shape:', self._img_full.shape)
 
       writer = WriterSingleton.get_writer()
-      if self.summarise and writer:
+      if self.summaries and writer:
         import torchvision
         import torch
 
