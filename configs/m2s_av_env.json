@@ -22,12 +22,12 @@
 
   "enable_active_vision": 1,
   "summaries": true,
-  "fovea_fraction": 0.25,
-  "fovea_scale": 0.2,
+  "fovea_fraction": 0.3,
+  "fovea_scale": 0.1,
   "gaze_step_size": 100,
-  "peripheral_scale": 0.05,
+  "peripheral_scale": 0.02,
   "peripheral_noise_magnitude": 0.1,
   "show_fovea_on_screen": 0,
-  "grid_length_x": 5,
-  "grid_length_y": 5
+  "grid_length_x": 3,
+  "grid_length_y": 3
 }
