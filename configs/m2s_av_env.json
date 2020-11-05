@@ -22,8 +22,8 @@
 
   "enable_active_vision": 1,
   "summaries": true,
-  "fovea_fraction": 0.3,
-  "fovea_scale": 0.25,
+  "fovea_fraction": 0.25,
+  "fovea_scale": 0.2,
   "gaze_step_size": 100,
   "peripheral_scale": 0.05,
   "peripheral_noise_magnitude": 0.1,

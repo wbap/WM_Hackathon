@@ -1,30 +1,23 @@
 {
   "mainTaskRepeat": 6,
   "frameRate": 3,
+  "imageDir": "resources/dm2s",
+  "screen_scale": 0.1,
+  "videoWidth": 800,
+  "videoHeight": 800,
+
   "targetRadius": 133,
-  "fovea_fraction": 0.3,
-  "fovea_scale": 0.25,
+  "colors": ["LB"],
+  "shapes": ["Barred_Ring", "Triangle", "Cross", "Heart"],
+
+  "enable_active_vision": 1,
+  "summaries": true,
+  "fovea_fraction": 0.25,
+  "fovea_scale": 0.2,
   "gaze_step_size": 100,
   "peripheral_scale": 0.05,
   "peripheral_noise_magnitude": 0.1,
-  "screen_scale": 0.1,
   "show_fovea_on_screen": 0,
-  "enable_active_vision": 1,
-  "summaries": false,
-  "videoWidth": 800,
-  "videoHeight": 800,
-  "colors": ["LB"],
-  "shapes": [
-    "Barred_Ring",
-    "Triangle",
-    "Crescent",
-    "Cross",
-    "Circle",
-    "Heart",
-    "Pentagon",
-    "Ring",
-    "Square"
-  ],
-  "grid_length_x": 3,
-  "grid_length_y": 3
+  "grid_length_x": 5,
+  "grid_length_y": 5
 }
