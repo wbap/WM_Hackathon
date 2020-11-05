@@ -255,8 +255,10 @@ class ActiveVisionEnv(PyGameEnv):
       # convert to pytorch format
       self._img_fov = to_pytorch_from_uint8(self._img_fov)
       img_periph = to_pytorch_from_uint8(img_periph)
+
+      # # add noise to peripheral image
       img_periph_random = (np.random.random(img_periph.shape)-0.5)*self.peripheral_noise_magnitude
-      self._img_periph = np.clip(img_periph + img_periph_random, a_min=0.0, a_max=1.0)
+      self._img_periph = np.clip(img_periph + img_periph_random, a_min=0.0, a_max=1.0).astype(np.float32)
 
       # print('fovea shape trans:', self._img_fov.shape)
 
@@ -269,7 +271,6 @@ class ActiveVisionEnv(PyGameEnv):
 
       writer = WriterSingleton.get_writer()
       if self.summaries and writer:
-        import torchvision
         import torch
 
         img = to_pytorch_from_uint8(img)

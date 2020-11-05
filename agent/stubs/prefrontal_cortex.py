@@ -13,6 +13,7 @@ class PrefrontalCortex(nn.Module):
     super().__init__()
     self._name = name
     self._config = config
+    self._build()
 
   def _build(self):
     pass

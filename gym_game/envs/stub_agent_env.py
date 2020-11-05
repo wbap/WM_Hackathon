@@ -52,13 +52,19 @@ class StubAgentEnv(gym.Env):
     pe_config = PositionalEncoder.get_default_config()
     cortex_f_config = VisualPath.get_default_config()
     cortex_p_config = VisualPath.get_default_config()
+    mtl_config = MedialTemporalLobe.get_default_config()
+    sc_config = SuperiorColliculus.get_default_config()
+    pfc_config = PrefrontalCortex.get_default_config()
     agent_config = {
       'obs_keys': {
         'visual': [StubAgentEnv.OBS_FOVEA, StubAgentEnv.OBS_PERIPHERAL]
       },
       StubAgentEnv.OBS_FOVEA: cortex_f_config,
       StubAgentEnv.OBS_PERIPHERAL: cortex_p_config,
-      StubAgentEnv.OBS_POSITIONAL_ENCODING: pe_config
+      StubAgentEnv.OBS_POSITIONAL_ENCODING: pe_config,
+      StubAgentEnv.MODULE_SC: sc_config,
+      StubAgentEnv.MODULE_MTL: mtl_config,
+      StubAgentEnv.MODULE_PFC: pfc_config
     }
     return agent_config
 
@@ -107,15 +113,15 @@ class StubAgentEnv(gym.Env):
       self._build_visual_paths(obs_spaces_dict)
 
     # build Prefrontal Cortex
-    pfc = PrefrontalCortex(self.MODULE_PFC, PrefrontalCortex.get_default_config())
+    pfc = PrefrontalCortex(self.MODULE_PFC, self._config[self.MODULE_PFC])
     self.modules[self.MODULE_PFC] = pfc
 
     # build Medial Temporal Lobe
-    mtl = MedialTemporalLobe(self.MODULE_MTL, MedialTemporalLobe.get_default_config())
+    mtl = MedialTemporalLobe(self.MODULE_MTL, self._config[self.MODULE_MTL])
     self.modules[self.MODULE_MTL] = mtl
 
     # build Superior Colliculus
-    sc = SuperiorColliculus(self.MODULE_SC, SuperiorColliculus.get_default_config())
+    sc = SuperiorColliculus(self.MODULE_SC, self._config[self.MODULE_SC])
     self.modules[self.MODULE_SC] = sc
 
     # the new observation space dict from the processed streams
@@ -123,7 +129,7 @@ class StubAgentEnv(gym.Env):
 
   def reset(self):
     obs = self.env.reset()
-    return self.forward(obs)
+    return self.forward_observation(obs)
 
   # -------------------------------------- Building Regions --------------------------------------
   # ------------ Visual Streams

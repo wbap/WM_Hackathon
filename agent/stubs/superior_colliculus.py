@@ -11,9 +11,9 @@ class SuperiorColliculus(nn.Module):
 
   def __init__(self, name, config):
     super().__init__()
-
     self._name = name
     self._config = config
+    self._build()
 
   def _build(self):
     pass

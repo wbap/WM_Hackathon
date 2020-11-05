@@ -9,6 +9,7 @@ class MedialTemporalLobe(nn.Module):
   @staticmethod
   def get_default_config():
     config = {
+      "mtl_max_length": 1
     }
     return config
 
@@ -16,6 +17,8 @@ class MedialTemporalLobe(nn.Module):
     super().__init__()
     self._name = name
     self._config = config
+    self.mtl = None
+    self._build()
 
   def _build(self):
     self.mtl = deque([], self._config["mtl_max_length"])
