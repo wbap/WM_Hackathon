@@ -235,6 +235,18 @@ class ActiveVisionEnv(PyGameEnv):
     self._img_full = to_pytorch_from_uint8(img_resized)
 
     if not self.enabled:
+
+      writer = WriterSingleton.get_writer()
+      if self.summaries and writer:
+        import torch
+
+        img = to_pytorch_from_uint8(img)
+
+        writer.add_image('active-vision/input', torch.tensor(img),
+                         global_step=WriterSingleton.global_step)
+        writer.add_image('active-vision/full', torch.tensor(self._img_full),
+                         global_step=WriterSingleton.global_step)
+
       # Assemble dict
       observation = {
         'full': self._img_full,

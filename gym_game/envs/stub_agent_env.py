@@ -2,7 +2,6 @@ import math
 import json
 from collections import deque
 from timeit import default_timer as timer
-import logging
 
 import gym
 from gym import error, spaces, utils
@@ -29,6 +28,17 @@ torch, nn = try_import_torch()
 """
   Wraps a task-specific environment and implements brain modules that are not trained by Reinforcement Learning.
 """
+
+
+class DelayMessage:
+
+  def __init__(self, delay_length):
+    self.buffer = deque([], delay_length)
+
+  def next_message(self, message_in):
+    self.buffer.append(message_in)      # put a new item in the dequeue (left)
+    message_out = self.buffer.pop()     # take one item off the deque (right)
+    return message_out
 
 
 def sc_2_env(sc_action):
@@ -64,8 +74,11 @@ class StubAgentEnv(gym.Env):
       StubAgentEnv.OBS_POSITIONAL_ENCODING: pe_config,
       StubAgentEnv.MODULE_SC: sc_config,
       StubAgentEnv.MODULE_MTL: mtl_config,
-      StubAgentEnv.MODULE_PFC: pfc_config
+      StubAgentEnv.MODULE_PFC: pfc_config,
+      'mtl_input_delay_size': 1,
+      'pfc_output_delay_size': 1
     }
+
     return agent_config
 
   @staticmethod
@@ -115,6 +128,10 @@ class StubAgentEnv(gym.Env):
     # build Prefrontal Cortex
     pfc = PrefrontalCortex(self.MODULE_PFC, self._config[self.MODULE_PFC])
     self.modules[self.MODULE_PFC] = pfc
+
+    # build delay on input to Medial Temporal Lobe, and output of observations to Agent
+    self.mtl_input_buffer = DelayMessage(self._config["mtl_input_delay_size"])
+    self.pfc_output_buffer = DelayMessage(self._config["pfc_output_delay_size"])
 
     # build Medial Temporal Lobe
     mtl = MedialTemporalLobe(self.MODULE_MTL, self._config[self.MODULE_MTL])
@@ -232,18 +249,20 @@ class StubAgentEnv(gym.Env):
       self.tensor_to_obs(pe_output, what_where_obs_dict, obs_key)
 
     # process everything downstream of posterior cortex
+    what_where_obs_dict_delayed = self.mtl_input_buffer.next_message(what_where_obs_dict)
     mtl = self.modules[self.MODULE_MTL]
-    mtl_out = mtl.forward(what_where_obs_dict)
+    mtl_out = mtl.forward(what_where_obs_dict_delayed)
 
     pfc = self.modules[self.MODULE_PFC]
-    env_obs_dict, pfc_action = pfc.forward(what_where_obs_dict, mtl_out, bg_action=None)
+    env_obs_dict, _ = pfc.forward(what_where_obs_dict, mtl_out, bg_action=None)
+    env_obs_dict_delayed = self.pfc_output_buffer.next_message(env_obs_dict)
 
-    return env_obs_dict
+    return env_obs_dict_delayed
 
   def forward_action(self, bg_action):
 
     pfc = self.modules[self.MODULE_PFC]
-    env_obs_dict, pfc_action = pfc.forward(None, None, bg_action)
+    _, pfc_action = pfc.forward(None, None, bg_action)
 
     sc = self.modules[self.MODULE_SC]
     sc_action = sc.forward(pfc_action)
