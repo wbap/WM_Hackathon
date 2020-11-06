@@ -4,10 +4,11 @@
 # sync code
 ################################################################################
 
+export MACHINE=${1:-incbox}
 DEST_DIR='~/agief-remote-run/WM_Hackathon'
 
 # sync this folder
-cmd="rsync --chmod=ug=rwX,o=rX --perms -av ./ incbox:$DEST_DIR --exclude='.git/' --filter=':- .gitignore'"
+cmd="rsync --chmod=ug=rwX,o=rX --perms -av ./ $MACHINE:$DEST_DIR --exclude='.git/' --filter=':- .gitignore'"
 echo $cmd
 eval $cmd
 status=$?
