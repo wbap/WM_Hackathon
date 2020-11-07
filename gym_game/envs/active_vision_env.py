@@ -3,6 +3,7 @@ from enum import Enum
 
 import numpy as np
 from gym import spaces
+from skimage import img_as_float32
 
 from utils.image_utils import fast_resize, to_pytorch_from_uint8
 from utils.writer_singleton import WriterSingleton
@@ -82,13 +83,12 @@ class ActiveVisionEnv(PyGameEnv):
     config = self.get_config()
 
     self.screen_scale = float(config["screen_scale"])  # resize the screen image before returning as an observation
-
+    self.summaries = config['summaries']
     self.enabled = False if config["enable_active_vision"] == 0 else True
     if not self.enabled:
       super().__init__(num_actions, screen_width, screen_height, frame_rate)
       return
 
-    self.summaries = config['summaries']
     self.fov_fraction = float(config["fovea_fraction"])  # fovea occupies this fraction of the screen image (applied to x and y respectively)
     self.fov_scale = float(config["fovea_scale"])  # image size, expressed as fraction of screen size
     self.step_size = int(config["gaze_step_size"])  # step size of gaze movement, in pixels in the screen image
@@ -228,30 +228,74 @@ class ActiveVisionEnv(PyGameEnv):
     img = np.transpose(img, [1, 0, 2])  # observed img is horizontally reflected, and rotated 90 deg ...
     img_shape = img.shape
 
-    # resize screen image before returning as observation
-    img_resized = fast_resize(img, self.screen_scale)
+    m2s_working_but_image_is_bad_format = False
+    if m2s_working_but_image_is_bad_format:
 
-    # convert to PyTorch format
-    self._img_full = to_pytorch_from_uint8(img_resized)
+      # convert to float type (the standard for pytorch and other scikit image methods)
+      from skimage.util import img_as_float
+      img = img_as_float(img)                                     # <----------- 1. converted to float and [0.f, 1.f] range  e.g. 228 -> 0.9f
 
-    if not self.enabled:
+      def inline_fast_resize(image, scale):
+        from PIL import Image
+        pili = Image.fromarray(image.astype('uint8'), 'RGB')      # <------------- ISSUE -------- cast [0.f, 1.f] as uint8, but not properly converted
+        size = (int(image.shape[0] * scale), int(image.shape[1] * scale))
+        pili2 = pili.resize(size, Image.ANTIALIAS)
+        return pili2
 
-      writer = WriterSingleton.get_writer()
-      if self.summaries and writer:
-        import torch
+      # resize screen image before returning as observation
+      img_resized = inline_fast_resize(img, self.screen_scale)    # <----------- 2. cast as uint8 (but not converted) then resized   e.g. 0.9f -> 0.9f   (i tried it, and it retains the floating point somehow when printed to console)
 
-        img = to_pytorch_from_uint8(img)
+      # PyTorch expects dimension order [b,c,h,w]
+      # transpose dimensions from [,h,w,c] to [,c,h,w]]
+      order = (2, 0, 1)
 
-        writer.add_image('active-vision/input', torch.tensor(img),
-                         global_step=WriterSingleton.global_step)
-        writer.add_image('active-vision/full', torch.tensor(self._img_full),
-                         global_step=WriterSingleton.global_step)
+      if not self.enabled:
+        self._img_full = np.transpose(img_resized, order).astype(np.float32)    # <----------- 3. cast as float  e.g. 0.9f -> 0.9f
+        img_input = np.transpose(img, order).astype(np.float32)
 
-      # Assemble dict
-      observation = {
-        'full': self._img_full,
-      }
+        writer = WriterSingleton.get_writer()
+        if self.summaries and writer:
+          import torch
+
+          writer.add_image('active-vision/input', torch.tensor(img_input),
+                           global_step=WriterSingleton.global_step)
+          writer.add_image('active-vision/full', torch.tensor(self._img_full),
+                           global_step=WriterSingleton.global_step)
+
+          writer.flush()
+
+        # Assemble dict
+        observation = {
+          'full': self._img_full
+        }
     else:
+
+      # resize screen image before returning as observation
+      img_resized = fast_resize(img, self.screen_scale)
+
+      # convert to PyTorch format
+      self._img_full = to_pytorch_from_uint8(img_resized)
+
+      if not self.enabled:
+
+        writer = WriterSingleton.get_writer()
+        if self.summaries and writer:
+          import torch
+
+          img = to_pytorch_from_uint8(img)
+
+          writer.add_image('active-vision/input', torch.tensor(img),
+                           global_step=WriterSingleton.global_step)
+          writer.add_image('active-vision/full', torch.tensor(self._img_full),
+                           global_step=WriterSingleton.global_step)
+
+        # Assemble dict
+        observation = {
+          'full': self._img_full,
+        }
+
+    if self.enabled:
+
       # Peripheral Image - downsize to get peripheral (lower resolution) image
       img_periph = fast_resize(img, self.peripheral_scale)
 
@@ -307,6 +351,7 @@ class ActiveVisionEnv(PyGameEnv):
     #print('Step obs: ', str(end - start)) # Time in seconds, e.g. 5.38091952400282
 
     return observation
+
 
   def draw_screen(self, screen, screen_options):
     import pygame as pygame
