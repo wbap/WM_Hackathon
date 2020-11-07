@@ -4,13 +4,15 @@
     "pe": ["gaze"]
   },
   "mtl_max_length": 6,
+  "mtl_input_delay_size": 1,
+  "pfc_output_delay_size": 1,
   "fovea": {
     "load": "data/pretrain_m2s_av/fovea.pt",
     "retina": {
       "f_size": 7,
       "f_sigma": 2.0,
       "f_k": 1.6,
-      "summaries": false
+      "summaries": true
     },
     "cortex": {
       "filters": 100,
@@ -37,7 +39,7 @@
       "f_size": 7,
       "f_sigma": 2.0,
       "f_k": 1.6,
-      "summaries": false
+      "summaries": true
     },
     "cortex": {
       "filters": 100,

@@ -12,7 +12,7 @@
   "screen_scale": 0.1,
   "show_fovea_on_screen": 0,
   "enable_active_vision": 1,
-  "summaries": false,
+  "summaries": true,
   "grid_length_x": 5,
   "grid_length_y": 5,
 

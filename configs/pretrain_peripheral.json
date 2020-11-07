@@ -6,7 +6,7 @@
   "model": {
     "retina": {
       "f_size": 7,
-      "summaries": false
+      "summaries": true
     },
     "cortex": {
       "filters": 100
