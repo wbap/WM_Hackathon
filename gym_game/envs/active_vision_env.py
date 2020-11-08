@@ -3,6 +3,8 @@ from enum import Enum
 
 import numpy as np
 from gym import spaces
+from skimage import img_as_float32
+from torch.utils.tensorboard import SummaryWriter
 
 from .pygame_env import PyGameEnv
 
@@ -10,6 +12,46 @@ from .pygame_env import PyGameEnv
   ActiveVisionEnv receives a screen image.
   All other quantities are expressed relative to that screen image. 
 """
+
+
+class WriterSingleton:
+  writer = None
+  global_step = 0
+
+  def __init__(self):
+    pass
+
+  @staticmethod
+  def get_writer():
+    if not WriterSingleton.writer:
+      WriterSingleton.writer = SummaryWriter()
+      print("---------------> Created writer at logdir(): ", WriterSingleton.writer.get_logdir())
+    return WriterSingleton.writer
+
+
+def fast_resize(image, scale):
+  """
+    image -- ndarray image as 8bit unsigned integers i.e. (0, 255)
+    Return -- PIL image
+  """
+
+  from PIL import Image
+  pili = Image.fromarray(image.astype('uint8'), 'RGB')
+  size = (int(image.shape[0] * scale), int(image.shape[1] * scale))
+  pili2 = pili.resize(size, Image.ANTIALIAS)
+  return pili2
+
+
+def to_pytorch_from_uint8(img):
+  """
+  Convert from uint8 images, with standard dimension order of [h,w,c]
+  To PyTorch format, float32, dimension order of [c,h,w]
+
+  """
+  order = (2, 0, 1)
+  img = img_as_float32(img)  # convert from uint8 to float 32
+  img = np.transpose(img, order)
+  return img
 
 
 class GazeMode(Enum):
@@ -212,10 +254,12 @@ class ActiveVisionEnv(PyGameEnv):
 
   def get_observation(self):
     """
-    Return images in PyTorch format.
+    The observation is a render of the screen.
+    The format is ndarray of 8 bit unsigned integers
+    Return images as ndarray, in PyTorch format: 32 bit floating point images
     """
+
     debug = False
-    multichannel = True
 
     img = self.render(mode='rgb_array')
 
@@ -225,70 +269,87 @@ class ActiveVisionEnv(PyGameEnv):
     img = np.transpose(img, [1, 0, 2])  # observed img is horizontally reflected, and rotated 90 deg ...
     img_shape = img.shape
 
-    # convert to float type (the standard for pytorch and other scikit image methods)
-    from skimage.util import img_as_float
-    img = img_as_float(img)
-
-    def fast_resize(image, scale, multichannel):
-      from PIL import Image
-      pili = Image.fromarray(image.astype('uint8'), 'RGB')
-      size = (int(image.shape[0] * scale), int(image.shape[1] * scale))
-      pili2 = pili.resize(size, Image.ANTIALIAS)
-      return pili2
-
     # resize screen image before returning as observation
-    img_resized = fast_resize(img, self.screen_scale, multichannel=multichannel)
+    img_resized = fast_resize(img, self.screen_scale)
 
-    # PyTorch expects dimension order [b,c,h,w]
-    # transpose dimensions from [,h,w,c] to [,c,h,w]]
-    order = (2, 0, 1)
+    # convert to PyTorch format
+    self._img_full = to_pytorch_from_uint8(img_resized)
 
     if not self.enabled:
-      self._img_full = np.transpose(img_resized, order)
+
+      writer = WriterSingleton.get_writer()
+      if True and writer:
+        import torch
+
+        img = to_pytorch_from_uint8(img)
+
+        writer.add_image('active-vision/input', torch.tensor(img),
+                         global_step=WriterSingleton.global_step)
+        writer.add_image('active-vision/full', torch.tensor(self._img_full),
+                         global_step=WriterSingleton.global_step)
+        writer.flush()
 
       # Assemble dict
       observation = {
-        'full': self._img_full.astype(np.float32),
+        'full': self._img_full,
       }
     else:
       # Peripheral Image - downsize to get peripheral (lower resolution) image
-      self._img_periph = fast_resize(img, self.peripheral_scale, multichannel=multichannel)
+      img_periph = fast_resize(img, self.peripheral_scale)
 
       # Foveal Image - crop to fovea and rescale
       h, w, ch = img.shape[0], img.shape[1], img.shape[2]
-      pixels_h = int(h * self.fov_fraction)
-      pixels_w = int(w * self.fov_fraction)
-      self._img_fov = img[self.gaze[1]:self.gaze[1] + pixels_h, self.gaze[0]:self.gaze[0] + pixels_w, :]
-      self._img_fov = fast_resize(self._img_fov, self.fov_scale, multichannel=multichannel)
+      pxl_h_half = int(0.5 * h * self.fov_fraction)
+      pxl_w_half = int(0.5 * w * self.fov_fraction)
+
+      self._img_fov = img[self.gaze_centre[1] - pxl_h_half:self.gaze_centre[1] + pxl_h_half,
+                          self.gaze_centre[0] - pxl_w_half:self.gaze_centre[0] + pxl_w_half]
+      self._img_fov = fast_resize(self._img_fov, self.fov_scale)
+
+      # convert to pytorch format
+      self._img_fov = to_pytorch_from_uint8(self._img_fov)
+      img_periph = to_pytorch_from_uint8(img_periph)
+
+      # # add noise to peripheral image
+      img_periph_random = (np.random.random(img_periph.shape)-0.5)*self.peripheral_noise_magnitude
+      self._img_periph = np.clip(img_periph + img_periph_random, a_min=0.0, a_max=1.0).astype(np.float32)
+
+      # print('fovea shape trans:', self._img_fov.shape)
 
       # debugging
       if debug:
         print('img orig screen shape:', img_shape)
         print('img periph shape:', self._img_periph.shape)
         print('img fovea shape:', self._img_fov.shape)
-        print('img screen rescaled shape:', img_resized.shape)
+        print('img full (rescaled) shape:', self._img_full.shape)
 
-      if self._writer:
-        import torchvision
+      writer = WriterSingleton.get_writer()
+      if True and writer:
         import torch
-        self._writer.add_image('av/fovea', torchvision.utils.make_grid(torch.tensor(self._img_fov)))
-        self._writer.add_image('av/periphery', torchvision.utils.make_grid(torch.tensor(self._img_periph)))
 
-      self._img_fov = np.transpose(self._img_fov, order)
-      self._img_periph = np.transpose(self._img_periph, order)
-      # print('fovea shape trans:', self._img_fov.shape)
+        img = to_pytorch_from_uint8(img)
+
+        writer.add_image('active-vision/input', torch.tensor(img),
+                         global_step=WriterSingleton.global_step)
+        writer.add_image('active-vision/fovea', torch.tensor(self._img_fov),
+                         global_step=WriterSingleton.global_step)
+        writer.add_image('active-vision/peripheral', torch.tensor(self._img_periph),
+                         global_step=WriterSingleton.global_step)
+        writer.flush()
 
       # Assemble dict
       observation = {
-        'fovea': self._img_fov.astype(np.float32),
-        'peripheral': self._img_periph.astype(np.float32),
-        'gaze': self.gaze.astype(np.float32)
+        'full': self._img_full,
+        'fovea': self._img_fov,
+        'peripheral': self._img_periph,
+        'gaze': self.gaze_centre.astype(np.float32)
       }
 
     #end = timer()
     #print('Step obs: ', str(end - start)) # Time in seconds, e.g. 5.38091952400282
 
     return observation
+
 
   def draw_screen(self, screen, screen_options):
     import pygame as pygame

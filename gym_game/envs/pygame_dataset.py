@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pygame as pygame
 
+from .active_vision_env import WriterSingleton
 from .pygame_env import PyGameEnv
 
 import torch
@@ -98,6 +99,7 @@ class PyGameDataset(torch.utils.data.Dataset):
   def generate(self, num_samples, env, policy, truncate=True):
     """Pregenerate a finite set of samples from the environment"""
     self._samples = []
+    WriterSingleton.global_step = 0
     while(len(self._samples) < num_samples):
       print('Have ', len(self._samples), ' samples.')
       samples = self.rollout(env, policy)  # perform a rollout
@@ -124,6 +126,7 @@ class PyGameDataset(torch.utils.data.Dataset):
       samples.append(observation)
       a = policy.get_action(observation)  # Generate policy given observation
       observation, reward, done, info = env.step(a)
+      WriterSingleton.global_step += 1
       #print('obs shape = ',observation)
       total_timesteps += 1
       total_reward += reward  # for tracking exploration

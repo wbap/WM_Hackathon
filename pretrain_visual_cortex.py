@@ -26,6 +26,7 @@ from torchvision import datasets, transforms
 
 from agent.stub_agent import StubAgent
 from agent.stubs.posterior_cortex import VisualCortex
+from gym_game.envs.active_vision_env import WriterSingleton
 from gym_game.envs.pygame_dataset import PyGameDataset
 
 
@@ -189,8 +190,10 @@ def main():
 
   # Begin training
   global_step = 0
+  WriterSingleton.global_step = 0
   for epoch in range(0, args.epochs):
     global_step = train(args, model, device, train_loader, global_step, optimizer, epoch, writer)
+    WriterSingleton.global_step = global_step
     test(model, device, test_loader, global_step, writer)
 
   if args.model_file is not None:
