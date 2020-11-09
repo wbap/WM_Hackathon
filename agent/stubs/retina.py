@@ -2,11 +2,13 @@ import torch.nn as nn
 import torch
 import torchvision
 
+from gym_game.envs import ActiveVisionEnv
 from utils.image_filter_utils import get_dog_image_filter, conv2d_output_shape
 from utils.writer_singleton import WriterSingleton
 
 
 class Retina(nn.Module):
+  STEP = 0
 
   @staticmethod
   def get_default_config():
@@ -51,14 +53,17 @@ class Retina(nn.Module):
 
     writer = WriterSingleton.get_writer()
     if self.summaries and writer:
+      self.STEP += 1
       # print("retina/input shape: ", image_tensor.shape)
       # print("retina/dog_neg shape: ", interest_neg.shape)
-      writer.add_image(self._name + '/input', torchvision.utils.make_grid(image_tensor),
-                       global_step=WriterSingleton.global_step)
-      writer.add_image(self._name + '/dog-', torchvision.utils.make_grid(interest_neg),
-                       global_step=WriterSingleton.global_step)
-      writer.add_image(self._name + '/dog+', torchvision.utils.make_grid(interest_pos),
-                       global_step=WriterSingleton.global_step)
+      writer.add_image(self._name + '/input', torchvision.utils.make_grid(image_tensor), global_step=self.STEP)
+      writer.add_image(self._name + '/dog-', torchvision.utils.make_grid(interest_neg), global_step=self.STEP)
+      writer.add_image(self._name + '/dog+', torchvision.utils.make_grid(interest_pos), global_step=self.STEP)
+
+      writer.add_histogram('retina/hist-input', image_tensor, global_step=self.STEP)
+      writer.add_histogram('retina/hist-dog-', interest_neg, global_step=self.STEP)
+      writer.add_histogram('retina/hist-dog+', interest_pos, global_step=self.STEP)
+      writer.flush()
 
     return interest, interest_pos, interest_neg
 

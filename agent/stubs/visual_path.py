@@ -1,6 +1,7 @@
 import torch.nn as nn
 from cerenaut_pt_core.components.sparse_autoencoder import SparseAutoencoder
 
+from gym_game.envs import ActiveVisionEnv
 from utils.general_utils import mergedicts
 from .retina import *
 
@@ -12,6 +13,7 @@ class VisualPath(nn.Module):
 
   MODULE_RETINA = 'retina'
   MODULE_CORTEX = 'cortex'
+  STEP = 0
 
   @staticmethod
   def get_default_config():
@@ -39,6 +41,7 @@ class VisualPath(nn.Module):
     self._name = name
     self._input_shape = input_shape
     self._config = config
+    self.summaries = True
 
     """
     We have several sub-components for the DoG+/- encodings of fovea and peripheral vision
@@ -93,6 +96,13 @@ class VisualPath(nn.Module):
     module_name = self.get_module_name(self.MODULE_RETINA)
     module = self._modules[module_name]
     retina_output, r_p, r_n = module.forward(x)
+
+    if self.summaries:
+      self.STEP += 1
+      writer = WriterSingleton.get_writer()
+      writer.add_histogram('vp/retina-input', x, global_step=self.STEP)
+      writer.add_histogram('vp/retina-output', retina_output, global_step=self.STEP)
+      writer.flush()
 
     # forward cortex feature detection
     module_name = self.get_module_name(self.MODULE_CORTEX)
