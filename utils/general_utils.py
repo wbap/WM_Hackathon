@@ -1,3 +1,5 @@
+import torch
+
 
 def mergedicts(dict1, dict2):
   """
@@ -17,3 +19,11 @@ def mergedicts(dict1, dict2):
       yield k, dict1[k]
     else:
       yield k, dict2[k]
+
+
+def stats_dic(tensor):
+  dic = {
+    "min": torch.min(tensor),
+    "max": torch.max(tensor)
+  }
+  return dic
