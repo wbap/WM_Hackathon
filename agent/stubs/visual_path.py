@@ -79,7 +79,7 @@ class VisualPath(nn.Module):
 
   def _build_visual_cortex(self, input_shape):
     config = self._config[self.MODULE_CORTEX]
-    module = SparseAutoencoder(input_shape, config).to(self._device)
+    module = SparseAutoencoder(input_shape, config)
     module_name = self.get_module_name(self.MODULE_CORTEX)
     self._modules[module_name] = module
     output_shape = module.get_encoding_shape()

@@ -274,7 +274,7 @@ class StubAgentEnv(gym.Env):
 
   def tensor_to_obs(self, output, obs_dict, obs_key):
     #print('output is', output)
-    obs = torch.squeeze(output).detach().numpy()  # remove batch dim, detach graph, convert numpy
+    obs = torch.squeeze(output).detach().cpu().numpy()  # remove batch dim, detach graph, convert numpy
     #print('!!!!!!!!!!!!!!!!!:',obs_key,' output tensor shape:', obs.shape)
     obs_dict[obs_key] = obs
 
@@ -282,7 +282,7 @@ class StubAgentEnv(gym.Env):
     obs = torch.tensor(observation[obs_key])
     obs_b = torch.unsqueeze(obs, 0)  # insert batch dimension 0
     #print('!!!!!!!!!!!!!!!!!:',obs_key,' input tensor shape:', obs_b.shape)
-    return obs_b
+    return obs_b.to(self._device)
 
   def get_config(self):
     """ return a dictionary of params """

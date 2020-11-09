@@ -181,7 +181,7 @@ def main():
   delta_model_config = config['model']
   model_config = VisualPath.update_config(default_model_config, delta_model_config)
   print('Model config:\n', model_config)
-  model = VisualPath(obs_key, input_shape, model_config, device=device)
+  model = VisualPath(obs_key, input_shape, model_config, device=device).to(device)
   print('Model:', model)
 
   # Create optimizer
