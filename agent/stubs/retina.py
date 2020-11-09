@@ -19,7 +19,7 @@ class Retina(nn.Module):
     }
     return config    
 
-  def __init__(self, name, channels, config=None):
+  def __init__(self, name, channels, config=None, device=None):
     super().__init__()
 
     self._name = name
@@ -31,7 +31,7 @@ class Retina(nn.Module):
 
     self.summaries = self._config['summaries']
 
-    # self._image_dic = {}
+    self._device = device
     self._dog_filter_pos = None
     self._dog_filter_neg = None
 
@@ -42,8 +42,10 @@ class Retina(nn.Module):
     size = self._config['f_size']
     sigma = self._config['f_sigma']
     k = self._config['f_k']
-    self._dog_filter_pos = get_dog_image_filter(channels=self.channels, size=size, sigma=sigma, k=k)
-    self._dog_filter_neg = get_dog_image_filter(channels=self.channels, size=size, sigma=sigma, k=k, invert=True)
+    self._dog_filter_pos = get_dog_image_filter(channels=self.channels, size=size, sigma=sigma,
+                                                device=self._device, k=k)
+    self._dog_filter_neg = get_dog_image_filter(channels=self.channels, size=size, sigma=sigma,
+                                                device=self._device, k=k, invert=True)
 
   def forward(self, image_tensor):
     interest_pos = self._dog_filter_pos(image_tensor)

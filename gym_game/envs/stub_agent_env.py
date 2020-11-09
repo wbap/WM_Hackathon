@@ -111,6 +111,8 @@ class StubAgentEnv(gym.Env):
       for obs_key in self._config['obs_keys'][obs_keys_key]:
         self._obs_keys += obs_key
 
+    self._device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
     # build all the components, and add the observation spaces to obs_spaces_dict
     obs_spaces_dict = {}
     self.modules = {}
@@ -126,7 +128,7 @@ class StubAgentEnv(gym.Env):
       self._build_visual_paths(obs_spaces_dict)
 
     # build Prefrontal Cortex
-    pfc = PrefrontalCortex(self.MODULE_PFC, self._config[self.MODULE_PFC])
+    pfc = PrefrontalCortex(self.MODULE_PFC, self._config[self.MODULE_PFC]).to(self._device)
     self.modules[self.MODULE_PFC] = pfc
 
     # build delay on input to Medial Temporal Lobe, and output of observations to Agent
@@ -134,11 +136,11 @@ class StubAgentEnv(gym.Env):
     self.pfc_output_buffer = DelayMessage(self._config["pfc_output_delay_size"])
 
     # build Medial Temporal Lobe
-    mtl = MedialTemporalLobe(self.MODULE_MTL, self._config[self.MODULE_MTL])
+    mtl = MedialTemporalLobe(self.MODULE_MTL, self._config[self.MODULE_MTL]).to(self._device)
     self.modules[self.MODULE_MTL] = mtl
 
     # build Superior Colliculus
-    sc = SuperiorColliculus(self.MODULE_SC, self._config[self.MODULE_SC])
+    sc = SuperiorColliculus(self.MODULE_SC, self._config[self.MODULE_SC]).to(self._device)
     self.modules[self.MODULE_SC] = sc
 
     # the new observation space dict from the processed streams
@@ -181,7 +183,7 @@ class StubAgentEnv(gym.Env):
     for obs_key in self._config["obs_keys"]["visual"]:
       input_shape = self.create_input_shape_visual(self.env_observation_space, obs_key)
       config = self._config[obs_key]
-      visual_path = VisualPath(obs_key, input_shape, config)
+      visual_path = VisualPath(obs_key, input_shape, config, device=self._device).to(self._device)
       self.modules[obs_key] = visual_path
 
       output_shape = visual_path.get_output_shape()
@@ -217,7 +219,7 @@ class StubAgentEnv(gym.Env):
     input_shape = self.create_input_shape_pe(self.env_observation_space, obs_key)
     screen_shape = self.get_screen_shape()
     config = self._config[obs_key]
-    pe = PositionalEncoder(obs_key, input_shape, config, max_xy=(screen_shape[0], screen_shape[1]))
+    pe = PositionalEncoder(obs_key, input_shape, config, max_xy=(screen_shape[0], screen_shape[1])).to(self._device)
     self.modules[obs_key] = pe
 
     output_shape = pe.get_output_shape()
@@ -272,7 +274,7 @@ class StubAgentEnv(gym.Env):
 
   def tensor_to_obs(self, output, obs_dict, obs_key):
     #print('output is', output)
-    obs = torch.squeeze(output).detach().numpy()  # remove batch dim, detach graph, convert numpy
+    obs = torch.squeeze(output).detach().cpu().numpy()  # remove batch dim, detach graph, convert numpy
     #print('!!!!!!!!!!!!!!!!!:',obs_key,' output tensor shape:', obs.shape)
     obs_dict[obs_key] = obs
 
@@ -280,7 +282,7 @@ class StubAgentEnv(gym.Env):
     obs = torch.tensor(observation[obs_key])
     obs_b = torch.unsqueeze(obs, 0)  # insert batch dimension 0
     #print('!!!!!!!!!!!!!!!!!:',obs_key,' input tensor shape:', obs_b.shape)
-    return obs_b
+    return obs_b.to(self._device)
 
   def get_config(self):
     """ return a dictionary of params """

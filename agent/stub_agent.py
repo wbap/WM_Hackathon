@@ -72,7 +72,9 @@ class StubAgent(TorchModelV2, nn.Module):
     obs_4d = input_dict["obs"].float()
     volume = np.prod(obs_4d.shape[1:])  # calculate volume as vector excl. batch dim
     obs_3d_shape = [obs_4d.shape[0], volume]  # [batch size, volume]
-    obs_3d = np.reshape(obs_4d, obs_3d_shape)
+    obs_3d = torch.reshape(obs_4d, obs_3d_shape)
+
+    print('OBS STATS: ', obs_3d.shape, obs_3d.min(), obs_3d.max())
     input_dict["obs"] = obs_3d
 
     # print(input_dict["obs"])

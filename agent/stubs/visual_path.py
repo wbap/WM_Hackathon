@@ -35,14 +35,8 @@ class VisualPath(nn.Module):
     updated_config = dict(mergedicts(default_config, delta_config))
     return updated_config
 
-  def __init__(self, name, input_shape, config):
-    super().__init__()
 
-    self._name = name
-    self._input_shape = input_shape
-    self._config = config
-    self.summaries = True
-
+  def __init__(self, name, input_shape, config, device):
     """
     We have several sub-components for the DoG+/- encodings of fovea and peripheral vision
     Args:
@@ -50,6 +44,14 @@ class VisualPath(nn.Module):
     config: A dict containing a config dict for each stream's modules
     """
 
+    super().__init__()
+
+    self._name = name
+    self._input_shape = input_shape
+    self._config = config
+    self._device = device
+    self.summaries = True    
+    
     # Build networks to preprocess the observation space
     print('>>>>>>>>>>>>>>>>>> ', self._name, 'visual_cortex_input_shape: ', input_shape)
     retina_output_shape = self._build_retina(input_shape)
@@ -73,7 +75,7 @@ class VisualPath(nn.Module):
     h = input_shape[2]
     w = input_shape[3]
     config = self._config[self.MODULE_RETINA]
-    module = Retina(self._name + '/retina', c, config)
+    module = Retina(self._name + '/retina', c, config, self._device)
     module_name = self.get_module_name(self.MODULE_RETINA)
     self._modules[module_name] = module
     output_shape = module.get_output_shape(h, w)
@@ -81,7 +83,7 @@ class VisualPath(nn.Module):
 
   def _build_visual_cortex(self, input_shape):
     config = self._config[self.MODULE_CORTEX]
-    module = SparseAutoencoder(input_shape, config)  #.to(device)
+    module = SparseAutoencoder(input_shape, config)
     module_name = self.get_module_name(self.MODULE_CORTEX)
     self._modules[module_name] = module
     output_shape = module.get_encoding_shape()
