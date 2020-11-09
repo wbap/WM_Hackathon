@@ -228,7 +228,7 @@ class Dm2sEnv(FiniteStateEnv):
     numTxTypes = len(self.txTypes)
     txTypeIndex = self.np_random.randint(0, numTxTypes)    
     txType = self.txTypes[txTypeIndex]
-    print('TX TYPE: ', txType)
+    # print('TX TYPE: ', txType)
     return txType
 
   def get_random_sample(self, like=None, unlike=None):

@@ -5,6 +5,7 @@
   "imageDir": "resources/dm2s",
   "screen_scale": 0.1,
   "enable_active_vision": 0,
+  "summaries": true,
   "videoWidth": 800,
   "videoHeight": 800,
 
