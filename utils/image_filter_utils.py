@@ -89,15 +89,15 @@ class ImageFilter(nn.Module):
     return torch.conv2d(input, weight=self.weight, groups=self.groups)
 
 
-def get_gaussian_image_filter(channels, size, sigma):
+def get_gaussian_image_filter(channels, size, sigma, device):
   kernel = gaussian_kernel(size, sigma)
-  image_filter = ImageFilter(channels, kernel)
+  image_filter = ImageFilter(channels, kernel).to(device)
   return image_filter
 
 
-def get_dog_image_filter(channels, size, sigma, k=1.6, invert=False):
+def get_dog_image_filter(channels, size, sigma, device, k=1.6, invert=False):
   kernel = dog_kernel(size, sigma, k)
   if invert is True:
     kernel = -kernel
-  image_filter = ImageFilter(channels, kernel)
+  image_filter = ImageFilter(channels, kernel).to(device)
   return image_filter

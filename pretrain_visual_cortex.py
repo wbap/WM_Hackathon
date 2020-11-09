@@ -32,11 +32,11 @@ from gym_game.envs.pygame_dataset import PyGameDataset
 def train(args, model, device, train_loader, global_step, optimizer, epoch, writer):
   """Trains the model for one epoch."""
   model.train()
-  #for batch_idx, (data, target) in enumerate(train_loader):
+
   for batch_idx, (data) in enumerate(train_loader):
-    #data, target = data.to(device), target.to(device)
     #print('Data:', data)
     #print('Batch:', batch_idx)
+
     data = data.to(device)
 
     optimizer.zero_grad()
@@ -181,7 +181,7 @@ def main():
   delta_model_config = config['model']
   model_config = VisualPath.update_config(default_model_config, delta_model_config)
   print('Model config:\n', model_config)
-  model = VisualPath(obs_key, input_shape, model_config)
+  model = VisualPath(obs_key, input_shape, model_config, device=device)
   print('Model:', model)
 
   # Create optimizer
