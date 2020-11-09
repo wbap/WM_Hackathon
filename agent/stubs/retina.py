@@ -2,7 +2,6 @@ import torch.nn as nn
 import torch
 import torchvision
 
-from gym_game.envs import ActiveVisionEnv
 from utils.image_filter_utils import get_dog_image_filter, conv2d_output_shape
 from utils.writer_singleton import WriterSingleton
 

@@ -1,7 +1,6 @@
 import torch.nn as nn
 from cerenaut_pt_core.components.sparse_autoencoder import SparseAutoencoder
 
-from gym_game.envs import ActiveVisionEnv
 from utils.general_utils import mergedicts
 from .retina import *
 
