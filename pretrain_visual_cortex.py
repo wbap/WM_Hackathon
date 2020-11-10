@@ -28,6 +28,8 @@ from agent.stub_agent import StubAgent
 from agent.stubs.visual_path import VisualPath, WriterSingleton
 from gym_game.envs.pygame_dataset import PyGameDataset
 
+show_encode_and_decode = True
+
 
 def train(args, model, device, train_loader, global_step, optimizer, epoch, writer):
   """Trains the model for one epoch."""
@@ -41,17 +43,30 @@ def train(args, model, device, train_loader, global_step, optimizer, epoch, writ
 
     optimizer.zero_grad()
     encoding, output, target = model(data)
-    #print('input min/max=', data.min(), data.max())
-    #print('encoding shape', encoding.shape)
-    #print('DEcoding shape', output.shape)
+    # print('input min/max=', data.min(), data.max())
+    # print('encoding shape', encoding.shape)
+    # print('Decoding shape', output.shape)
     loss = F.mse_loss(output, target)
     loss.backward()
     optimizer.step()
 
     writer.add_image('train/inputs', torchvision.utils.make_grid(data), global_step)
-    # TODO fix this when input has 6 channels...
-    #writer.add_image('train/outputs', torchvision.utils.make_grid(output), global_step)
     writer.add_scalar('train/loss', loss, global_step)
+
+    # This section is for extra fine grained debugging and makes some assumptions about size and dimensions
+    if show_encode_and_decode:
+      import numpy as np
+      encoding_volume = encoding.shape[1] * encoding.shape[2] * encoding.shape[3]
+      side_length = int(np.sqrt(encoding_volume))     # TODO NOTE this assumes it is evenly square
+      encoding_img = torch.reshape(encoding, [encoding.shape[0], 1, side_length, side_length])
+
+      writer.add_image('train/encoding', torchvision.utils.make_grid(encoding_img), global_step)
+
+      # when input has 6 channels...
+      dog_1 = output[:, 0:2, :, :]
+      dog_2 = output[:, 3:5, :, :]
+      writer.add_image('train/dog_1', torchvision.utils.make_grid(dog_1), global_step)
+      writer.add_image('train/dog_2', torchvision.utils.make_grid(dog_2), global_step)
 
     global_step += 1
 
@@ -77,13 +92,25 @@ def test(model, device, test_loader, global_step, writer):
       encoding, output, target = model(data)
 
       writer.add_image('test/inputs', torchvision.utils.make_grid(data), global_step)
-      # TODO fix this when input has 6 channels...
-      #writer.add_image('test/outputs', torchvision.utils.make_grid(output), global_step)
+
+      # This section is for extra fine grained debugging and makes some assumptions about size and dimensions
+      if show_encode_and_decode:
+        import numpy as np
+        encoding_volume = encoding.shape[1] * encoding.shape[2] * encoding.shape[3]
+        side_length = int(np.sqrt(encoding_volume))  # TODO NOTE this assumes it is evenly square
+        encoding_img = torch.reshape(encoding, [encoding.shape[0], 1, side_length, side_length])
+
+        writer.add_image('test/encoding', torchvision.utils.make_grid(encoding_img), global_step)
+
+        # when input has 6 channels...
+        dog_1 = output[:, 0:2, :, :]
+        dog_2 = output[:, 3:5, :, :]
+        writer.add_image('test/dog_1', torchvision.utils.make_grid(dog_1), global_step)
+        writer.add_image('test/dog_2', torchvision.utils.make_grid(dog_2), global_step)
 
       test_loss += F.mse_loss(output, target, reduction='sum').item()  # sum up batch loss
 
     test_loss /= len(test_loader.dataset)
-
     writer.add_scalar('test/avg_loss', test_loss, global_step)
 
     print('\nTest set: Average loss: {:.4f}\n'.format(test_loss))

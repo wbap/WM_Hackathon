@@ -41,7 +41,7 @@ class StubPreprocessor(Preprocessor):
     print('Obs space:', str(obs_space))
     tx_shape = (10, 10, 10)
     #tx_shape = obs_space
-    return tx_shape # can vary depending on inputs
+    return tx_shape  # can vary depending on inputs
 
   def transform(self, observation):
     tx = np.zeros((10, 10, 10))

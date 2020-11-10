@@ -343,7 +343,7 @@ class StubAgentEnv(gym.Env):
   def get_observation(self):
     print('>>>>>>>>>>> Stub get obs')
     obs = self.env.get_observation()
-    tx_obs = self.forward(obs)
+    tx_obs = self.forward_observation(obs)
     return tx_obs
 
   def render(self, mode='human', close=False):
