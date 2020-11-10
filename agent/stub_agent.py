@@ -26,6 +26,8 @@ torch, nn = try_import_torch()
 
 # default config
 config = {
+  "observation_min": -1.0,
+  "observation_max": 1.0
 }
 
 from ray.rllib.models.preprocessors import Preprocessor
@@ -41,7 +43,7 @@ class StubPreprocessor(Preprocessor):
     print('Obs space:', str(obs_space))
     tx_shape = (10, 10, 10)
     #tx_shape = obs_space
-    return tx_shape # can vary depending on inputs
+    return tx_shape  # can vary depending on inputs
 
   def transform(self, observation):
     tx = np.zeros((10, 10, 10))
@@ -58,7 +60,9 @@ class StubAgent(TorchModelV2, nn.Module):
     # Reshape obs to vector and convert to float
     volume = np.prod(obs_space.shape)
     space = np.zeros(volume)
-    flat_observation_space = spaces.Box(low=0, high=255, shape=space.shape, dtype=np.float32)
+    flat_observation_space = spaces.Box(low=self.custom_model_config["observation_min"],
+                                        high=self.custom_model_config["observation_max"],
+                                        shape=space.shape, dtype=np.float32)
 
     # TODO: Transform to output of any other PyTorch and pass new shape to model.
 
@@ -74,7 +78,7 @@ class StubAgent(TorchModelV2, nn.Module):
     obs_3d_shape = [obs_4d.shape[0], volume]  # [batch size, volume]
     obs_3d = torch.reshape(obs_4d, obs_3d_shape)
 
-    print('OBS STATS: ', obs_3d.shape, obs_3d.min(), obs_3d.max())
+    print('AGENT: OBS STATS: ', obs_3d.shape, obs_3d.min(), obs_3d.max())
     input_dict["obs"] = obs_3d
 
     # print(input_dict["obs"])

@@ -61,9 +61,9 @@ class Retina(nn.Module):
       writer.add_image(self._name + '/dog-', torchvision.utils.make_grid(interest_neg), global_step=self.STEP)
       writer.add_image(self._name + '/dog+', torchvision.utils.make_grid(interest_pos), global_step=self.STEP)
 
-      writer.add_histogram('retina/hist-input', image_tensor, global_step=self.STEP)
-      writer.add_histogram('retina/hist-dog-', interest_neg, global_step=self.STEP)
-      writer.add_histogram('retina/hist-dog+', interest_pos, global_step=self.STEP)
+      # writer.add_histogram('retina/hist-input', image_tensor, global_step=self.STEP)
+      # writer.add_histogram('retina/hist-dog-', interest_neg, global_step=self.STEP)
+      # writer.add_histogram('retina/hist-dog+', interest_pos, global_step=self.STEP)
       writer.flush()
 
     return interest, interest_pos, interest_neg

@@ -49,7 +49,7 @@ class VisualPath(nn.Module):
     self._input_shape = input_shape
     self._config = config
     self._device = device
-    self.summaries = True    
+    self.summaries = False
     
     # Build networks to preprocess the observation space
     print('>>>>>>>>>>>>>>>>>> ', self._name, 'visual_cortex_input_shape: ', input_shape)

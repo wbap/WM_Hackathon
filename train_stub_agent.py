@@ -161,7 +161,6 @@ def find_json_value(key_path, json, delimiter='.'):
 
 
 def update_writer(result_step, result_key, writer, writer_key, step):
-  #value = result_step[result_key]
   value = find_json_value(result_key, result_step)
   if not math.isnan(value):
     writer.add_scalar(writer_key, value, step)
@@ -182,6 +181,7 @@ evaluation_epoch = 0
 for training_epoch in range(training_epochs):  # number of epochs for all training
   # Train for many steps
   print('Training Epoch ~~~~~~~~~> ', training_epoch)
+
   # https://github.com/ray-project/ray/issues/8189 - inference mode
   agent.get_policy().config['explore'] = True  # Revert to training
   for training_step in range(training_steps):  # steps in an epoch
@@ -195,14 +195,14 @@ for training_epoch in range(training_epochs):  # number of epochs for all traini
     mean_len = len(results_mean)
 
     # Update tensorboard plots
-    WriterSingleton.global_step = training_epoch * training_steps + training_step
+    global_step = training_epoch * training_steps + training_step
     for result_key in result_writer_keys:
       writer_key = 'Train/' + result_key
-      update_writer(result, result_key, writer, writer_key, WriterSingleton.global_step)
+      update_writer(result, result_key, writer, writer_key, global_step)
     writer.flush()
 
     print(status_message.format(
-      WriterSingleton.global_step,
+      global_step,
       mean_min,
       mean_mean,
       mean_max,
@@ -221,10 +221,10 @@ for training_epoch in range(training_epochs):  # number of epochs for all traini
     for evaluation_step in range(evaluation_steps):  # steps in an epoch
       result = agent.train()
       # TODO use compute_action
-      WriterSingleton.global_step = evaluation_epoch * evaluation_steps + evaluation_step
+      global_step = evaluation_epoch * evaluation_steps + evaluation_step
       for result_key in result_writer_keys:
         writer_key = 'Eval/' + result_key
-        update_writer(result, result_key, writer, writer_key, WriterSingleton.global_step)
+        update_writer(result, result_key, writer, writer_key, global_step)
       writer.flush()
 
     evaluation_epoch = evaluation_epoch + 1

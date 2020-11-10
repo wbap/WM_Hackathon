@@ -230,7 +230,6 @@ class StubAgentEnv(gym.Env):
   # -----------------------------------------------------------------------------------------------
 
   def forward_observation(self, observation):
-    # print('-----------Obs old', observation)
 
     # process foveal and peripheral visual path
     what_where_obs_dict = {}
@@ -247,7 +246,6 @@ class StubAgentEnv(gym.Env):
       pe = self.modules[obs_key]
       input_tensor = self.obs_to_tensor(observation, obs_key)
       pe_output = pe.forward(input_tensor)
-
       self.tensor_to_obs(pe_output, what_where_obs_dict, obs_key)
 
     # process everything downstream of posterior cortex
@@ -304,8 +302,16 @@ class StubAgentEnv(gym.Env):
     # Update the game env, based on actions originating in PFC (and direct from Actor)
     [obs, self.reward, is_end_state, additional] = self.env.step(env_action)    # StubAgentEnv.step
 
+    print('Game-ENV (inner): OBS STATS: ')
+    for key, val in obs.items():
+      print("\t{}: {}, {}, {}".format(key, val.shape, val.min(), val.max()))
+
     # Update agent brain with new observations
     tx_obs = self.forward_observation(obs)  # Process the input from StubAgentEnv
+
+    print('SA-ENV: OBS STATS: ')
+    for key, val in tx_obs.items():
+      print("\t{}: {}, {}, {}".format(key, val.shape, val.min(), val.max()))
 
     emit = [tx_obs, self.reward, is_end_state, additional]
 
@@ -343,7 +349,7 @@ class StubAgentEnv(gym.Env):
   def get_observation(self):
     print('>>>>>>>>>>> Stub get obs')
     obs = self.env.get_observation()
-    tx_obs = self.forward(obs)
+    tx_obs = self.forward_observation(obs)
     return tx_obs
 
   def render(self, mode='human', close=False):

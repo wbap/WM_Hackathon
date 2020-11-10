@@ -23,8 +23,8 @@
       "encoder_padding": 0,
       "decoder_padding": 0,
 
-      "encoder_nonlinearity": "leaky_relu",
-      "decoder_nonlinearity": "sigmoid",
+      "encoder_nonlinearity": "tanh",
+      "decoder_nonlinearity": "tanh",
 
       "sparsity": 5,
       "sparsity_output_factor": 1.0
