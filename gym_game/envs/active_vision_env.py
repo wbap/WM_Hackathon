@@ -266,7 +266,7 @@ class ActiveVisionEnv(PyGameEnv):
 
         writer.add_image('active-vision-w/input', img_tensor, global_step=self.STEP)
         writer.add_image('active-vision-w/full', img_full_tensor, global_step=self.STEP)
-        # writer.add_histogram('active-vision-w/hist-full', img_full_tensor, global_step=self.STEP)
+        writer.add_histogram('active-vision-w/hist-full', img_full_tensor, global_step=self.STEP)
         writer.flush()
 
       # -------------------------------------------- NOT WORKING --------------------------------------------
@@ -288,7 +288,7 @@ class ActiveVisionEnv(PyGameEnv):
 
         writer.add_image('active-vision-nw/input', img_tensor, global_step=self.STEP)
         writer.add_image('active-vision-nw/full', img_full_tensor, global_step=self.STEP)
-        # writer.add_histogram('active-vision-nw/hist-full', img_full_tensor, global_step=self.STEP)
+        writer.add_histogram('active-vision-nw/hist-full', img_full_tensor, global_step=self.STEP)
         writer.flush()
 
       # ----------------------------------------------------------------------------------------

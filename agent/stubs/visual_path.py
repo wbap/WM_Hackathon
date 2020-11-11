@@ -34,7 +34,6 @@ class VisualPath(nn.Module):
     updated_config = dict(mergedicts(default_config, delta_config))
     return updated_config
 
-
   def __init__(self, name, input_shape, config, device):
     """
     We have several sub-components for the DoG+/- encodings of fovea and peripheral vision
@@ -49,7 +48,7 @@ class VisualPath(nn.Module):
     self._input_shape = input_shape
     self._config = config
     self._device = device
-    self.summaries = False
+    self.summaries = True
     
     # Build networks to preprocess the observation space
     print('>>>>>>>>>>>>>>>>>> ', self._name, 'visual_cortex_input_shape: ', input_shape)
@@ -101,8 +100,14 @@ class VisualPath(nn.Module):
     if self.summaries:
       self.STEP += 1
       writer = WriterSingleton.get_writer()
-      writer.add_histogram('vp/retina-input', x, global_step=self.STEP)
-      writer.add_histogram('vp/retina-output', retina_output, global_step=self.STEP)
+      writer.add_histogram(self._name + '/retina-input', x, global_step=self.STEP)
+      writer.add_histogram(self._name + '/retina-output', retina_output, global_step=self.STEP)
+
+      dog_pos = retina_output[:, 0:2, :, :]
+      dog_neg = retina_output[:, 3:5, :, :]
+      writer.add_image(self._name + '/retina-output-dog+', torchvision.utils.make_grid(dog_pos), global_step=self.STEP)
+      writer.add_image(self._name + '/retina-output-dog-', torchvision.utils.make_grid(dog_neg), global_step=self.STEP)
+
       writer.flush()
 
     # forward cortex feature detection
@@ -112,13 +117,7 @@ class VisualPath(nn.Module):
     target = retina_output
     return encoding, decoding, target
 
-  # def get_module(self, module):
-  #   m = self._modules[module]
-  #   return m
-
   def save(self, file_path):
-    #m = self._modules[module]
-    #torch.save(model.state_dict(), file_path)
     torch.save(self.state_dict(), file_path)
 
   def load(self, file_path):

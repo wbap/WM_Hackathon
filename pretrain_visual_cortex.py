@@ -50,8 +50,8 @@ def train(args, model, device, train_loader, global_step, optimizer, epoch, writ
     loss.backward()
     optimizer.step()
 
-    writer.add_image('train/inputs', torchvision.utils.make_grid(data), global_step)
-    writer.add_scalar('train/loss', loss, global_step)
+    writer.add_image('pre-train/inputs', torchvision.utils.make_grid(data), global_step)
+    writer.add_scalar('pre-train/loss', loss, global_step)
 
     # This section is for extra fine grained debugging and makes some assumptions about size and dimensions
     if show_encode_and_decode:
@@ -60,13 +60,17 @@ def train(args, model, device, train_loader, global_step, optimizer, epoch, writ
       side_length = int(np.sqrt(encoding_volume))     # TODO NOTE this assumes it is evenly square
       encoding_img = torch.reshape(encoding, [encoding.shape[0], 1, side_length, side_length])
 
-      writer.add_image('train/encoding', torchvision.utils.make_grid(encoding_img), global_step)
+      writer.add_image('pre-train/encoding', torchvision.utils.make_grid(encoding_img), global_step)
 
       # when input has 6 channels...
-      dog_1 = output[:, 0:2, :, :]
-      dog_2 = output[:, 3:5, :, :]
-      writer.add_image('train/dog_1', torchvision.utils.make_grid(dog_1), global_step)
-      writer.add_image('train/dog_2', torchvision.utils.make_grid(dog_2), global_step)
+      dog_pos = output[:, 0:2, :, :]
+      dog_neg = output[:, 3:5, :, :]
+      writer.add_image('pre-train/dog+recon', torchvision.utils.make_grid(dog_pos), global_step)
+      writer.add_image('pre-train/dog-recon', torchvision.utils.make_grid(dog_neg), global_step)
+
+      writer.add_histogram('pre-train/hist-dog+recon', dog_pos, global_step=global_step)
+      writer.add_histogram('pre-train/hist-dog-recon', dog_neg, global_step=global_step)
+      writer.add_histogram('pre-train/hist-encoding', encoding, global_step=global_step)
 
     global_step += 1
 
@@ -91,7 +95,7 @@ def test(model, device, test_loader, global_step, writer):
       data = data.to(device)
       encoding, output, target = model(data)
 
-      writer.add_image('test/inputs', torchvision.utils.make_grid(data), global_step)
+      writer.add_image('pre-test/inputs', torchvision.utils.make_grid(data), global_step)
 
       # This section is for extra fine grained debugging and makes some assumptions about size and dimensions
       if show_encode_and_decode:
@@ -100,18 +104,22 @@ def test(model, device, test_loader, global_step, writer):
         side_length = int(np.sqrt(encoding_volume))  # TODO NOTE this assumes it is evenly square
         encoding_img = torch.reshape(encoding, [encoding.shape[0], 1, side_length, side_length])
 
-        writer.add_image('test/encoding', torchvision.utils.make_grid(encoding_img), global_step)
+        writer.add_image('pre-test/encoding', torchvision.utils.make_grid(encoding_img), global_step)
 
         # when input has 6 channels...
-        dog_1 = output[:, 0:2, :, :]
-        dog_2 = output[:, 3:5, :, :]
-        writer.add_image('test/dog_1', torchvision.utils.make_grid(dog_1), global_step)
-        writer.add_image('test/dog_2', torchvision.utils.make_grid(dog_2), global_step)
+        dog_pos = output[:, 0:2, :, :]
+        dog_neg = output[:, 3:5, :, :]
+        writer.add_image('pre-test/dog+recon', torchvision.utils.make_grid(dog_pos), global_step)
+        writer.add_image('pre-test/dog-recon', torchvision.utils.make_grid(dog_neg), global_step)
+
+        writer.add_histogram('pre-test/hist-dog+recon', dog_pos, global_step=global_step)
+        writer.add_histogram('pre-test/hist-dog-recon', dog_neg, global_step=global_step)
+        writer.add_histogram('pre-test/hist-encoding', encoding, global_step=global_step)
 
       test_loss += F.mse_loss(output, target, reduction='sum').item()  # sum up batch loss
 
     test_loss /= len(test_loader.dataset)
-    writer.add_scalar('test/avg_loss', test_loss, global_step)
+    writer.add_scalar('pre-test/avg_loss', test_loss, global_step)
 
     print('\nTest set: Average loss: {:.4f}\n'.format(test_loss))
 

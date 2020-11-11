@@ -17,13 +17,13 @@
       "stride": 2,
 
       "use_bias": true,
-      "use_tied_weights": true,
+      "use_tied_weights": false,
       "use_lifetime_sparsity": true,
 
       "encoder_padding": 0,
       "decoder_padding": 0,
 
-      "encoder_nonlinearity": "tanh",
+      "encoder_nonlinearity": "none",
       "decoder_nonlinearity": "tanh",
 
       "sparsity": 5,
