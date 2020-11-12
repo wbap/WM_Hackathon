@@ -232,44 +232,7 @@ class ActiveVisionEnv(PyGameEnv):
     img = np.transpose(img, [1, 0, 2])  # observed img is horizontally reflected, and rotated 90 deg ...
     img_shape = img.shape
 
-    # PyTorch expects dimension order [b,c,h,w]
-    # transpose dimensions from [,h,w,c] to [,c,h,w]]
-    order = (2, 0, 1)
-
     if not self.enabled:
-
-      # -------------------------------------------- WORKING --------------------------------------------
-      # convert to float type (the standard for pytorch and other scikit image methods)
-      from skimage.util import img_as_float
-      img_float = img_as_float(img)                                     # <----------- 1. converted to float and [0.f, 1.f] range  e.g. 228 -> 0.9f
-
-      def inline_fast_resize(image, scale):
-        from PIL import Image
-        pili = Image.fromarray(image.astype('uint8'), 'RGB')      # <------------- ISSUE -------- cast [0.f, 1.f] as uint8, but not properly converted
-        size = (int(image.shape[0] * scale), int(image.shape[1] * scale))
-        pili2 = pili.resize(size, Image.ANTIALIAS)
-        return pili2
-
-      # resize screen image before returning as observation
-      img_resized = inline_fast_resize(img_float, self.screen_scale)    # <----------- 2. cast as uint8 (but not converted) then resized   e.g. 0.9f -> 0.9f   (i tried it, and it retains the floating point somehow when printed to console)
-
-      self._img_full = np.transpose(img_resized, order).astype(np.float32)    # <----------- 3. cast as float  e.g. 0.9f -> 0.9f
-
-      writer = WriterSingleton.get_writer()
-      if self.summaries and writer:
-        import torch
-
-        img_input = np.transpose(img_float, order).astype(np.float32)
-
-        img_tensor = torch.tensor(img_input)
-        img_full_tensor = torch.tensor(self._img_full)
-
-        writer.add_image('active-vision-w/input', img_tensor, global_step=self.STEP)
-        writer.add_image('active-vision-w/full', img_full_tensor, global_step=self.STEP)
-        writer.add_histogram('active-vision-w/hist-full', img_full_tensor, global_step=self.STEP)
-        writer.flush()
-
-      # -------------------------------------------- NOT WORKING --------------------------------------------
 
       # resize screen image before returning as observation
       img_resized = fast_resize(img, self.screen_scale)
@@ -290,8 +253,6 @@ class ActiveVisionEnv(PyGameEnv):
         writer.add_image('active-vision-nw/full', img_full_tensor, global_step=self.STEP)
         writer.add_histogram('active-vision-nw/hist-full', img_full_tensor, global_step=self.STEP)
         writer.flush()
-
-      # ----------------------------------------------------------------------------------------
 
       # Assemble dict
       observation = {
@@ -316,7 +277,7 @@ class ActiveVisionEnv(PyGameEnv):
       self._img_fov = to_pytorch_from_uint8(self._img_fov)
       img_periph = to_pytorch_from_uint8(img_periph)
 
-      # # add noise to peripheral image
+      # add noise to peripheral image
       img_periph_random = (np.random.random(img_periph.shape)-0.5)*self.peripheral_noise_magnitude
       self._img_periph = np.clip(img_periph + img_periph_random, a_min=0.0, a_max=1.0).astype(np.float32)
 
@@ -332,15 +293,10 @@ class ActiveVisionEnv(PyGameEnv):
       writer = WriterSingleton.get_writer()
       if self.summaries and writer:
         import torch
-
         img = to_pytorch_from_uint8(img)
-
-        writer.add_image('active-vision/input', torch.tensor(img),
-                         global_step=WriterSingleton.global_step)
-        writer.add_image('active-vision/fovea', torch.tensor(self._img_fov),
-                         global_step=WriterSingleton.global_step)
-        writer.add_image('active-vision/peripheral', torch.tensor(self._img_periph),
-                         global_step=WriterSingleton.global_step)
+        writer.add_image('active-vision/input', torch.tensor(img), global_step=self.STEP)
+        writer.add_image('active-vision/fovea', torch.tensor(self._img_fov), global_step=self.STEP)
+        writer.add_image('active-vision/peripheral', torch.tensor(self._img_periph), global_step=self.STEP)
         writer.flush()
 
       # Assemble dict
@@ -355,7 +311,6 @@ class ActiveVisionEnv(PyGameEnv):
     #print('Step obs: ', str(end - start)) # Time in seconds, e.g. 5.38091952400282
 
     return observation
-
 
   def draw_screen(self, screen, screen_options):
     import pygame as pygame

@@ -78,7 +78,7 @@ class StubAgent(TorchModelV2, nn.Module):
     obs_3d_shape = [obs_4d.shape[0], volume]  # [batch size, volume]
     obs_3d = torch.reshape(obs_4d, obs_3d_shape)
 
-    print('AGENT: OBS STATS: ', obs_3d.shape, obs_3d.min(), obs_3d.max())
+    # print('AGENT: OBS STATS: ', obs_3d.shape, obs_3d.min(), obs_3d.max())
     input_dict["obs"] = obs_3d
 
     # print(input_dict["obs"])

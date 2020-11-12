@@ -21,7 +21,7 @@
   "shapes": ["Barred_Ring", "Triangle", "Cross", "Heart"],
 
   "enable_active_vision": 1,
-  "summaries": true,
+  "summaries": false,
   "fovea_fraction": 0.3,
   "fovea_scale": 0.1,
   "gaze_step_size": 100,

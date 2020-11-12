@@ -7,12 +7,13 @@
   "mtl_input_delay_size": 1,
   "pfc_output_delay_size": 1,
   "fovea": {
+    "summaries": false,
     "load": "data/pretrain_m2s_av/fovea.pt",
     "retina": {
       "f_size": 7,
       "f_sigma": 2.0,
       "f_k": 1.6,
-      "summaries": true
+      "summaries": false
     },
     "cortex": {
       "filters": 100,
@@ -34,12 +35,13 @@
     }
   },
   "peripheral": {
+    "summaries": false,
     "load": "data/pretrain_m2s_av/peripheral.pt",
     "retina": {
       "f_size": 7,
       "f_sigma": 2.0,
       "f_k": 1.6,
-      "summaries": true
+      "summaries": false
     },
     "cortex": {
       "filters": 100,

@@ -4,7 +4,7 @@
   "frameRate": 3,
   "imageDir": "resources/dm2s",
   "screen_scale": 0.1,
-  "summaries": true,
+  "summaries": false,
   "enable_active_vision": 0,
   "videoWidth": 800,
   "videoHeight": 800,

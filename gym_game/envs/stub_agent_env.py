@@ -19,7 +19,6 @@ from agent.stubs.positional_encoder import PositionalEncoder
 from agent.stubs.prefrontal_cortex import PrefrontalCortex
 from agent.stubs.superior_colliculus import SuperiorColliculus
 from agent.stubs.visual_path import VisualPath
-from utils.writer_singleton import WriterSingleton
 from utils.general_utils import mergedicts
 
 torch, nn = try_import_torch()
@@ -60,8 +59,8 @@ class StubAgentEnv(gym.Env):
   @staticmethod
   def get_default_config():
     pe_config = PositionalEncoder.get_default_config()
-    cortex_f_config = VisualPath.get_default_config()
-    cortex_p_config = VisualPath.get_default_config()
+    vp_f_config = VisualPath.get_default_config()
+    vp_p_config = VisualPath.get_default_config()
     mtl_config = MedialTemporalLobe.get_default_config()
     sc_config = SuperiorColliculus.get_default_config()
     pfc_config = PrefrontalCortex.get_default_config()
@@ -69,8 +68,8 @@ class StubAgentEnv(gym.Env):
       'obs_keys': {
         'visual': [StubAgentEnv.OBS_FOVEA, StubAgentEnv.OBS_PERIPHERAL]
       },
-      StubAgentEnv.OBS_FOVEA: cortex_f_config,
-      StubAgentEnv.OBS_PERIPHERAL: cortex_p_config,
+      StubAgentEnv.OBS_FOVEA: vp_f_config,
+      StubAgentEnv.OBS_PERIPHERAL: vp_p_config,
       StubAgentEnv.OBS_POSITIONAL_ENCODING: pe_config,
       StubAgentEnv.MODULE_SC: sc_config,
       StubAgentEnv.MODULE_MTL: mtl_config,
@@ -235,9 +234,9 @@ class StubAgentEnv(gym.Env):
     what_where_obs_dict = {}
     if self._use_visual:
       for obs_key in self._config["obs_keys"]["visual"]:
-        cortex = self.modules[obs_key]
+        visual_path = self.modules[obs_key]
         input_tensor = self.obs_to_tensor(observation, obs_key)
-        encoding_tensor, decoding, target = cortex.forward(input_tensor)
+        encoding_tensor, decoding, target = visual_path.forward(input_tensor)
         self.tensor_to_obs(encoding_tensor, what_where_obs_dict, obs_key)
 
     # process positional encoding

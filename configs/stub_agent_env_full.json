@@ -9,7 +9,7 @@
       "f_size": 7,
       "f_sigma": 2.0,
       "f_k": 1.6,
-      "summaries": true
+      "summaries": false
     },
     "cortex": {
       "filters": 100,
