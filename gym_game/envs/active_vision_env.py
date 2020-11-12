@@ -85,6 +85,7 @@ class ActiveVisionEnv(PyGameEnv):
 
     self.screen_scale = float(config["screen_scale"])  # resize the screen image before returning as an observation
     self.summaries = config['summaries']
+
     self.enabled = False if config["enable_active_vision"] == 0 else True
     if not self.enabled:
       super().__init__(num_actions, screen_width, screen_height, frame_rate)
