@@ -1,6 +1,8 @@
 import math
+
 import numpy as np
 import scipy.ndimage
+
 import torch
 import torch.nn as nn
 
@@ -59,14 +61,14 @@ class ImageFilter(nn.Module):
     """
     super(ImageFilter, self).__init__()
 
-    self.groups = 1  #channels
+    self.groups = channels
 
     weight = torch.from_numpy(kernel).float()
     shape_4d1 = [1, 1, weight.shape[0], weight.shape[1]]
     weight = torch.reshape(weight, shape_4d1)
     #shape_4d = [channels, channels, weight.shape[0], weight.shape[1]]
     #weight = torch.reshape(weight, shape_4d)  # [out_c, in_c/group, ksize[0], kszie[1]]
-    weight = weight.repeat([channels, channels, 1, 1])
+    weight = weight.repeat([channels, channels // self.groups, 1, 1])
     #print('ImageFilter weight shape', weight.shape)
     self.register_buffer('weight', weight)
 
