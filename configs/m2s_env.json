@@ -19,6 +19,6 @@
 
   "gameTypes":["shape"],
   "txTypes":["None"],
-  "colors": ["LB"],
+  "colors": ["DB"],
   "shapes": ["Barred_Ring", "Triangle", "Cross", "Heart"]
 }

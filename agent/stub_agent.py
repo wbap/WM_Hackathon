@@ -26,8 +26,8 @@ torch, nn = try_import_torch()
 
 # default config
 config = {
-  "observation_min": -1.0,
-  "observation_max": 1.0
+  "observation_min": 0,
+  "observation_max": 255
 }
 
 from ray.rllib.models.preprocessors import Preprocessor

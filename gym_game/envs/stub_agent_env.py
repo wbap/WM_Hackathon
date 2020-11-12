@@ -302,16 +302,8 @@ class StubAgentEnv(gym.Env):
     # Update the game env, based on actions originating in PFC (and direct from Actor)
     [obs, self.reward, is_end_state, additional] = self.env.step(env_action)    # StubAgentEnv.step
 
-    print('Game-ENV (inner): OBS STATS: ')
-    for key, val in obs.items():
-      print("\t{}: {}, {}, {}".format(key, val.shape, val.min(), val.max()))
-
     # Update agent brain with new observations
     tx_obs = self.forward_observation(obs)  # Process the input from StubAgentEnv
-
-    print('SA-ENV: OBS STATS: ')
-    for key, val in tx_obs.items():
-      print("\t{}: {}, {}, {}".format(key, val.shape, val.min(), val.max()))
 
     emit = [tx_obs, self.reward, is_end_state, additional]
 
@@ -325,6 +317,10 @@ class StubAgentEnv(gym.Env):
       m.update(o)
       h = m.hexdigest()
       print(' Hash = ', h)
+
+      print('SA-ENV: OBS STATS: ')
+      for key, val in tx_obs.items():
+        print("\t{}: {}, {}, {}".format(key, val.shape, val.min(), val.max()))
 
     if debug_timing:
       end = timer()
