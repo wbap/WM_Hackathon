@@ -3,6 +3,7 @@ from enum import Enum
 
 import numpy as np
 from gym import spaces
+from skimage import img_as_float32
 
 from utils.image_utils import fast_resize, to_pytorch_from_uint8
 from utils.writer_singleton import WriterSingleton
@@ -72,6 +73,7 @@ class ActiveVisionEnv(PyGameEnv):
   HUMAN = 'human'
   ARRAY = 'rgb_array'
   GAZE_CONTROL_MODE = GazeMode.ABSOLUTE
+  STEP = 0
 
   def __init__(self, num_actions, screen_width, screen_height, frame_rate):
     """
@@ -127,6 +129,7 @@ class ActiveVisionEnv(PyGameEnv):
     self._img_fov = None
     self._img_periph = None
     self._img_full = None
+    self._img_full_nw = None
 
     # bounds for centre of gaze
     self._x_min = self.fov_size_half[0]
@@ -218,6 +221,8 @@ class ActiveVisionEnv(PyGameEnv):
     Return images as ndarray, in PyTorch format: 32 bit floating point images
     """
 
+    self.STEP += 1
+
     debug = False
 
     img = self.render(mode='rgb_array')
@@ -228,30 +233,35 @@ class ActiveVisionEnv(PyGameEnv):
     img = np.transpose(img, [1, 0, 2])  # observed img is horizontally reflected, and rotated 90 deg ...
     img_shape = img.shape
 
-    # resize screen image before returning as observation
-    img_resized = fast_resize(img, self.screen_scale)
-
-    # convert to PyTorch format
-    self._img_full = to_pytorch_from_uint8(img_resized)
-
     if not self.enabled:
+
+      # resize screen image before returning as observation
+      img_resized = fast_resize(img, self.screen_scale)
+
+      # convert to PyTorch format
+      self._img_full_nw = to_pytorch_from_uint8(img_resized)
 
       writer = WriterSingleton.get_writer()
       if self.summaries and writer:
         import torch
 
-        img = to_pytorch_from_uint8(img)
+        input_img_pt = to_pytorch_from_uint8(img)
 
-        writer.add_image('active-vision/input', torch.tensor(img),
-                         global_step=WriterSingleton.global_step)
-        writer.add_image('active-vision/full', torch.tensor(self._img_full),
-                         global_step=WriterSingleton.global_step)
+        img_tensor = torch.tensor(input_img_pt)
+        img_full_tensor = torch.tensor(self._img_full_nw)
+
+        writer.add_image('active-vision-nw/input', img_tensor, global_step=self.STEP)
+        writer.add_image('active-vision-nw/full', img_full_tensor, global_step=self.STEP)
+        writer.add_histogram('active-vision-nw/hist-full', img_full_tensor, global_step=self.STEP)
+        writer.flush()
 
       # Assemble dict
       observation = {
-        'full': self._img_full,
+        'full': self._img_full_nw,
       }
+
     else:
+
       # Peripheral Image - downsize to get peripheral (lower resolution) image
       img_periph = fast_resize(img, self.peripheral_scale)
 
@@ -268,7 +278,7 @@ class ActiveVisionEnv(PyGameEnv):
       self._img_fov = to_pytorch_from_uint8(self._img_fov)
       img_periph = to_pytorch_from_uint8(img_periph)
 
-      # # add noise to peripheral image
+      # add noise to peripheral image
       img_periph_random = (np.random.random(img_periph.shape)-0.5)*self.peripheral_noise_magnitude
       self._img_periph = np.clip(img_periph + img_periph_random, a_min=0.0, a_max=1.0).astype(np.float32)
 
@@ -284,15 +294,10 @@ class ActiveVisionEnv(PyGameEnv):
       writer = WriterSingleton.get_writer()
       if self.summaries and writer:
         import torch
-
         img = to_pytorch_from_uint8(img)
-
-        writer.add_image('active-vision/input', torch.tensor(img),
-                         global_step=WriterSingleton.global_step)
-        writer.add_image('active-vision/fovea', torch.tensor(self._img_fov),
-                         global_step=WriterSingleton.global_step)
-        writer.add_image('active-vision/peripheral', torch.tensor(self._img_periph),
-                         global_step=WriterSingleton.global_step)
+        writer.add_image('active-vision/input', torch.tensor(img), global_step=self.STEP)
+        writer.add_image('active-vision/fovea', torch.tensor(self._img_fov), global_step=self.STEP)
+        writer.add_image('active-vision/peripheral', torch.tensor(self._img_periph), global_step=self.STEP)
         writer.flush()
 
       # Assemble dict

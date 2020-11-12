@@ -39,7 +39,7 @@ class Dm2sEnv(FiniteStateEnv):
   WHITE = (255, 255, 255)
   YELLOW = (255, 255, 0)
   BLUE = (0, 0, 255)
-  GRAY = (128,128,128)
+  GRAY = (128, 128, 128)
   RED = (255, 0, 0)
 
   GAME_TYPE_SHAPE = 'shape'
@@ -47,15 +47,10 @@ class Dm2sEnv(FiniteStateEnv):
   GAME_TYPE_POSITION = 'position'
 
   TX_TYPES = ["None", "Reduce", "Rotate"]
-  BAR_POSITIONS = ['Bottom','Right','Left','Top']
+  BAR_POSITIONS = ['Bottom', 'Right', 'Left', 'Top']
 
   # define global variables
   gParams = {}  # parameter dictionary
-  # gVideoWidth = 800
-  # gVideoHeight = 800
-  # gColors = ["LB"]
-  # gShapes = ["Barred_Ring", "Triangle", "Crescent", "Cross", "Circle", "Heart", "Pentagon", "Ring", "Square"]
-  #gShapes = ["Barred_Ring", "Triangle"]  # Reduced shape set for quicker learning
 
   def __init__(self, config_file=None):
     # obtain parameters from a file
@@ -369,14 +364,14 @@ class Dm2sEnv(FiniteStateEnv):
     image2 = self.transform_image(image, txType)
     halfWidth = int(image2.get_width()/2)
     halfHeight = int(image2.get_height()/2)
-    x2 = x -halfWidth  # Center it
-    y2 = y -halfHeight 
+    x2 = x - halfWidth  # Center it
+    y2 = y - halfHeight
     screen.blit(image2, (x2, y2))
 
     # Draw bar around the sample? Only in the relevant game.
     if self.gameType == self.GAME_TYPE_POSITION:
       position = sample['position']
-      bar_w = bar_length # Horz bar
+      bar_w = bar_length  # Horz bar
       bar_h = bar_height
       if position == 'Left' or position == 'Right':
         bar_w = bar_height

@@ -12,6 +12,7 @@ class VisualPath(nn.Module):
 
   MODULE_RETINA = 'retina'
   MODULE_CORTEX = 'cortex'
+  STEP = 0
 
   @staticmethod
   def get_default_config():
@@ -33,13 +34,7 @@ class VisualPath(nn.Module):
     updated_config = dict(mergedicts(default_config, delta_config))
     return updated_config
 
-  def __init__(self, name, input_shape, config):
-    super().__init__()
-
-    self._name = name
-    self._input_shape = input_shape
-    self._config = config
-
+  def __init__(self, name, input_shape, config, device):
     """
     We have several sub-components for the DoG+/- encodings of fovea and peripheral vision
     Args:
@@ -47,6 +42,14 @@ class VisualPath(nn.Module):
     config: A dict containing a config dict for each stream's modules
     """
 
+    super().__init__()
+
+    self._name = name
+    self._input_shape = input_shape
+    self._config = config
+    self._device = device
+    self.summaries = True
+    
     # Build networks to preprocess the observation space
     print('>>>>>>>>>>>>>>>>>> ', self._name, 'visual_cortex_input_shape: ', input_shape)
     retina_output_shape = self._build_retina(input_shape)
@@ -70,7 +73,7 @@ class VisualPath(nn.Module):
     h = input_shape[2]
     w = input_shape[3]
     config = self._config[self.MODULE_RETINA]
-    module = Retina(self._name + '/retina', c, config)
+    module = Retina(self._name + '/retina', c, config, self._device)
     module_name = self.get_module_name(self.MODULE_RETINA)
     self._modules[module_name] = module
     output_shape = module.get_output_shape(h, w)
@@ -78,7 +81,7 @@ class VisualPath(nn.Module):
 
   def _build_visual_cortex(self, input_shape):
     config = self._config[self.MODULE_CORTEX]
-    module = SparseAutoencoder(input_shape, config)  #.to(device)
+    module = SparseAutoencoder(input_shape, config)
     module_name = self.get_module_name(self.MODULE_CORTEX)
     self._modules[module_name] = module
     output_shape = module.get_encoding_shape()
@@ -94,6 +97,19 @@ class VisualPath(nn.Module):
     module = self._modules[module_name]
     retina_output, r_p, r_n = module.forward(x)
 
+    if self.summaries:
+      self.STEP += 1
+      writer = WriterSingleton.get_writer()
+      writer.add_histogram(self._name + '/retina-input', x, global_step=self.STEP)
+      writer.add_histogram(self._name + '/retina-output', retina_output, global_step=self.STEP)
+
+      dog_pos = retina_output[:, 0:2, :, :]
+      dog_neg = retina_output[:, 3:5, :, :]
+      writer.add_image(self._name + '/retina-output-dog+', torchvision.utils.make_grid(dog_pos), global_step=self.STEP)
+      writer.add_image(self._name + '/retina-output-dog-', torchvision.utils.make_grid(dog_neg), global_step=self.STEP)
+
+      writer.flush()
+
     # forward cortex feature detection
     module_name = self.get_module_name(self.MODULE_CORTEX)
     module = self._modules[module_name]
@@ -101,13 +117,7 @@ class VisualPath(nn.Module):
     target = retina_output
     return encoding, decoding, target
 
-  # def get_module(self, module):
-  #   m = self._modules[module]
-  #   return m
-
   def save(self, file_path):
-    #m = self._modules[module]
-    #torch.save(model.state_dict(), file_path)
     torch.save(self.state_dict(), file_path)
 
   def load(self, file_path):

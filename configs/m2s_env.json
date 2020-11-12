@@ -4,6 +4,7 @@
   "frameRate": 3,
   "imageDir": "resources/dm2s",
   "screen_scale": 0.1,
+  "summaries": false,
   "enable_active_vision": 0,
   "summaries": true,
   "videoWidth": 800,
@@ -19,6 +20,6 @@
 
   "gameTypes":["shape"],
   "txTypes":["None"],
-  "colors": ["LB"],
+  "colors": ["DB"],
   "shapes": ["Barred_Ring", "Triangle", "Cross", "Heart"]
 }

@@ -4,7 +4,10 @@
     "pe": ["gaze"]
   },
   "mtl_max_length": 6,
+  "mtl_input_delay_size": 1,
+  "pfc_output_delay_size": 1,
   "fovea": {
+    "summaries": false,
     "load": "data/pretrain_m2s_av/fovea.pt",
     "retina": {
       "f_size": 7,
@@ -32,6 +35,7 @@
     }
   },
   "peripheral": {
+    "summaries": false,
     "load": "data/pretrain_m2s_av/peripheral.pt",
     "retina": {
       "f_size": 7,

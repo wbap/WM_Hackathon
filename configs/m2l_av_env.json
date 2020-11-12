@@ -7,16 +7,16 @@
   "videoHeight": 800,
 
   "targetRadius": 133,
-  "colors": ["LB"],
+  "colors": ["DB"],
   "shapes": ["Barred_Ring", "Triangle", "Cross", "Heart"],
 
   "enable_active_vision": 1,
-  "summaries": true,
+  "summaries": false,
   "fovea_fraction": 0.3,
   "fovea_scale": 0.1,
   "gaze_step_size": 100,
   "peripheral_scale": 0.02,
-  "peripheral_noise_magnitude": 0.1,
+  "peripheral_noise_magnitude": 0.0,
   "show_fovea_on_screen": 0,
   "grid_length_x": 3,
   "grid_length_y": 3

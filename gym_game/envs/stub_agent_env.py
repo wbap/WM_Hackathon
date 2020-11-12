@@ -19,7 +19,6 @@ from agent.stubs.positional_encoder import PositionalEncoder
 from agent.stubs.prefrontal_cortex import PrefrontalCortex
 from agent.stubs.superior_colliculus import SuperiorColliculus
 from agent.stubs.visual_path import VisualPath
-from utils.writer_singleton import WriterSingleton
 from utils.general_utils import mergedicts
 
 torch, nn = try_import_torch()
@@ -60,8 +59,8 @@ class StubAgentEnv(gym.Env):
   @staticmethod
   def get_default_config():
     pe_config = PositionalEncoder.get_default_config()
-    cortex_f_config = VisualPath.get_default_config()
-    cortex_p_config = VisualPath.get_default_config()
+    vp_f_config = VisualPath.get_default_config()
+    vp_p_config = VisualPath.get_default_config()
     mtl_config = MedialTemporalLobe.get_default_config()
     sc_config = SuperiorColliculus.get_default_config()
     pfc_config = PrefrontalCortex.get_default_config()
@@ -69,8 +68,8 @@ class StubAgentEnv(gym.Env):
       'obs_keys': {
         'visual': [StubAgentEnv.OBS_FOVEA, StubAgentEnv.OBS_PERIPHERAL]
       },
-      StubAgentEnv.OBS_FOVEA: cortex_f_config,
-      StubAgentEnv.OBS_PERIPHERAL: cortex_p_config,
+      StubAgentEnv.OBS_FOVEA: vp_f_config,
+      StubAgentEnv.OBS_PERIPHERAL: vp_p_config,
       StubAgentEnv.OBS_POSITIONAL_ENCODING: pe_config,
       StubAgentEnv.MODULE_SC: sc_config,
       StubAgentEnv.MODULE_MTL: mtl_config,
@@ -111,6 +110,8 @@ class StubAgentEnv(gym.Env):
       for obs_key in self._config['obs_keys'][obs_keys_key]:
         self._obs_keys += obs_key
 
+    self._device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
     # build all the components, and add the observation spaces to obs_spaces_dict
     obs_spaces_dict = {}
     self.modules = {}
@@ -126,7 +127,7 @@ class StubAgentEnv(gym.Env):
       self._build_visual_paths(obs_spaces_dict)
 
     # build Prefrontal Cortex
-    pfc = PrefrontalCortex(self.MODULE_PFC, self._config[self.MODULE_PFC])
+    pfc = PrefrontalCortex(self.MODULE_PFC, self._config[self.MODULE_PFC]).to(self._device)
     self.modules[self.MODULE_PFC] = pfc
 
     # build delay on input to Medial Temporal Lobe, and output of observations to Agent
@@ -134,11 +135,11 @@ class StubAgentEnv(gym.Env):
     self.pfc_output_buffer = DelayMessage(self._config["pfc_output_delay_size"])
 
     # build Medial Temporal Lobe
-    mtl = MedialTemporalLobe(self.MODULE_MTL, self._config[self.MODULE_MTL])
+    mtl = MedialTemporalLobe(self.MODULE_MTL, self._config[self.MODULE_MTL]).to(self._device)
     self.modules[self.MODULE_MTL] = mtl
 
     # build Superior Colliculus
-    sc = SuperiorColliculus(self.MODULE_SC, self._config[self.MODULE_SC])
+    sc = SuperiorColliculus(self.MODULE_SC, self._config[self.MODULE_SC]).to(self._device)
     self.modules[self.MODULE_SC] = sc
 
     # the new observation space dict from the processed streams
@@ -181,7 +182,7 @@ class StubAgentEnv(gym.Env):
     for obs_key in self._config["obs_keys"]["visual"]:
       input_shape = self.create_input_shape_visual(self.env_observation_space, obs_key)
       config = self._config[obs_key]
-      visual_path = VisualPath(obs_key, input_shape, config)
+      visual_path = VisualPath(obs_key, input_shape, config, device=self._device).to(self._device)
       self.modules[obs_key] = visual_path
 
       output_shape = visual_path.get_output_shape()
@@ -217,7 +218,7 @@ class StubAgentEnv(gym.Env):
     input_shape = self.create_input_shape_pe(self.env_observation_space, obs_key)
     screen_shape = self.get_screen_shape()
     config = self._config[obs_key]
-    pe = PositionalEncoder(obs_key, input_shape, config, max_xy=(screen_shape[0], screen_shape[1]))
+    pe = PositionalEncoder(obs_key, input_shape, config, max_xy=(screen_shape[0], screen_shape[1])).to(self._device)
     self.modules[obs_key] = pe
 
     output_shape = pe.get_output_shape()
@@ -228,15 +229,14 @@ class StubAgentEnv(gym.Env):
   # -----------------------------------------------------------------------------------------------
 
   def forward_observation(self, observation):
-    # print('-----------Obs old', observation)
 
     # process foveal and peripheral visual path
     what_where_obs_dict = {}
     if self._use_visual:
       for obs_key in self._config["obs_keys"]["visual"]:
-        cortex = self.modules[obs_key]
+        visual_path = self.modules[obs_key]
         input_tensor = self.obs_to_tensor(observation, obs_key)
-        encoding_tensor, decoding, target = cortex.forward(input_tensor)
+        encoding_tensor, decoding, target = visual_path.forward(input_tensor)
         self.tensor_to_obs(encoding_tensor, what_where_obs_dict, obs_key)
 
     # process positional encoding
@@ -245,7 +245,6 @@ class StubAgentEnv(gym.Env):
       pe = self.modules[obs_key]
       input_tensor = self.obs_to_tensor(observation, obs_key)
       pe_output = pe.forward(input_tensor)
-
       self.tensor_to_obs(pe_output, what_where_obs_dict, obs_key)
 
     # process everything downstream of posterior cortex
@@ -272,7 +271,7 @@ class StubAgentEnv(gym.Env):
 
   def tensor_to_obs(self, output, obs_dict, obs_key):
     #print('output is', output)
-    obs = torch.squeeze(output).detach().numpy()  # remove batch dim, detach graph, convert numpy
+    obs = torch.squeeze(output).detach().cpu().numpy()  # remove batch dim, detach graph, convert numpy
     #print('!!!!!!!!!!!!!!!!!:',obs_key,' output tensor shape:', obs.shape)
     obs_dict[obs_key] = obs
 
@@ -280,7 +279,7 @@ class StubAgentEnv(gym.Env):
     obs = torch.tensor(observation[obs_key])
     obs_b = torch.unsqueeze(obs, 0)  # insert batch dimension 0
     #print('!!!!!!!!!!!!!!!!!:',obs_key,' input tensor shape:', obs_b.shape)
-    return obs_b
+    return obs_b.to(self._device)
 
   def get_config(self):
     """ return a dictionary of params """
@@ -318,6 +317,10 @@ class StubAgentEnv(gym.Env):
       h = m.hexdigest()
       print(' Hash = ', h)
 
+      print('SA-ENV: OBS STATS: ')
+      for key, val in tx_obs.items():
+        print("\t{}: {}, {}, {}".format(key, val.shape, val.min(), val.max()))
+
     if debug_timing:
       end = timer()
       print('Step elapsed time: ', str(end - start))  # Time in seconds, e.g. 5.38091952400282
@@ -341,7 +344,7 @@ class StubAgentEnv(gym.Env):
   def get_observation(self):
     print('>>>>>>>>>>> Stub get obs')
     obs = self.env.get_observation()
-    tx_obs = self.forward(obs)
+    tx_obs = self.forward_observation(obs)
     return tx_obs
 
   def render(self, mode='human', close=False):
