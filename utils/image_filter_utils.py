@@ -5,6 +5,7 @@ import scipy.ndimage
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 # TODO: add appropriate padding so that the filtered image is the correct size
@@ -88,7 +89,7 @@ class ImageFilter(nn.Module):
     # weight = [c_out, c_in, kH, kW]
     # groups = 1 by default; split into groups. c_in should be divisible by groups
     # stride = not used
-    return torch.conv2d(input, weight=self.weight, groups=self.groups)
+    return F.conv2d(input, weight=self.weight, groups=self.groups)
 
 
 def get_gaussian_image_filter(channels, size, sigma, device):
