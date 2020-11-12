@@ -8,8 +8,8 @@
   },
   "agent":{
     "num_workers": 1,
-    "num_gpus": 1,
-    "num_gpus_per_worker": 1,
+    "num_gpus": 0,
+    "num_gpus_per_worker": 0,
     "rollout_fragment_length": 50,
     "gamma": 0.8
   },
