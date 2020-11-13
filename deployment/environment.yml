@@ -9,8 +9,8 @@ dependencies:
     - setuptools==50.3.0
     - scipy==1.5.2
     - pillow==7.2.0
-    - torch==1.6.0+cu92
-    - torchvision==0.7.0+cu92
+    - torch==1.6.0
+    - torchvision==0.7.0
     - ray==0.8.7
     - matplotlib==3.3.1
     - scikit-image==0.16.2
