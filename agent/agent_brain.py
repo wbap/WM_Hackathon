@@ -174,23 +174,21 @@ class AgentBrain(nn.Module):
     obs_space = self.create_observation_space_pe(obs_shape)
     obs_spaces_dict.update({obs_key: obs_space})
 
-  def forward(self, fwd_type, bg_action, observation_dic):
+  def forward(self, fwd_type, bg_action, observations):
     """
-    'Observation': a dictionary of Gym Env (the game environment) observations, converted to tensors
+    'Observation': a NamedTuple of Gym Env (the game environment) observations, converted to tensors
     'bg_action': an action from the Gym Agent (the basal ganglia)
     """
 
     if torch.equal(fwd_type, self.fwd_type['obs']) or \
        torch.equal(fwd_type, self.fwd_type['both']):
 
-      observation_dic = dict(observation_dic._asdict())
-
       # process foveal and peripheral visual path
       what_where_obs_dict = {}
       if self._use_visual:
         for obs_key in self._config["obs_keys"]["visual"]:
           visual_path = getattr(self, obs_key)
-          input_tensor = observation_dic[obs_key]
+          input_tensor = getattr(observations, obs_key)
           encoding_tensor, decoding, target = visual_path(input_tensor)
           what_where_obs_dict[obs_key] = encoding_tensor
 
@@ -198,7 +196,7 @@ class AgentBrain(nn.Module):
       if self._use_pe:
         obs_key = self.OBS_POSITIONAL_ENCODING
         pe = getattr(self, obs_key)
-        input_tensor = observation_dic[obs_key]
+        input_tensor = getattr(observations, obs_key)
         pe_output = pe(input_tensor)
         what_where_obs_dict[obs_key] = pe_output
 
