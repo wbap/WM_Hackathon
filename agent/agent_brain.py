@@ -55,8 +55,14 @@ class AgentBrain(nn.Module):
     super().__init__()
     self._name = name
     self._config = config
-    self.env_observation_space = game_obs_space
+    self._env_observation_space = game_obs_space
     self._build(obs_spaces_dict)
+
+    self.fwd_type = {
+      'obs': torch.tensor(0),
+      'action': torch.tensor(1),
+      'both': torch.tensor(2)
+    }
 
   def _build(self, obs_spaces_dict):
     """
@@ -121,7 +127,7 @@ class AgentBrain(nn.Module):
 
   def _build_visual_paths(self, obs_spaces_dict):
     for obs_key in self._config["obs_keys"]["visual"]:
-      input_shape = self.create_input_shape_visual(self.env_observation_space, obs_key)
+      input_shape = self.create_input_shape_visual(self._env_observation_space, obs_key)
       config = self._config[obs_key]
       visual_path = VisualPath(obs_key, input_shape, config)
       self.add_module(obs_key, visual_path)
@@ -157,7 +163,7 @@ class AgentBrain(nn.Module):
 
   def _build_positional_encoder(self, obs_spaces_dict):
     obs_key = self.OBS_POSITIONAL_ENCODING
-    input_shape = self.create_input_shape_pe(self.env_observation_space, obs_key)
+    input_shape = self.create_input_shape_pe(self._env_observation_space, obs_key)
     screen_shape = self.get_screen_shape()
     config = self._config[obs_key]
     pe = PositionalEncoder(obs_key, input_shape, config, max_xy=(screen_shape[0], screen_shape[1]))
@@ -174,7 +180,10 @@ class AgentBrain(nn.Module):
     'bg_action': an action from the Gym Agent (the basal ganglia)
     """
 
-    if fwd_type == 'obs':
+    if torch.equal(fwd_type, self.fwd_type['obs']) or \
+       torch.equal(fwd_type, self.fwd_type['both']):
+
+      observation_dic = dict(observation_dic._asdict())
 
       # process foveal and peripheral visual path
       what_where_obs_dict = {}
@@ -184,7 +193,6 @@ class AgentBrain(nn.Module):
           input_tensor = observation_dic[obs_key]
           encoding_tensor, decoding, target = visual_path(input_tensor)
           what_where_obs_dict[obs_key] = encoding_tensor
-          # self.tensor_to_obs(encoding_tensor, what_where_obs_dict, obs_key)
 
       # process positional encoding
       if self._use_pe:
@@ -205,7 +213,8 @@ class AgentBrain(nn.Module):
 
       return pfc_obs_dict_delayed
 
-    elif fwd_type == 'action':
+    elif torch.equal(fwd_type, self.fwd_type['action']) or \
+         torch.equal(fwd_type, self.fwd_type['both']):
 
       pfc = getattr(self, self.MODULE_PFC)
       _, pfc_action = pfc(None, None, bg_action)
