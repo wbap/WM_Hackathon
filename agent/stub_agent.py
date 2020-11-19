@@ -20,7 +20,7 @@ from ray.tune.registry import register_env
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 import ray.rllib.agents.ppo as ppo
 from ray.rllib.utils.framework import try_import_torch
-
+from ray.rllib.models.preprocessors import Preprocessor
 
 torch, nn = try_import_torch()
 
@@ -30,25 +30,12 @@ config = {
   "observation_max": 255
 }
 
-from ray.rllib.models.preprocessors import Preprocessor
-
 
 class StubPreprocessor(Preprocessor):
   """Test of a custom preprocessor - not required, for now, as this functionality is now in the wrapping Environment."""
 
   def __init__(self, obs_space, options):
     super().__init__(obs_space, options)
-
-  def _init_shape(self, obs_space, options):
-    print('Obs space:', str(obs_space))
-    tx_shape = (10, 10, 10)
-    #tx_shape = obs_space
-    return tx_shape  # can vary depending on inputs
-
-  def transform(self, observation):
-    tx = np.zeros((10, 10, 10))
-    #tx = observation
-    return tx  # return the preprocessed observation
 
 
 class StubAgent(TorchModelV2, nn.Module):

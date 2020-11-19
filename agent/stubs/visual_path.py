@@ -34,7 +34,7 @@ class VisualPath(nn.Module):
     updated_config = dict(mergedicts(default_config, delta_config))
     return updated_config
 
-  def __init__(self, name, input_shape, config, device):
+  def __init__(self, name, input_shape, config):
     """
     We have several sub-components for the DoG+/- encodings of fovea and peripheral vision
     Args:
@@ -47,7 +47,6 @@ class VisualPath(nn.Module):
     self._name = name
     self._input_shape = input_shape
     self._config = config
-    self._device = device
     self.summaries = True
     
     # Build networks to preprocess the observation space
@@ -73,29 +72,23 @@ class VisualPath(nn.Module):
     h = input_shape[2]
     w = input_shape[3]
     config = self._config[self.MODULE_RETINA]
-    module = Retina(self._name + '/retina', c, config, self._device)
-    module_name = self.get_module_name(self.MODULE_RETINA)
-    self._modules[module_name] = module
+    module = Retina(self._name + '/retina', c, config)
+    self.add_module(self.MODULE_RETINA, module)
     output_shape = module.get_output_shape(h, w)
     return output_shape
 
   def _build_visual_cortex(self, input_shape):
     config = self._config[self.MODULE_CORTEX]
     module = SparseAutoencoder(input_shape, config)
-    module_name = self.get_module_name(self.MODULE_CORTEX)
-    self._modules[module_name] = module
+    self.add_module(self.MODULE_CORTEX, module)
     output_shape = module.get_encoding_shape()
     return output_shape
-
-  def get_module_name(self, module):
-    return module
 
   def forward(self, x):
 
     # forward retina coding
-    module_name = self.get_module_name(self.MODULE_RETINA)
-    module = self._modules[module_name]
-    retina_output, r_p, r_n = module.forward(x)
+    retina = getattr(self, self.MODULE_RETINA)
+    retina_output, r_p, r_n = retina(x)
 
     if self.summaries:
       self.STEP += 1
@@ -111,9 +104,8 @@ class VisualPath(nn.Module):
       writer.flush()
 
     # forward cortex feature detection
-    module_name = self.get_module_name(self.MODULE_CORTEX)
-    module = self._modules[module_name]
-    encoding, decoding = module.forward(retina_output)
+    cortex = getattr(self, self.MODULE_CORTEX)
+    encoding, decoding = cortex(retina_output)
     target = retina_output
     return encoding, decoding, target
 
@@ -121,22 +113,5 @@ class VisualPath(nn.Module):
     torch.save(self.state_dict(), file_path)
 
   def load(self, file_path):
-    #m = self._modules[module]
-    #m.load_state_dict(torch.load(file_path))
     self.load_state_dict(torch.load(file_path))
 
-  # def eval(self, module=None):
-  #   if module is None:  # eval all
-  #     for m in self._modules:
-  #       m.eval()
-  #   else:
-  #     m = self._modules[module]
-  #     m.eval()
-
-  # def train(self, module=None):
-  #   if module is None:  # train all
-  #     for m in self._modules:
-  #       m.train()
-  #   else:
-  #     m = self._modules[module]
-  #     m.train()

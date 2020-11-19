@@ -95,9 +95,9 @@ def get_gaussian_image_filter(channels, size, sigma, device):
   return image_filter
 
 
-def get_dog_image_filter(channels, size, sigma, device, k=1.6, invert=False):
+def get_dog_image_filter(channels, size, sigma, k=1.6, invert=False):
   kernel = dog_kernel(size, sigma, k)
   if invert is True:
     kernel = -kernel
-  image_filter = ImageFilter(channels, kernel).to(device)
+  image_filter = ImageFilter(channels, kernel)
   return image_filter
