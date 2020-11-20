@@ -28,6 +28,12 @@ def sc_2_env(sc_action):
   return sc_action
 
 
+def dict_to_namedtuple(d, type_name='nt'):
+  NamedTuple = namedtuple(type_name, ' '.join(d.keys()))
+  nt = NamedTuple(**d)
+  return nt
+
+
 class StubAgentEnv(gym.Env):
 
   @staticmethod
@@ -101,13 +107,14 @@ class StubAgentEnv(gym.Env):
     game_obs_dic_tensors = {obs_key: self.obs_to_tensor(obs) for (obs_key, obs) in game_obs_dic.items()}
 
     # convert to named tuple
-    ObsNamedTuple = namedtuple('ObsDict', game_obs_dic_tensors.keys())
-    ont = ObsNamedTuple(**game_obs_dic_tensors)
-    print("*********************", ont)
+    game_obs_tensors = dict_to_namedtuple(game_obs_dic_tensors)
+
+    print("-------------------------- game_obs_tensors", game_obs_tensors)
+    print("-------------------------- game_obs_tensors.full", getattr(game_obs_tensors, 'full'))
 
     obs_dic_tensors = self.agent_brain(fwd_type=self.agent_brain.fwd_type['obs'],
                                        bg_action=None,
-                                       observation_dic=ont)
+                                       observations=game_obs_tensors)
 
     # convert tensors back to gym env observations
     obs_dic = {obs_key: self.tensor_to_obs(t_obs) for (obs_key, t_obs) in obs_dic_tensors.items()}
@@ -120,7 +127,7 @@ class StubAgentEnv(gym.Env):
     action_tensor = torch.tensor(action)
     sc_action_tensor = self.agent_brain(fwd_type=self.agent_brain.fwd_type['action'],
                                         bg_action=action_tensor,
-                                        observation_dic=None)
+                                        observations=None)
 
     # convert back to gym env action
     sc_action = sc_action_tensor.detach().cpu().numpy()
@@ -170,23 +177,25 @@ class StubAgentEnv(gym.Env):
       end = timer()
       print('Step elapsed time: ', str(end - start))  # Time in seconds, e.g. 5.38091952400282
 
-    print("-------------------------- graph ---------------------------")
-
-    # convert gym env observations to tensors
-    game_obs_dic_tensors = {obs_key: self.obs_to_tensor(obs) for (obs_key, obs) in game_obs_dic.items()}
-
-    # convert to named tuple
-    ObsNamedTuple = namedtuple('ObsDict', game_obs_dic_tensors.keys())
-    ont = ObsNamedTuple(**game_obs_dic_tensors)
-
-    # convert gym env action  to tensor
-    action_tensor = torch.tensor(action)
-
-    writer = WriterSingleton.get_writer()
-    writer.add_graph(model=self.agent_brain,
-                     input_to_model=(self.agent_brain.fwd_type['both'], action_tensor, ont),
-                     verbose=True)
-    writer.flush()
+    # print("-------------------------- graph ---------------------------")
+    #
+    # # convert gym env observations to tensors
+    # game_obs_dic_tensors = {obs_key: self.obs_to_tensor(obs) for (obs_key, obs) in game_obs_dic.items()}
+    #
+    # # convert to named tuple
+    # game_obs_tensors = dict_to_namedtuple(game_obs_dic_tensors)
+    #
+    # print("-------------------------- game_obs_tensors", game_obs_tensors)
+    # print("-------------------------- game_obs_tensors.full", getattr(game_obs_tensors, 'full'))
+    #
+    # # convert gym env action  to tensor
+    # action_tensor = torch.tensor(action)
+    #
+    # writer = WriterSingleton.get_writer()
+    # writer.add_graph(model=self.agent_brain,
+    #                  input_to_model=(self.agent_brain.fwd_type['both'], action_tensor, game_obs_tensors),
+    #                  verbose=True)
+    # writer.flush()
 
     return emit
 
