@@ -51,7 +51,7 @@ ENV PATH $HOME/miniconda/envs/wm_env/bin:$PATH
 # Clean-up
 RUN conda clean --all -y
 
-RUN source activate wm_env
+RUN conda activate wm_env
 RUN git clone https://github.com/Cerenaut/cerenaut-pt-core.git
 RUN python cerenaut-pt-core/setup.py develop
 
