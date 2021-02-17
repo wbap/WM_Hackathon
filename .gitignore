@@ -1,4 +1,5 @@
 __pycache__/
+cerenaut_pt_core.egg-info/
 gym_game.egg-info/
 gym_game/envs/__pycache__/
 agent/__pycache__/
