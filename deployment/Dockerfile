@@ -34,8 +34,9 @@ WORKDIR $HOME
 # Create volumes (that we'll map to when we run the container)
 RUN mkdir -p $HOME/wm_hackathon
 VOLUME $HOME/wm_hackathon
-RUN mkdir -p $HOME/cerenaut-pt-core
-VOLUME $HOME/cerenaut-pt-core
+
+RUN git clone https://github.com/Cerenaut/cerenaut-pt-core.git
+RUN python cerenaut-pt-core/setup.py develop
 
 # Copy Conda environment config
 COPY environment.yml ./environment.yml
@@ -63,6 +64,6 @@ RUN echo "export PATH=/usr/local/cuda-9.0/bin:$PATH" >> $HOME/.bashrc
 RUN echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64/:$LD_LIBRARY_PATH" >> $HOME/.bashrc
 
 # set the default path to the mounted folder (commands passed to the container are run from there)
-WORKDIR wm_hackathon
+WORKDIR $HOME/wm_hackathon
 
 CMD ["bash"]
