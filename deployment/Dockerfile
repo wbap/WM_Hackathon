@@ -35,9 +35,6 @@ WORKDIR $HOME
 RUN mkdir -p $HOME/wm_hackathon
 VOLUME $HOME/wm_hackathon
 
-RUN git clone https://github.com/Cerenaut/cerenaut-pt-core.git
-RUN python cerenaut-pt-core/setup.py develop
-
 # Copy Conda environment config
 COPY environment.yml ./environment.yml
 
@@ -53,6 +50,10 @@ ENV PATH $HOME/miniconda/envs/wm_env/bin:$PATH
 
 # Clean-up
 RUN conda clean --all -y
+
+RUN source activate wm_env
+RUN git clone https://github.com/Cerenaut/cerenaut-pt-core.git
+RUN python cerenaut-pt-core/setup.py develop
 
 # TensorBoard
 EXPOSE 6006
