@@ -49,6 +49,7 @@ RUN conda env create -f environment.yml -n wm_env
 ENV PATH $HOME/miniconda/envs/wm_env/bin:$PATH
 
 # Clean-up
+RUN conda init bash
 RUN conda clean --all -y
 
 # Make RUN commands use the new environment
