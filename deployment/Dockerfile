@@ -51,9 +51,10 @@ ENV PATH $HOME/miniconda/envs/wm_env/bin:$PATH
 # Clean-up
 RUN conda clean --all -y
 
-RUN conda init bash
-RUN . $HOME/.bashrc
-RUN conda activate wm_env
+# Make RUN commands use the new environment
+SHELL ["conda", "run", "-n", "wm_env", "/bin/bash", "-c"]
+
+# Setup cerenaut-pt-core
 RUN git clone https://github.com/Cerenaut/cerenaut-pt-core.git
 RUN python cerenaut-pt-core/setup.py develop
 
