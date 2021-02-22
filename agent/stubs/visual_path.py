@@ -123,7 +123,11 @@ class VisualPath(nn.Module):
   def load(self, file_path):
     #m = self._modules[module]
     #m.load_state_dict(torch.load(file_path))
-    self.load_state_dict(torch.load(file_path))
+    map_location = None
+    if torch.cuda.is_available() is False:
+      map_location = torch.device('cpu')
+
+    self.load_state_dict(torch.load(file_path, map_location=map_location))
 
   # def eval(self, module=None):
   #   if module is None:  # eval all
