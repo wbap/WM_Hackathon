@@ -63,8 +63,6 @@ print("ACTIONS={}".format(ACTIONS))
 render_mode = 'rgb_array'
 ray.shutdown()
 ray.init(ignore_reinit_error=True)
-CHECKPOINT_ROOT = 'tmp/simple'
-shutil.rmtree(CHECKPOINT_ROOT, ignore_errors=True, onerror=None)
 
 # Build agent config
 agent_config = {}
@@ -132,6 +130,7 @@ results_mean = collections.deque()
 results_max = collections.deque()
 results_window_size = 100
 
+checkpoint_dir = writer.get_logdir()
 
 status_message = "{:3d}: reward {:6.2f}/{:6.2f}/{:6.2f} len {:6.2f}"
 file_name = 'None'
@@ -212,7 +211,11 @@ for training_epoch in range(training_epochs):  # number of epochs for all traini
   # Periodically save checkpoints
   if checkpoint_interval > 0:  # Optionally save checkpoint every n epochs of training
     if (training_epoch % checkpoint_interval) == 0:
-      file_name = agent.save(CHECKPOINT_ROOT)
+      file_name = agent.save(checkpoint_dir)
+
+  # Always save the final checkpoint regardless of interval
+  if training_epoch == (training_epochs - 1):
+    file_name = agent.save(checkpoint_dir)
 
   # Periodically evaluate
   if (training_epoch % evaluation_interval) == 0:
