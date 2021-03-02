@@ -51,7 +51,7 @@ class StubPreprocessor(Preprocessor):
     return tx  # return the preprocessed observation
 
 
-class StubAgent(TorchModelV2, nn.Module):
+class Agent(TorchModelV2, nn.Module):
   """PyTorch custom model that flattens the input to 1d and delegates to a fc-net."""
 
   def __init__(self, obs_space, action_space, num_outputs, model_config, name):

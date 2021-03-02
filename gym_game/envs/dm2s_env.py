@@ -227,7 +227,7 @@ class Dm2sEnv(FiniteStateEnv):
     return txType
 
   def get_random_sample(self, like=None, unlike=None):
-    """The rules of the game dictate what the random samples can be. We must avoid more than one 
+    """The rules of the game dictate what the random samples can be. We must avoid more than one
     matching sample in the quality that determines the correct answer in the current game type.
     The matching sample should ONLY be matching in the aspect that matters for the current game type."""
     except_color = None

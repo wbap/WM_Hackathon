@@ -44,7 +44,7 @@ def sc_2_env(sc_action):
   return sc_action
 
 
-class StubAgentEnv(gym.Env):
+class AgentEnv(gym.Env):
 
   # Observation keys - for the obs dict that is emitted by this environment
   OBS_FOVEA = 'fovea'
@@ -66,14 +66,14 @@ class StubAgentEnv(gym.Env):
     pfc_config = PrefrontalCortex.get_default_config()
     agent_config = {
       'obs_keys': {
-        'visual': [StubAgentEnv.OBS_FOVEA, StubAgentEnv.OBS_PERIPHERAL]
+        'visual': [AgentEnv.OBS_FOVEA, AgentEnv.OBS_PERIPHERAL]
       },
-      StubAgentEnv.OBS_FOVEA: vp_f_config,
-      StubAgentEnv.OBS_PERIPHERAL: vp_p_config,
-      StubAgentEnv.OBS_POSITIONAL_ENCODING: pe_config,
-      StubAgentEnv.MODULE_SC: sc_config,
-      StubAgentEnv.MODULE_MTL: mtl_config,
-      StubAgentEnv.MODULE_PFC: pfc_config,
+      AgentEnv.OBS_FOVEA: vp_f_config,
+      AgentEnv.OBS_PERIPHERAL: vp_p_config,
+      AgentEnv.OBS_POSITIONAL_ENCODING: pe_config,
+      AgentEnv.MODULE_SC: sc_config,
+      AgentEnv.MODULE_MTL: mtl_config,
+      AgentEnv.MODULE_PFC: pfc_config,
       'mtl_input_delay_size': 1,
       'pfc_output_delay_size': 1
     }
@@ -299,10 +299,10 @@ class StubAgentEnv(gym.Env):
     env_action = self.forward_action(action)
 
     # Update the game env, based on actions originating in PFC (and direct from Actor)
-    [obs, self.reward, is_end_state, additional] = self.env.step(env_action)    # StubAgentEnv.step
+    [obs, self.reward, is_end_state, additional] = self.env.step(env_action)    # AgentEnv.step
 
     # Update agent brain with new observations
-    tx_obs = self.forward_observation(obs)  # Process the input from StubAgentEnv
+    tx_obs = self.forward_observation(obs)  # Process the input from AgentEnv
 
     emit = [tx_obs, self.reward, is_end_state, additional]
 

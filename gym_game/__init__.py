@@ -20,7 +20,7 @@ register(
 
 register(
   id='stub-v0',
-  entry_point='gym_game.envs:StubAgentEnv',
+  entry_point='gym_game.envs:AgentEnv',
   kwargs={'env_type': None, 'env_config_file': None}
 )
 

@@ -8,7 +8,7 @@
   "pfc_output_delay_size": 1,
   "fovea": {
     "summaries": false,
-    "load": "data/pretrain_m2s_av/fovea.pt",
+    "load": "data/pretrain/fovea.pt",
     "retina": {
       "f_size": 7,
       "f_sigma": 2.0,
@@ -36,7 +36,7 @@
   },
   "peripheral": {
     "summaries": false,
-    "load": "data/pretrain_m2s_av/peripheral.pt",
+    "load": "data/pretrain/peripheral.pt",
     "retina": {
       "f_size": 7,
       "f_sigma": 2.0,

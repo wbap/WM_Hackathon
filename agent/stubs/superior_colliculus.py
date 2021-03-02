@@ -28,7 +28,7 @@ class SuperiorColliculus(nn.Module):
     """
 
     sc_action = pfc_action
-    # print("======> StubAgentEnv: agent_action", sc_action)
+    # print("======> AgentEnv: agent_action", sc_action)
 
     return sc_action
 

@@ -18,7 +18,7 @@
     "play-feedback":{"interval":1000,"flash_interval":100}
   },
 
-  "gameTypes":["shape"],
+  "gameTypes":["position"],
   "txTypes":["None"],
   "colors": ["DB"],
   "shapes": ["Barred_Ring", "Triangle", "Cross", "Heart"]

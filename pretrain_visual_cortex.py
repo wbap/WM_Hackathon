@@ -24,7 +24,6 @@ import torchvision
 from torchvision import datasets, transforms
 
 
-from agent.stub_agent import StubAgent
 from agent.stubs.visual_path import VisualPath, WriterSingleton
 from gym_game.envs.pygame_dataset import PyGameDataset
 

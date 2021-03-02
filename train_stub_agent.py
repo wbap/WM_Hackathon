@@ -15,7 +15,7 @@ from statistics import mean
 import ray
 import ray.rllib.agents.a3c as a3c
 import ray.tune as tune
-from agent.stub_agent import StubAgent
+from agent.agent import Agent
 from ray.rllib.models import ModelCatalog
 from ray.rllib.utils.framework import try_import_torch
 
@@ -24,19 +24,19 @@ from utils.writer_singleton import WriterSingleton
 torch, nn = try_import_torch()
 
 """
-Create a simple RL agent using StubAgent. 
+Create a simple RL agent using an Agent. 
 The environment can be chosen. Both environment and agent are configurable.
 """
 
 
-def stub_env_creator(task_env_type, task_env_config_file, stub_env_config_file):
+def env_creator(task_env_type, task_env_config_file, env_config_file):
   """Custom functor to create custom Gym environments."""
-  from gym_game.envs import StubAgentEnv
-  return StubAgentEnv(task_env_type, task_env_config_file, stub_env_config_file)  # Instantiate with config fil
+  from gym_game.envs import AgentEnv
+  return AgentEnv(task_env_type, task_env_config_file, env_config_file)  # Instantiate with config fil
 
 
 if len(sys.argv) < 4:
-    print('Usage: python simple_agent.py ENV_NAME ENV_CONFIG_FILE STUB_ENV_CONFIG_FILE AGENT_CONFIG_FILE')
+    print('Usage: python simple_agent.py ENV_NAME ENV_CONFIG_FILE ENV_CONFIG_FILE AGENT_CONFIG_FILE')
     sys.exit(-1)
 
 meta_env_type = 'stub-v0'
@@ -44,14 +44,14 @@ task_env_type = sys.argv[1]
 print('Task Gym[PyGame] environment:', task_env_type)
 task_env_config_file = sys.argv[2]
 print('Task Env config file:', task_env_config_file)
-stub_env_config_file = sys.argv[3]
-print('Stub Env config file:', stub_env_config_file)
+env_config_file = sys.argv[3]
+print('Env config file:', env_config_file)
 model_config_file = sys.argv[4]
 print('Agent config file:', model_config_file)
 
 # Try to instantiate the environment
-env = stub_env_creator(task_env_type, task_env_config_file, stub_env_config_file)  #gym.make(env_name, config_file=env_config_file)
-tune.register_env(meta_env_type, lambda config: stub_env_creator(task_env_type, task_env_config_file, stub_env_config_file))
+env = env_creator(task_env_type, task_env_config_file, env_config_file)  #gym.make(env_name, config_file=env_config_file)
+tune.register_env(meta_env_type, lambda config: env_creator(task_env_type, task_env_config_file, env_config_file))
 
 # Check action space of the environment
 if not hasattr(env.action_space, 'n'):
@@ -72,8 +72,8 @@ agent_config["num_workers"] = 1
 agent_config["model"] = {}  # This is the "model" for the agent (i.e. Basal-Ganglia) only.
 
 # Override preprocessor and model
-model_name = 'stub_agent_model'
-preprocessor_name = 'stub_preprocessor'
+model_name = 'agent_model'
+preprocessor_name = 'obs_preprocessor'
 agent_config["model"]["custom_model"] = model_name
 #agent_config["model"]["custom_preprocessor"] = preprocessor_name
 
@@ -113,7 +113,7 @@ if model_config_file is not None:
     checkpoint_interval = training_config['checkpoint_interval']
 
 # Register the custom items
-ModelCatalog.register_custom_model(model_name, StubAgent)
+ModelCatalog.register_custom_model(model_name, Agent)
 
 print('Agent config:\n', agent_config)
 #agent_config['gamma'] = 0.0

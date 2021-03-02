@@ -21,5 +21,5 @@ class PrefrontalCortex(nn.Module):
   def forward(self, what_where_obs_dict, mtl_out, bg_action):
     pfc_action = bg_action
     pfc_observation = what_where_obs_dict
-    # print("======> StubAgent: bg_action", bg_action)
+    # print("======> Agent: bg_action", bg_action)
     return pfc_observation, pfc_action
