@@ -9,3 +9,4 @@ tmp/
 runs/
 .idea/
 *.zip
+checkpoints/stub_agent_checkpoint

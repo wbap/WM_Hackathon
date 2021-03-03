@@ -3,23 +3,43 @@
   "observationRepeat": 2,
   "frameRate": 3,
   "imageDir": "resources/dm2s",
+
+  "fovea_fraction": 0.25,
+  "fovea_scale": 0.2,
+  "gaze_step_size": 100,
+  "peripheral_scale": 0.02,
+  "peripheral_noise_magnitude": 0.1,
   "screen_scale": 0.1,
+  "show_fovea_on_screen": 0,
+  "enable_active_vision": 1,
   "summaries": false,
-  "enable_active_vision": 0,
-  "summaries": true,
+  "grid_length_x": 5,
+  "grid_length_y": 5,
+
   "videoWidth": 800,
   "videoHeight": 800,
 
   "states":{
-    "tutor-show":{"interval":2000},
+    "tutor-stim":{"interval":2000},
+    "tutor-hide":{"interval":2000},
+    "tutor-show":{"interval":1000},
     "tutor-feedback":{"interval":1000,"flash_interval":100},
     "inter":{"interval":1200,"flash_interval":400},
+    "play-stim":{"interval":2000},
+    "play-hide":{"interval":2000},
     "play-show":{"interval":5000},
     "play-feedback":{"interval":1000,"flash_interval":100}
   },
 
   "gameTypes":["color"],
-  "txTypes":["None"],
-  "colors": ["DB"],
-  "shapes": ["Barred_Ring", "Triangle", "Cross", "Heart"]
+  "txTypes":["None", "Reduce", "Rotate"],
+  "colors":["LB", "LG", "PINK"],
+  "shapes": [
+    "Barred_Ring",
+    "Triangle",
+    "Crescent",
+    "Cross",
+    "Heart",
+    "Square"
+  ]
 }
