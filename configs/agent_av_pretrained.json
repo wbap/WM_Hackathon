@@ -5,7 +5,7 @@
     "evaluation_steps": 5,
     "evaluation_interval": 2,
     "checkpoint_interval": -1,
-    "checkpoint_path": "tmp/simple/checkpoint_30/checkpoint-30"
+    "checkpoint_path": "checkpoints/stub_agent_checkpoint/checkpoint-160"
   },
   "agent":{
     "num_workers": 1,
