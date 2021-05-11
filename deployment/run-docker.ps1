@@ -1,4 +1,4 @@
-# usage: run-docker.ps1 [path to wm code] [boolean for GPU or not] [command and params to run in container]
+# usage: run-docker.ps1 [path to wm code] [path to cerenaut-pt-core code] [boolean for GPU or not] [command and params to run in container]
 # e.g.  deployment/run-docker.ps1 ~/Dev/WM_Hackathon ~/Dev/cerenaut-pt-core $false python 
 Param(
 	[String]$WM_SRC_DIR = "~/Dev/WM_Hackathon",

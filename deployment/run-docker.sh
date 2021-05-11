@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# usage: run-docker.sh [path to wm code] [boolean for GPU or not] [command and params to run in container]
+# usage: run-docker.sh [path to wm code] [path to cerenaut-pt-core code] [boolean for GPU or not] [command and params to run in container]
 # e.g.  deployment/run-docker.sh ~/Dev/WM_Hackathon ~/Dev/cerenaut-pt-core false python 
 export WM_SRC_DIR=${1:-~/Dev/WM_Hackathon}
 export CORE_SRC_DIR=${2:-~/Dev/cerenaut-pt-core}
