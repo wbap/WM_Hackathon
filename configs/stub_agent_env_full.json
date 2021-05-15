@@ -4,7 +4,7 @@
   },
   "mtl_max_length": 6,
   "full": {
-    "load": "data/pretrain/full.pt",
+    "load": "checkpoints/full.pt",
     "retina": {
       "f_size": 7,
       "f_sigma": 2.0,
