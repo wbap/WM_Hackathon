@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #
-# Trains a simple agent on an environment
+# Trains agent on an environment
 # python simple_agent.py Env-vN
 #
 

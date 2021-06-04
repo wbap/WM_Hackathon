@@ -299,10 +299,10 @@ class AgentEnv(gym.Env):
     env_action = self.forward_action(action)
 
     # Update the game env, based on actions originating in PFC (and direct from Actor)
-    [obs, self.reward, is_end_state, additional] = self.env.step(env_action)    # AgentEnv.step
+    [obs, self.reward, is_end_state, additional] = self.env.step(env_action)
 
     # Update agent brain with new observations
-    tx_obs = self.forward_observation(obs)  # Process the input from AgentEnv
+    tx_obs = self.forward_observation(obs)
 
     emit = [tx_obs, self.reward, is_end_state, additional]
 
