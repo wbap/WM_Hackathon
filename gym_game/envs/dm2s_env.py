@@ -163,7 +163,7 @@ class Dm2sEnv(FiniteStateEnv):
     # Only transition if action in scope of dm2s actions
     if action < self.NUM_ACTIONS:
       if old_state_key == self.STATE_PLAY_SHOW:
-        if action != self.ACTION_NONE:
+        if action in [self.ACTION_LEFT, self.ACTION_RIGHT]:
           if self.result is None:
             if action == self.position:
               self.result = self.RESULT_CORRECT
@@ -199,11 +199,11 @@ class Dm2sEnv(FiniteStateEnv):
     return old_state_key
 
   def _update_reward(self, old_state_key, action, elapsed_time, new_state_key):
-    """Reward is always zero unless in the PLAY_SHOW state and the action is not zero. 
+    """Reward is always zero unless in the PLAY_SHOW state and the action is not zero.
     In that case it is 1 if correct and -1 otherwise."""
     reward = 0.0
     if old_state_key == self.STATE_PLAY_SHOW:
-      if action != self.ACTION_NONE:
+      if action in [self.ACTION_LEFT, self.ACTION_RIGHT]:
         if action == self.position:
           reward = 1.0
         else:

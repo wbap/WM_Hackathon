@@ -59,7 +59,7 @@ class M2sEnv(Dm2sEnv):
     new_state_key = old_state_key  # default
     next_state_keys = self.get_next_state_keys(old_state_key)
     if old_state_key == self.STATE_PLAY_SHOW:
-      if action != self.ACTION_NONE:
+      if action in [self.ACTION_LEFT, self.ACTION_RIGHT]:
         if self.result is None:
           if action == self.position:
             self.result = self.RESULT_CORRECT
