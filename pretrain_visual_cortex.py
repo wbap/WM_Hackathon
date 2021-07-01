@@ -62,8 +62,8 @@ def train(args, model, device, train_loader, global_step, optimizer, epoch, writ
       writer.add_image('pre-train/encoding', torchvision.utils.make_grid(encoding_img), global_step)
 
       # when input has 6 channels...
-      dog_pos = output[:, 0:2, :, :]
-      dog_neg = output[:, 3:5, :, :]
+      dog_pos = output[:, 0:3, :, :]
+      dog_neg = output[:, 3:6, :, :]
       writer.add_image('pre-train/dog+recon', torchvision.utils.make_grid(dog_pos), global_step)
       writer.add_image('pre-train/dog-recon', torchvision.utils.make_grid(dog_neg), global_step)
 

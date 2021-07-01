@@ -103,8 +103,8 @@ class VisualPath(nn.Module):
       writer.add_histogram(self._name + '/retina-input', x, global_step=self.STEP)
       writer.add_histogram(self._name + '/retina-output', retina_output, global_step=self.STEP)
 
-      dog_pos = retina_output[:, 0:2, :, :]
-      dog_neg = retina_output[:, 3:5, :, :]
+      dog_pos = retina_output[:, 0:3, :, :]
+      dog_neg = retina_output[:, 3:6, :, :]
       writer.add_image(self._name + '/retina-output-dog+', torchvision.utils.make_grid(dog_pos), global_step=self.STEP)
       writer.add_image(self._name + '/retina-output-dog-', torchvision.utils.make_grid(dog_neg), global_step=self.STEP)
 
