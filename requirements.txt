@@ -1,4 +1,4 @@
-pygame==1.9.6
+pygame==2.0.0.dev4
 gym==0.17.2
 numpy==1.19.1
 setuptools==50.3.0
